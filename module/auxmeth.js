@@ -84,16 +84,13 @@ export class auxMeth {
 
     static async registerIfHelper(){
         Handlebars.registerHelper('ifCond', function(v1, v2, options) {
-
-            let regE = /^\d+$/g;
-            let isnumv1 = v1.match(regE);
-            let isnumv2 = v2.match(regE);
-
-            if(isnumv1)
+            if (!isNaN(v1)) {
                 v1 = Number(v1);
+            }
 
-            if(isnumv2)
+            if (!isNaN(v2)) {
                 v2 = Number(v2);
+            }
 
             if(v1 === v2) {
                 return options.fn(this);
@@ -166,7 +163,7 @@ export class auxMeth {
     }
 
     static async isNumeric(str) {
-        if (typeof str != "string") return false // we only process strings!  
+        if (typeof str != "string") return false // we only process strings!
         return !isNaN(str) && // use type coercion to parse the _entirety_ of the string (`parseFloat` alone does not do this)...
             !isNaN(parseFloat(str)) // ...and ensure strings of whitespace fail
     }
@@ -356,7 +353,7 @@ export class auxMeth {
                 if(!itemresult[i].includes("#{target|"))
                     expr = expr.replace(attname,attvalue);
 
-            }      
+            }
 
         }
         //console.log(expr);
@@ -420,7 +417,7 @@ export class auxMeth {
                 }
 
                 expr = expr.replace(attname,attvalue);
-            }         
+            }
 
         }
 
@@ -443,7 +440,7 @@ export class auxMeth {
 
                 if(!nonvalidexpr)
                     expr = expr.replace(attname,attvalue);
-            }         
+            }
 
         }
 
@@ -473,7 +470,7 @@ export class auxMeth {
 
                 if(!nonvalidexpr)
                     expr = expr.replace(attname,attvalue);
-            }         
+            }
 
         }
 
@@ -504,7 +501,7 @@ export class auxMeth {
             }
 
             if(ceilResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<ceilResult.length;i++){
                     let ceilExpr = ceilResult[i];
                     let tochange = "ceil(" + ceilExpr+ ")";
@@ -547,7 +544,7 @@ export class auxMeth {
             }
 
             if(floorResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<floorResult.length;i++){
                     let floorExpr = floorResult[i];
                     let tochange = "floor(" + floorExpr+ ")";
@@ -559,7 +556,7 @@ export class auxMeth {
                         if(isNaN(floorExpr)){
                             //                            let roll = new Roll(floorExpr).roll();
                             //                            let finalvalue = roll.total;
-                            //                            expr = expr.replace(tochange,parseInt(finalvalue)); 
+                            //                            expr = expr.replace(tochange,parseInt(finalvalue));
                             //console.log(floorExpr);
 
                             let test = eval(floorExpr);
@@ -626,7 +623,7 @@ export class auxMeth {
             }
 
             if(maxResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<maxResult.length;i++){
                     //console.log(maxResult[i]);
                     let ifpresent = /\bif\[|\bmax\(|\bmin\(|\bsum\(|\%\[|\bceil\(|\bfloor\(|\bcount[E|L|H]\(|\?\[/g;
@@ -659,7 +656,7 @@ export class auxMeth {
                         if(!nonumber){
                             finalvalue = Math.max.apply(Math, valueToMax);
                             let tochange = "max(" + maxResult[i]+ ")";
-                            expr = expr.replace(tochange,parseInt(finalvalue)); 
+                            expr = expr.replace(tochange,parseInt(finalvalue));
                         }
 
                         else{
@@ -690,7 +687,7 @@ export class auxMeth {
                 minResult.push(subb);
             }
             if(minResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<minResult.length;i++){
                     let ifpresent = /\bif\[|\bmax\(|\bmin\(|\bsum\(|\%\[|\bceil\(|\bfloor\(|\bcount[E|L|H]\(|\?\[/g;
                     let ifpresentcheck = minResult[i].match(ifpresent);
@@ -721,7 +718,7 @@ export class auxMeth {
                         if(!nonumber){
                             finalvalue = Math.min.apply(Math, valueToMin);
                             let tochange = "min(" + minResult[i]+ ")";
-                            expr = expr.replace(tochange,parseInt(finalvalue)); 
+                            expr = expr.replace(tochange,parseInt(finalvalue));
                         }
 
                         else{
@@ -754,7 +751,7 @@ export class auxMeth {
                 countIfResult.push(subb);
             }
             if(countIfResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<countIfResult.length;i++){
                     //                let debugname = attpresult[i];
 
@@ -784,7 +781,7 @@ export class auxMeth {
                         }
 
                         let tochange = "countE(" + countIfResult[i]+ ")";
-                        expr = expr.replace(tochange,parseInt(finalvalue)); 
+                        expr = expr.replace(tochange,parseInt(finalvalue));
                     }
 
                     else{
@@ -809,7 +806,7 @@ export class auxMeth {
                 countHighResult.push(subb);
             }
             if(countHighResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<countHighResult.length;i++){
                     //                let debugname = attpresult[i];
 
@@ -861,7 +858,7 @@ export class auxMeth {
             }
 
             if(countLowResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<countLowResult.length;i++){
                     //                let debugname = attpresult[i];
 
@@ -916,7 +913,7 @@ export class auxMeth {
                 sumResult.push(subb);
             }
             if(sumResult!=null){
-                //Substitute string for current value        
+                //Substitute string for current value
                 for (let i=0;i<sumResult.length;i++){
                     //                let debugname = attpresult[i];
 
@@ -1111,7 +1108,7 @@ export class auxMeth {
 
                         let finalvalue = falsevalue;
 
-                        var findOR = general_cond.search(" OR "); 
+                        var findOR = general_cond.search(" OR ");
                         var findAND = general_cond.search(" AND ");
 
                         let orconditions;
@@ -1294,7 +1291,7 @@ export class auxMeth {
                     }
 
 
-                }         
+                }
 
             }
 
@@ -1366,7 +1363,7 @@ export class auxMeth {
                 }
 
                 toreturn = expr;
-            }   
+            }
         }
         else{
             if(exprmode)
@@ -1437,7 +1434,7 @@ export class auxMeth {
             property = property.substr(1);
         }
         return function (a,b) {
-            /* next line works with strings and numbers, 
+            /* next line works with strings and numbers,
          * and you may want to customize it to your needs
          */
             var result = (a[property] < b[property]) ? -1 : (a[property] > b[property]) ? 1 : 0;
