@@ -985,6 +985,8 @@ export class gActor extends Actor{
         const citemIDs = actorData.data.citems;
         const attributes = actorData.data.attributes;
 
+        console.log(actorData);
+
         for(let k=0;k<citemIDs.length;k++){
             const mycitem = citemIDs[k];
             let cIOrigTemplate = game.items.get(mycitem.id);
@@ -1015,7 +1017,7 @@ export class gActor extends Actor{
 
                         if(hasProperty(mycitem.attributes,att)){
                             if(groupProps[j].isconstant && tempAtt.value!= mycitem.attributes[att].value){
-                                if(actor.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actor.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM)
+                                if(actorData.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actorData.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM)
                                     mycitem.attributes[att].value = tempAtt.value;
 
                             }
@@ -1049,7 +1051,7 @@ export class gActor extends Actor{
                     }
 
                     if(!hasProperty(mycitem.attributes,att)){
-                        if(actor.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actor.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM){
+                        if(actorData.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actorData.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM){
                             setProperty(mycitem.attributes,att,{});
                             setProperty(mycitem.attributes[att],"value",newvalue);
                         }
