@@ -25,11 +25,18 @@ global.game = {
     }
 }
 
+// Mock Roll
+global.Roll = function( expression ){
+    this.evaluate = function() {
+        this.total = eval( expression );
+    }
+}
+
 // Simple test assertion.
 var stop_on_fail = false;
 var successful_asserts = 0;
 var failed_asserts = 0;
-function assert( success, message ){
+function assert( success, message = ''){
 
     if( success ){
         // Report success.
@@ -44,13 +51,20 @@ function assert( success, message ){
 }
 
 // Assert that two values are equal.
-function assert_equal( a, b, message ) {
+function assert_equal( a, b, message = '') {
     // Create a message that mentions the values.
     var equality_message = `${message} ('${a}' == '${b}')`;
 
     // Delegate to plain assert.
     assert( a === b, equality_message );
 }
+
+function test_mocked_roll(){
+    var roll = new Roll('1+2');
+    roll.evaluate();
+    assert_equal(3, roll.total );
+}
+test_mocked_roll();
 
 async function test_basic_arithmetic(){
     var result = await auxMeth.autoParser("1 + 2", {}, {}, false, false, 1 );
@@ -65,7 +79,10 @@ await test_basic_arithmetic();
 
 async function test_get_attribute(){
     var result = await auxMeth.autoParser("#{name}", {}, {name:'Billy'}, false, false, 1 );
-    assert_equal( 'Billy', result, "Get name");
+    assert_equal( 'Billy', result, "Get name" );
+
+    result = await auxMeth.autoParser("#{damage} + 1", {}, {damage:{value: 3}}, false, false, 1 );
+    assert_equal( 4, result, "Get damage and add a value" );
 }
 await test_get_attribute();
 
