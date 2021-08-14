@@ -1,0 +1,30 @@
+{
+  "name": "sandbox-system-builder",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Sandbox System Builder for ForgeVTT",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs",
+    "test": "tests"
+  },
+  "scripts": {
+    "test": "node tests/roll_expression_tests.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://gitlab.com/rolnl/sandbox-system-builder.git"
+  },
+  "keywords": [
+    "forgevtt",
+    "sandbox",
+    "builder",
+    "system"
+  ],
+  "author": "RolNL",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://gitlab.com/rolnl/sandbox-system-builder/issues"
+  },
+  "homepage": "https://gitlab.com/rolnl/sandbox-system-builder#readme"
+}
