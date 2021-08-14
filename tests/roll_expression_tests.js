@@ -62,6 +62,13 @@ async function test_basic_arithmetic(){
 }
 await test_basic_arithmetic();
 
+
+async function test_get_attribute(){
+    var result = await auxMeth.autoParser("#{name}", {}, {name:'Billy'}, false, false, 1 );
+    assert_equal( 'Billy', result, "Get name");
+}
+await test_get_attribute();
+
 console.log( `Successful asserts: ${successful_asserts}` );
 console.log( `Failed asserts: ${failed_asserts}` );
 
