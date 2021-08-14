@@ -16,6 +16,15 @@ var color_red = "\x1b[31m"
 var color_green = "\x1b[32m"
 var color_yellow = "\x1b[33m"
 
+// Mock global game object.
+global.game = {
+    settings: {
+        get: async function( scope, key ) {
+            return null;
+        }
+    }
+}
+
 // Simple test assertion.
 var stop_on_fail = false;
 var successful_asserts = 0;
@@ -24,20 +33,34 @@ function assert( success, message ){
 
     if( success ){
         // Report success.
-        console.log( `${message}${color_green}\tSuccess${color_reset}` );
+        console.log( `${message}${color_green}\t Success${color_reset}` );
         successful_asserts++;
     } else {
         // Report failure.
-        console.log( `${message}${color_red}\Failure${color_reset}` );
+        console.log( `${message}${color_red}\t Failure${color_reset}` );
         failed_asserts++;
     }
 
 }
 
-function test_basic_arithmetic(){
-    assert( true, "Test truth" );
+// Assert that two values are equal.
+function assert_equal( a, b, message ) {
+    // Create a message that mentions the values.
+    var equality_message = `${message} ('${a}' == '${b}')`;
+
+    // Delegate to plain assert.
+    assert( a === b, equality_message );
 }
-test_basic_arithmetic();
+
+async function test_basic_arithmetic(){
+    var result = await auxMeth.autoParser("1 + 2", {}, {}, false, false, 1 );
+    assert_equal( result, 3, "1 + 2 == 3" );
+    result = await auxMeth.autoParser("1 + 2", {}, {}, true, false, 1 );
+    assert_equal( result, 3, "1 + 2 == 3" );
+    result = await auxMeth.autoParser("1 + 2", {}, {}, true, true, 1 );
+    assert_equal( result, 3, "1 + 2 == 3" );
+}
+await test_basic_arithmetic();
 
 console.log( `Successful asserts: ${successful_asserts}` );
 console.log( `Failed asserts: ${failed_asserts}` );
