@@ -102,7 +102,10 @@ async function test_get_attribute(){
     assert_equal( 'Billy', result, "Get name" );
 
     result = await auxMeth.autoParser("#{damage} + 1", {}, {damage:{value: 3}}, false, false, 1 );
-    assert_equal( 4, result, "Get damage and add a value" );
+    assert_equal( 4, result, "Get item damage and add a value" );
+
+    result = await auxMeth.autoParser("@{damage} + 1", {damage:{value:5}}, {damage:{value: 3}}, false, false, 1 );
+    assert_equal( 6, result, "Get actor damage and add a value" );
 }
 await test_get_attribute();
 
@@ -112,6 +115,10 @@ async function test_number_functions(){
 
     result = await auxMeth.autoParser("floor(1.5)", {}, {}, false, false, 1 );
     assert_equal( 1, result, 'floor( 1.5 )' );
+
+    // Combine math and attribute.
+    result = await auxMeth.autoParser("floor(@{damage})", {damage:{value:2.6}}, {}, false, false, 1 );
+    assert_equal( 2, result, "floor(@{damage}), where damage = 2.6");
 }
 await test_number_functions();
 
