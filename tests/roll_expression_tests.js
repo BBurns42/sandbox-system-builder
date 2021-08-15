@@ -117,6 +117,9 @@ async function test_get_attribute(){
     await assert_result( 4, "#{damage} + 1", {}, {damage:{value: 3}} );
 
     await assert_result( 6, "@{damage} + 1", {damage:{value:5}}, {damage:{value: 3}} );
+
+    // Test with zero attributes.
+    await assert_result( 5*5 + 0 * 10 + 1, "@{damage}*5 + #{damage}*10 +1", {damage:{value:5}}, {damage:{value: 0}} );
 }
 await test_get_attribute();
 
