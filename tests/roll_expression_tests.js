@@ -132,9 +132,16 @@ await test_number_functions();
 
 // Test lookup expressions.
 async function test_lookup(){
+    // Test min value.
     await assert_result( 7, "%[1, 0:7, 5: 14, 7: 8]" );
+
+    // Test exact match.
     await assert_result( 14, "%[5, 0:7, 5: 14, 7: 8]" );
+
+    // Test far above.
     await assert_result( 8, "%[100, 0:7, 5: 14, 7: 8]" );
+
+    // Test combined with attributes.
     await assert_result( 19, "%[@{height}, 0:7, 5: #{width}, 7: 8]", {height:{value: 6}}, {width:{value:19}} );
 }
 await test_lookup();
