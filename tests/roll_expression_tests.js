@@ -78,6 +78,22 @@ function assert_equal( a, b, message = '') {
     assert( a == b, equality_message );
 }
 
+// Assert that evaluationg the given expression gives the provided result.
+async function assert_result(
+    // The expected result.
+    expected,
+    // The expression to evaluate.
+    expression,
+    // Actor attributes for evaluation.
+    actor_attributes = {},
+    // Item attributes for evaluation.
+    item_attributes = {} )
+{
+    // Evaluate.
+    var result = await auxMeth.autoParser( expression, actor_attributes, item_attributes, false, false, 1 );
+    assert_equal( result, expected, expression );
+}
+
 // Test that the mock of Roll
 // behaves with a basic level of sanity.
 function test_mocked_roll(){
@@ -121,6 +137,14 @@ async function test_number_functions(){
     assert_equal( 2, result, "floor(@{damage}), where damage = 2.6");
 }
 await test_number_functions();
+
+// Test lookup expressions.
+async function test_lookup(){
+    await assert_result(7, "%[1, 0:7, 5: 14, 7: 8]" );
+    await assert_result(14, "%[5, 0:7, 5: 14, 7: 8]" );
+    await assert_result(8, "%[100, 0:7, 5: 14, 7: 8]" );
+}
+await test_lookup();
 
 console.log( `Successful asserts: ${successful_asserts}` );
 console.log( `Failed asserts: ${failed_asserts}` );
