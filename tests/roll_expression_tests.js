@@ -25,8 +25,19 @@ global.game = {
     }
 }
 
+
 // Mock Roll
 global.Roll = function( expression ){
+
+    // Make a couple Math functions visible locally to eval
+    // to emulate the real Roll's support for them.
+    function ceil( num ){
+        return Math.ceil( num );
+    }
+    function floor( num ){
+        return Math.floor( num );
+    }
+
     this.evaluate = function() {
         this.total = eval( expression );
     }
@@ -63,7 +74,8 @@ function assert_equal( a, b, message = '') {
     var equality_message = `${message} ('${a}' == '${b}')`;
 
     // Delegate to plain assert.
-    assert( a === b, equality_message );
+    // Use loose equality, the parser is loose with strings and numbers.
+    assert( a == b, equality_message );
 }
 
 // Test that the mock of Roll
@@ -93,6 +105,15 @@ async function test_get_attribute(){
     assert_equal( 4, result, "Get damage and add a value" );
 }
 await test_get_attribute();
+
+async function test_number_functions(){
+    var result = await auxMeth.autoParser("ceil(1.5)", {}, {}, false, false, 1 );
+    assert_equal( 2, result, 'ceil( 1.5 )' );
+
+    result = await auxMeth.autoParser("floor(1.5)", {}, {}, false, false, 1 );
+    assert_equal( 1, result, 'floor( 1.5 )' );
+}
+await test_number_functions();
 
 console.log( `Successful asserts: ${successful_asserts}` );
 console.log( `Failed asserts: ${failed_asserts}` );
