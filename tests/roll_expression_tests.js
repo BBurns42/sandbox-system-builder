@@ -69,9 +69,7 @@ test_mocked_roll();
 async function test_basic_arithmetic(){
     var result = await auxMeth.autoParser("1 + 2", {}, {}, false, false, 1 );
     assert_equal( result, 3, "1 + 2 == 3" );
-    result = await auxMeth.autoParser("1 + 2", {}, {}, true, false, 1 );
-    assert_equal( result, 3, "1 + 2 == 3" );
-    result = await auxMeth.autoParser("1 + 2", {}, {}, true, true, 1 );
+    result = await auxMeth.autoParser("1 + 2", {}, {}, false, true, 1 );
     assert_equal( result, 3, "1 + 2 == 3" );
 }
 await test_basic_arithmetic();
