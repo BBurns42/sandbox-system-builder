@@ -32,10 +32,12 @@ global.Roll = function( expression ){
     }
 }
 
-// Simple test assertion.
+
 var stop_on_fail = false;
 var successful_asserts = 0;
 var failed_asserts = 0;
+
+// Simple test assertion.
 function assert( success, message = ''){
 
     if( success ){
@@ -46,11 +48,16 @@ function assert( success, message = ''){
         // Report failure.
         console.log( `${message}${color_red}\t Failure${color_reset}` );
         failed_asserts++;
+
+        // Exit if asked to.
+        if( stop_on_fail ){
+            process.exit( 1 );
+        }
     }
 
 }
 
-// Assert that two values are equal.
+// Asserts that two values are equal.
 function assert_equal( a, b, message = '') {
     // Create a message that mentions the values.
     var equality_message = `${message} ('${a}' == '${b}')`;
@@ -59,6 +66,8 @@ function assert_equal( a, b, message = '') {
     assert( a === b, equality_message );
 }
 
+// Test that the mock of Roll
+// behaves with a basic level of sanity.
 function test_mocked_roll(){
     var roll = new Roll('1+2');
     roll.evaluate();
@@ -66,6 +75,7 @@ function test_mocked_roll(){
 }
 test_mocked_roll();
 
+// Test that simple arithmetic works.
 async function test_basic_arithmetic(){
     var result = await auxMeth.autoParser("1 + 2", {}, {}, false, false, 1 );
     assert_equal( result, 3, "1 + 2 == 3" );
@@ -74,7 +84,7 @@ async function test_basic_arithmetic(){
 }
 await test_basic_arithmetic();
 
-
+// Test fetching item attributes.
 async function test_get_attribute(){
     var result = await auxMeth.autoParser("#{name}", {}, {name:'Billy'}, false, false, 1 );
     assert_equal( 'Billy', result, "Get name" );
