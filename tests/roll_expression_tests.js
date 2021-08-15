@@ -105,36 +105,28 @@ test_mocked_roll();
 
 // Test that simple arithmetic works.
 async function test_basic_arithmetic(){
-    var result = await auxMeth.autoParser("1 + 2", {}, {}, false, false, 1 );
-    assert_equal( result, 3, "1 + 2 == 3" );
-    result = await auxMeth.autoParser("1 + 2", {}, {}, false, true, 1 );
-    assert_equal( result, 3, "1 + 2 == 3" );
+    await assert_result( 3, "1 + 2" );
+    await assert_result( 6, "2 * 3" );
 }
 await test_basic_arithmetic();
 
 // Test fetching item attributes.
 async function test_get_attribute(){
-    var result = await auxMeth.autoParser("#{name}", {}, {name:'Billy'}, false, false, 1 );
-    assert_equal( 'Billy', result, "Get name" );
+    await assert_result("Billy", "#{name}", {}, {name:'Billy'} );
 
-    result = await auxMeth.autoParser("#{damage} + 1", {}, {damage:{value: 3}}, false, false, 1 );
-    assert_equal( 4, result, "Get item damage and add a value" );
+    await assert_result( 4, "#{damage} + 1", {}, {damage:{value: 3}} );
 
-    result = await auxMeth.autoParser("@{damage} + 1", {damage:{value:5}}, {damage:{value: 3}}, false, false, 1 );
-    assert_equal( 6, result, "Get actor damage and add a value" );
+    await assert_result( 6, "@{damage} + 1", {damage:{value:5}}, {damage:{value: 3}} );
 }
 await test_get_attribute();
 
 async function test_number_functions(){
-    var result = await auxMeth.autoParser("ceil(1.5)", {}, {}, false, false, 1 );
-    assert_equal( 2, result, 'ceil( 1.5 )' );
+    await assert_result( 2, "ceil(1.5)" );
 
-    result = await auxMeth.autoParser("floor(1.5)", {}, {}, false, false, 1 );
-    assert_equal( 1, result, 'floor( 1.5 )' );
+    await assert_result( 1, "floor(1.5)" );
 
     // Combine math and attribute.
-    result = await auxMeth.autoParser("floor(@{damage})", {damage:{value:2.6}}, {}, false, false, 1 );
-    assert_equal( 2, result, "floor(@{damage}), where damage = 2.6");
+    await assert_result( 2, "floor(@{damage})", {damage:{value:2.6}}, {} );
 }
 await test_number_functions();
 
