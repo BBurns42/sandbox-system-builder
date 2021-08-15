@@ -1311,11 +1311,6 @@ export class auxMeth {
             expr = expr.replace(minmin,"+");
             let commazero = /\,\s\-\b0|\,\-\b0/g;
             expr = expr.replace(commazero,",0");
-            let pluszero = /\+\s\b0|\+\b0/g;
-            expr = expr.replace(pluszero,"");
-            let minuszero = /\-\s\b0|\-\b0/g;
-            expr = expr.replace(minuszero,"");
-            //console.log(expr);
 
             safety_break += 1;
 
