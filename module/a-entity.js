@@ -3263,6 +3263,19 @@ export class gActor extends Actor {
             sRoll.expr = sRoll.expr.replace(/[0-9]+d0/g, "0");
             sRoll.expr = sRoll.expr.replace(/(?<![0-9])0x\d+/g, "0");
 
+            //Add ROLL MODS to rollp()
+            if(blocks[2] != null){
+                let rollpid = blocks[2].split(",");
+                console.log("==ALON rollp IDs");
+                console.log(rollpid);
+                for (let k = 0; k < rollpid.length; k++) {
+                    if (rollpid[k] != "" && hasProperty(actorrolls, rollpid[k]))
+                        sRoll.expr = sRoll.expr + actorrolls[rollpid[k]].value;
+                }
+                console.log("==ALON sRoll.expr");
+                console.log(sRoll.expr);
+            }
+
             let partroll = new Roll(sRoll.expr);
             let keepImpMod = [];
             for (let i = 0; i < partroll.dice.length; i++) {
@@ -3548,7 +3561,6 @@ export class gActor extends Actor {
         //PARSE SUBROLLS
         var attpresult = rollexp.match(/(?<=\·\·\!)\S*?(?=\!)/g);
         if (attpresult != null) {
-
             //Substitute string for current value
             for (let i = 0; i < attpresult.length; i++) {
                 //                let debugname = attpresult[i];
@@ -3560,7 +3572,6 @@ export class gActor extends Actor {
                 rollexp = rollexp.replace(attname, attvalue);
                 rollformula = rollformula.replace(attname, subrolls[parseInt(attindex)].expr);
             }
-
         }
 
         //Add ROLL MODS
