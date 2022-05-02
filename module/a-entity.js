@@ -2889,6 +2889,7 @@ export class gActor extends Actor {
     // PARAM 'mode' accepts: "add" or "set"
     // PARAM 'target' accepts: target or "SELF"
     async parseAddSet(expArray, mode, target, actorattributes, citemattributes, number, rolltotal) {
+        actorattributes = this.data.data.attributes; // Very quick and dirty overwrite of copied data object.
         if (expArray != null) {
             for (let i = 0; i < expArray.length; i++) {
                 let blocks = expArray[i].split(";");
