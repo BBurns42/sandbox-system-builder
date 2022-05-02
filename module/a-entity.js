@@ -2989,6 +2989,7 @@ export class gActor extends Actor {
         let blindmode = false;
         let nochat = false;
         let initrollexp = rollexp;
+        let showResult = true;
 
         if (rollexp.includes("~blind~"))
             blindmode = true;
@@ -3011,6 +3012,9 @@ export class gActor extends Actor {
 
             if (rollid[n] == "nochat")
                 nochat = true;
+
+            if (rollid[n] == "noresult")
+                showResult = false;
         }
 
         let linkmode = false;
@@ -3498,6 +3502,9 @@ export class gActor extends Actor {
                 if (parseid[j] == "nochat") // TODO: This is checked early... Remove?
                     nochat = true;
 
+                if (parseid[j] == "noresult")
+                    showResult = false;
+
                 if (findIF != -1) {
                     //We don't do anything - We will parse this into the IF function inside autoParser   
                 } else {
@@ -3834,7 +3841,8 @@ export class gActor extends Actor {
             link: linkmode,
             rollexp: initrollexp,
             actorid: this.id,
-            msgid: null
+            msgid: null,
+            showresult: showResult
         };
 
         
