@@ -3276,6 +3276,8 @@ export class gActor extends Actor {
                 for (let k = 0; k < rollpid.length; k++) {
                     if (rollpid[k] != "" && hasProperty(actorrolls, rollpid[k])){
                         let actorRollMod = actorrolls[rollpid[k]].value;
+                        if(actorRollMod == "" || actorRollMod == null || actorRollMod == undefined)
+                            continue;
                         let rollMODvalue = await auxMeth.autoParser(actorRollMod, actorattributes, citemattributes, false, false, number);
                         /*console.log("==ALON actor-roll-mod");
                         console.log(actorRollMod);
