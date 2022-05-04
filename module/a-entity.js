@@ -3281,7 +3281,8 @@ export class gActor extends Actor {
                         console.log(actorRollMod);
                         console.log("==ALON parsed roll-mod-value");
                         console.log(rollMODvalue);*/
-                        sRoll.expr += "+(" + rollMODvalue + ")";
+                        if(!isNaN(rollMODvalue))
+                            sRoll.expr += "+(" + rollMODvalue + ")";
                     }
                 }
                 /*console.log("==ALON sRoll.expr");
