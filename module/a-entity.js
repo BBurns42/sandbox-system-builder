@@ -2891,7 +2891,6 @@ export class gActor extends Actor {
     async parseAddSet(expArray, mode, target, actorattributes, citemattributes, number, rolltotal) {
         if (expArray != null) {
             for (let i = 0; i < expArray.length; i++) {
-                actorattributes = this.data.data.attributes; // Very quick and dirty overwrite of copied data object.
                 let blocks = expArray[i].split(";");
                 let parseprop = await auxMeth.autoParser(blocks[0], actorattributes, citemattributes, true, false, number);
                 if (parseprop.match("self.")) {
