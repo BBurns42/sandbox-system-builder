@@ -3271,21 +3271,21 @@ export class gActor extends Actor {
             //Add ROLL MODS to rollp()
             if(blocks[2] != null){
                 let rollpid = blocks[2].split(",");
-                console.log("==ALON rollp IDs");
-                console.log(rollpid);
+                /*console.log("==ALON rollp IDs");
+                console.log(rollpid);*/
                 for (let k = 0; k < rollpid.length; k++) {
                     if (rollpid[k] != "" && hasProperty(actorrolls, rollpid[k])){
                         let actorRollMod = actorrolls[rollpid[k]].value;
                         let rollMODvalue = await auxMeth.autoParser(actorRollMod, actorattributes, citemattributes, false, false, number);
-                        console.log("==ALON actor-roll-mod");
+                        /*console.log("==ALON actor-roll-mod");
                         console.log(actorRollMod);
                         console.log("==ALON parsed roll-mod-value");
-                        console.log(rollMODvalue);
-                        sRoll.expr += actorRollMod;
+                        console.log(rollMODvalue);*/
+                        sRoll.expr += "+(" + rollMODvalue + ")";
                     }
                 }
-                console.log("==ALON sRoll.expr");
-                console.log(sRoll.expr);
+                /*console.log("==ALON sRoll.expr");
+                console.log(sRoll.expr);*/
             }
 
             let partroll = new Roll(sRoll.expr);
