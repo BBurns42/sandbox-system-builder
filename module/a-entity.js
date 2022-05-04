@@ -3281,6 +3281,8 @@ export class gActor extends Actor {
                 console.log(sRoll.expr);
             }
 
+            sRoll.expr = await auxMeth.autoParser(sRoll.expr, actorattributes, citemattributes, false, false, number);
+
             let partroll = new Roll(sRoll.expr);
             let keepImpMod = [];
             for (let i = 0; i < partroll.dice.length; i++) {
