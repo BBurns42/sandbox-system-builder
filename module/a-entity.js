@@ -3274,14 +3274,14 @@ export class gActor extends Actor {
                 console.log("==ALON rollp IDs");
                 console.log(rollpid);
                 for (let k = 0; k < rollpid.length; k++) {
-                    if (rollpid[k] != "" && hasProperty(actorrolls, rollpid[k]))
-                        sRoll.expr = sRoll.expr + actorrolls[rollpid[k]].value;
+                    if (rollpid[k] != "" && hasProperty(actorrolls, rollpid[k])){
+                        let rollMODvalue = await auxMeth.autoParser(actorrolls[rollpid[k]].value, actorattributes, citemattributes, false, false, number);
+                        sRoll.expr = sRoll.expr + rollMODvalue;
+                    }
                 }
                 console.log("==ALON sRoll.expr");
                 console.log(sRoll.expr);
             }
-
-            sRoll.expr = await auxMeth.autoParser(sRoll.expr, actorattributes, citemattributes, false, false, number);
 
             let partroll = new Roll(sRoll.expr);
             let keepImpMod = [];
