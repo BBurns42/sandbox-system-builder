@@ -956,7 +956,8 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             mod: 0,
             result: app._roll.total,
             dice: app._roll.dice,
-            user: realuser.data.name
+            user: realuser.data.name,
+            showresult: true
         };
 
 
