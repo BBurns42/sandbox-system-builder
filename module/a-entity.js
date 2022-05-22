@@ -249,13 +249,13 @@ export class gActor extends Actor {
                 if (actorData.attributes[key].istable && hasProperty(attributes[key], "tableitems"))
                     actorData.attributes[key].tableitems = attributes[key].tableitems;
 
-                if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")){
-                    for (var totkey in attributes[key].totals){
+                if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")) {
+                    for (var totkey in attributes[key].totals) {
                         actorData.attributes[key].totals[totkey] = attributes[key].totals[totkey];
                     }
-                    
+
                 }
-                    
+
             }
             else {
                 //console.log("adding " + key)
@@ -688,7 +688,7 @@ export class gActor extends Actor {
                                 let jumpmod = await this.checkModConditional(this.data, addsetmods[i], _basecitem);
                                 //console.log("cItem NO cumple condicional: " + jumpmod);
                                 if (((toRemove.isactive && !toRemoveObj.ispermanent) || (toRemoveObj.usetype == "PAS" && !toRemoveObj.selfdestruct)) && !jumpmod) {
-                                    
+
                                     let pdatatype = seedprop?.data.data.datatype || "other";
 
                                     if (pdatatype == "list") {
@@ -2923,12 +2923,22 @@ export class gActor extends Actor {
                             }
                             else {
                                 console.warn("(" + expArray[i] + ") NaN detected.");
+                                console.warn("Can't add " + attvalue + " and " + parsevalue);
                                 continue;
                             }
                         }
 
                         if (mode == "set") {
-                            let dataType = game.items.find(y => y.id == targetattributes[parseprop].id).data.data.datatype;
+                            let propData = await auxMeth.getTElement(targetattributes[parseprop].id, "property", parseprop);
+
+                            // Set even if the parent item cannot be found.
+                            // TODO: Is this dangerous to allow based on the presence of actor/json data, but no parent item? Is this even necessary?
+                            if (propData == null || propData == undefined) {
+                                attvalue = parsevalue;
+                                continue;
+                            }
+
+                            let dataType = propData.data.data.datatype;
                             if (dataType == "checkbox") {
                                 if (parsevalue != "false" && parsevalue != "0")
                                     attvalue = "true";
@@ -2937,7 +2947,7 @@ export class gActor extends Actor {
                             }
                             else if (dataType == "simplenumeric" || dataType == "badge" || dataType == "radio") { //TODO: BUG: Set on Badge type ignore a max value..?
                                 if (isNaN(parsevalue)) {
-                                    console.warn("(" + expArray[i] + ") NaN detected.");
+                                    console.warn("(" + expArray[i] + ") NaN detected. ");
                                     continue;
                                 }
                                 attvalue = parseInt(parsevalue);
@@ -3256,7 +3266,7 @@ export class gActor extends Actor {
             //Definition of sub Roll
             let sRoll = {};
             sRoll.name = blocks[0];
-            // Makes auxMeth NOT parse the roll into a singluar value
+            // "|" Makes auxMeth NOT parse the roll into a singluar value
             blocks[1] = "|" + blocks[1];
             sRoll.expr = await auxMeth.autoParser(blocks[1], actorattributes, citemattributes, false, false, number);
             //TODO: This might be tricky if a property key used in the expression contains xa?
@@ -3305,10 +3315,17 @@ export class gActor extends Actor {
             let finalvalue = "";
             let impTotal = 0;
 
+            console.log("sroll Results");
+            console.log(sRoll.results);
+
+            // TODO: Switched to results.terms instead of results.dice
+            // TODO: This skips im/xa rolls if they're in a Foundry Dice pool bracket for example: "{1d6im,1d10}kl1"
             if (sRoll.results != null) {
-                let currentDice = sRoll.results.dice;
+                let currentDice = sRoll.results.terms;
                 for (let j = 0; j < currentDice.length; j++) {
                     let dicearray = currentDice[j].results;
+                    if (dicearray == null) // Skip over dice terms without any results (usually +/-/* etc.)
+                        continue;
                     let diceNumber = currentDice[j].number
                     let diceMods = currentDice[j].modifiers
 
@@ -3326,64 +3343,63 @@ export class gActor extends Actor {
 
                             let implodeCount = 0;
                             //TODO: Set implode range to logical value (ie im2 implodes only on 2, but im<2 is 1 and 2)?
-                            for (let k = 0; k < diceNumber; k++) {
-                                if (dicearray[k].result <= impValue)
-                                    implodeCount++;
+                            if (diceNumber != null && diceNumber != undefined) {
+                                for (let k = 0; k < diceNumber; k++) {
+                                    if (dicearray[k].result <= impValue)
+                                        implodeCount++;
+                                }
                             }
 
-                            let subImplodingRoll = {};
-                            subImplodingRoll.name = "impl." + j;
-                            subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces;
-                            let impRoll = new Roll(subImplodingRoll.expr);
-                            let impRollFinal = await impRoll.evaluate({ async: true });
-                            impRollFinal.extraroll = true;
-                            subImplodingRoll.results = impRollFinal;
-                            await subrolls.push(subImplodingRoll);
-                            impTotal = impRollFinal.total;
+                            if (implodeCount > 0) {
+                                let subImplodingRoll = {};
+                                subImplodingRoll.name = "impl." + j;
+                                subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces;
+                                let impRoll = new Roll(subImplodingRoll.expr);
+                                let impRollFinal = await impRoll.evaluate({ async: true });
+                                impRollFinal.extraroll = true;
+                                subImplodingRoll.results = impRollFinal;
+                                await subrolls.push(subImplodingRoll);
+                                impTotal += impRollFinal.total;
+                            }
                         }
                     }
 
                     // Handle ADD explosions
-                    if (mysubRoll.addexploding != null) {
+                    if (mysubRoll.addexploding != null && diceNumber != null && diceNumber != undefined) {
                         // Count upwards from the original number of dice thrown to tally explosions
                         let explodeCounter = diceNumber;
                         for (let k = 0; k < diceNumber; k++) {
                             if (k > 0)
                                 finalvalue += ",";
 
-                            let rollvalue = 0;
+                            let rollvalue = "NO";
                             if (dicearray[k].active && !dicearray[k].discarded)
                                 rollvalue = dicearray[k].result;
 
                             // More testing required if this works properly or not
-                            if (dicearray[k].exploded) {
+                            if (dicearray[k].exploded && rollvalue != "NO") {
                                 rollvalue += dicearray[explodeCounter].result;
                                 while (dicearray[explodeCounter].exploded)
                                     rollvalue += dicearray[++explodeCounter].result;
                                 explodeCounter++;
                             }
 
-                            finalvalue += rollvalue;
+                            if (rollvalue != "NO")
+                                finalvalue += rollvalue;
                         }
                     } else {
                         for (let k = 0; k < dicearray.length; k++) {
-                            if (k > 0)
-                                finalvalue += ",";
+                            if (dicearray[k].active && !dicearray[k].discarded) {
+                                if (finalvalue.slice(-1) != "," && finalvalue != "")
+                                    finalvalue += ",";
 
-                            let rollvalue = 0;
-                            if (dicearray[k].active && !dicearray[k].discarded)
-                                rollvalue = dicearray[k].result;
-
-                            finalvalue += rollvalue;
+                                finalvalue += dicearray[k].result;
+                            }
                         }
                     }
-
-                    // Necessary if the user inputs multile dice, such as "1d4 + 2d4"
-                    if (j != currentDice.length - 1)
-                        finalvalue += ",";
                 }
-                if (currentDice.length == 0)
-                    finalvalue += "0";
+                //if (currentDice.length == 0)
+                //    finalvalue += "0";
             }
             else
                 finalvalue = 0;
@@ -3392,12 +3408,13 @@ export class gActor extends Actor {
             if (finalvalue != 0 && impTotal != 0)
                 finalvalue += ",-" + impTotal;
 
-            console.log(finalvalue);
+            console.log("Final for rollp(): " + finalvalue);
+            console.log("Roll exp for rollp(): " + sRoll.expr);
 
             rollformula = rollformula.replace(re, sRoll.expr);
             rollexp = rollexp.replace(re, finalvalue);
             rollformula = rollformula.replace(reTotal, sRoll.expr);
-            rollexp = rollexp.replace(reTotal, sRoll.results.total);
+            rollexp = rollexp.replace(reTotal, (sRoll.results.total - impTotal));
             rollexp = await auxMeth.autoParser(rollexp, actorattributes, citemattributes, true, false, number);
             rollformula = rollexp;
         }
@@ -3466,7 +3483,6 @@ export class gActor extends Actor {
         if (findADV == -1 && findDIS == -1) {
             //In this case it allows to parse the manual MOD in case there is any  
             findIF = -1;
-
         }
 
         if (parseid != null) {
@@ -3831,9 +3847,9 @@ export class gActor extends Actor {
             msgid: null
         };
 
-        
 
-        if (!nochat){
+
+        if (!nochat) {
             let newhtml = await renderTemplate("systems/sandbox/templates/dice.html", rollData);
             let rolltype = document.getElementsByClassName("roll-type-select");
             let rtypevalue = rolltype[0].value;
@@ -3869,7 +3885,7 @@ export class gActor extends Actor {
 
             //}
         }
-        
+
         //console.log(initiative);
         if (initiative) {
             await this.setInit(rollData.result, tokenID);
