@@ -3291,7 +3291,7 @@ export class gActor extends Actor {
             let finalroll = await partroll.evaluate({ async: true });
             finalroll.extraroll = true;
             for (let i = 0; i < finalroll.dice.length; i++)
-                if (keepImpMod[i].mod)
+                if (keepImpMod[i] != null && keepImpMod[i] != undefined)
                     finalroll.dice[i].modifiers.push(keepImpMod[i].mod);
 
             if (game.dice3d != null && !nochat) //Dice So Nice Module
@@ -3336,6 +3336,7 @@ export class gActor extends Actor {
                     // And added to the end of the dice-array that is replaced via ?[roll] as a negative value.
                     // currently IGNORES exploded dice results, and also does not recursively implode with further results of 1
                     for (let m = 0; m < diceMods.length; m++) {
+                        if (diceMods[m] != null && diceMods[m] != undefined)
                         if (diceMods[m].includes("im")) {
                             let impValue = diceMods[m].match(/\d+/g);
                             if (impValue == null)
