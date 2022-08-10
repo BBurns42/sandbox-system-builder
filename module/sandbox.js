@@ -21,7 +21,8 @@ async function createSandboxMacro(data, slot) {
     // Add quotes to the strings if they are NOT null/true/false
     rollData.attrID = await placeholderParser(rollData.attrID);
     rollData.attKey = await placeholderParser(rollData.attKey);
-    rollData.citemID = await placeholderParser(rollData.citemID);
+    if(!rollData.isFree)
+        rollData.citemID = await placeholderParser(rollData.citemID);
     rollData.citemKey = await placeholderParser(rollData.citemKey);
     rollData.tableKey = await placeholderParser(rollData.tableKey);
 
