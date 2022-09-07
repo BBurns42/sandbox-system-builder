@@ -1010,10 +1010,16 @@ export class auxMeth {
             for (let i = 0; i < result.length; i++) {
                 let rawattname = result[i];
                 let attProp = "value";
+                let attIsList = false;
                 let attTotal;
                 if (rawattname.includes(".max")) {
                     rawattname = rawattname.replace(".max", "");
                     attProp = "max";
+                }
+
+                if (rawattname.includes(".listoptions")) {
+                    rawattname = rawattname.replace(".listoptions", "")
+                    attIsList = true;
                 }
 
                 if (rawattname.includes(".totals.")) {
@@ -1030,7 +1036,14 @@ export class auxMeth {
                     let myatt = attributes[rawattname];
 
 
-                    if (myatt != null) {
+                    if (attIsList == true) {
+                        let { remove, add } = myatt.listedit || {};
+                        remove = remove || [];
+                        add = add || [];
+                        attvalue = (await auxMeth.getTElement(myatt.id, "property", rawattname)).data.data.listoptions;
+                        attvalue = attvalue.split(",").filter(v => !remove.includes(v)).concat(add).join(",");
+                    }
+                    else if (myatt != null) {
                         if (attTotal != null && attTotal != "")
                             myatt = attributes[rawattname].totals[attTotal];
                         if (myatt != null)
