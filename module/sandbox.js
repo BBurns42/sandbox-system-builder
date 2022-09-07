@@ -423,7 +423,7 @@ Hooks.once("init", async function () {
         return newObj;
     };
 
-         JournalEntry.prototype.show = async function (mode = "text", force = false) {
+    JournalEntry.prototype.show = async function (mode = "text", force = false) {
         if (!this.isOwner) throw new Error("You may only request to show Journal Entries which you own.");
         return new Promise((resolve) => {
             game.socket.emit("showEntry", this.uuid, mode, force, entry => {
@@ -436,7 +436,7 @@ Hooks.once("init", async function () {
                 return resolve(this);
             });
         });
-    }; 
+    };
 
     CONFIG.Combat.initiative = {
         formula: "1d20",
@@ -871,7 +871,7 @@ Hooks.on("createItem", async (entity) => {
 Hooks.on("rendersItemSheet", async (app, html, data) => {
     //console.log(app);
 
-    app.customCallOverride(html,app.object.data);
+    app.customCallOverride(html, app.object.data);
 
     if (app.object.data.type == "cItem") {
         app.refreshCIAttributes(html);
@@ -943,6 +943,15 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     let _html = await html[0].outerHTML;
     let realuser = game.users.get(data.message.user);
     let alias = data.alias;
+
+    let rollcond = (data.message.flavor) == undefined ? null : data.message.flavor;
+    let rollname = "Roll";
+    if (rollcond != null && rollcond.includes("frname(")) {
+        let tempname = rollcond.match(/(?<=\bfrname\b\().*?(?=\))/g);
+        rollname = tempname[0];
+        rollcond = rollcond.replace("frname(" + tempname + ")", "");
+    }
+
     //
     //    if(((data.cssClass == "whisper")||(data.message.type==1)) && game.user.id!=data.message.user && !game.user.isgM)
     //        hide=true;
@@ -955,7 +964,8 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
                 name: "Free Roll"
             },
             actor: alias,
-            flavor: "Roll",
+            flavor: rollname,
+            conditional: rollcond,
             formula: app._roll.formula,
             mod: 0,
             result: app._roll.total,
@@ -1034,11 +1044,11 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     //
     //
     let iamWhispered = data.message.whisper.find(y => y == game.user.id);
-    if (iamWhispered == null && data.message.whisper.length>0) {
+    if (iamWhispered == null && data.message.whisper.length > 0) {
         hide = true;
     }
 
-    if (!game.user.isGM && hide && (game.user.id != data.author.id )) {
+    if (!game.user.isGM && hide && (game.user.id != data.author.id)) {
         //console.log(html);
         //console.log(_html);
         html.hide();
