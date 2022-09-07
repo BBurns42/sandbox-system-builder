@@ -2634,7 +2634,7 @@ export class gActor extends Actor {
 
                 // ALONDAAR lookupj now works in auto properties !!
                 // TODO: I have no idea if this is optimal or in the correct location however... 
-                /*let getLookupJ = rawexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
+                let getLookupJ = rawexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
                 if (getLookupJ != null) {
                     for (let i = 0; i < getLookupJ.length; i++) {
                         let tochange = "lookupj(" + getLookupJ[i] + ")";
@@ -2686,7 +2686,7 @@ export class gActor extends Actor {
 
                         rawexp = rawexp.replace(tochange, replaceValue);
                     }
-                }*/
+                }
 
                 if (rawexp !== "") {
                     //console.log(rawexp);
@@ -3670,7 +3670,7 @@ export class gActor extends Actor {
         // JOURNAL NAME SHOULD BE UNIQUE FROM OTHER JOURNALS!
         // ONLY ONE TABLE PER JOURNAL!
         // LIMIT: This only applies to rolls, not auto-calc props... Can use the same logic elsewehre though?
-        /*let getLookupJ = rollexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
+        let getLookupJ = rollexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
         if (getLookupJ != null) {
             for (let i = 0; i < getLookupJ.length; i++) {
                 let tochange = "lookupj(" + getLookupJ[i] + ")";
@@ -3723,7 +3723,7 @@ export class gActor extends Actor {
                 rollexp = rollexp.replace(tochange, replaceValue);
                 rollformula = rollformula.replace(tochange, replaceValue);
             }
-        }*/
+        }
 
         //FIX FORMULA
         rollformula = await auxMeth.autoParser(rollformula, actorattributes, citemattributes, true, false, number);
