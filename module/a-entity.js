@@ -648,6 +648,7 @@ export class gActor extends Actor {
         }
         const attributes = newdata.data.attributes;
         const citems = newdata.data.citems;
+        let originalcIDs = duplicate(citems);
         let toRemove = citems.find(y => y.id == itemID || y.ciKey == itemID);
         //let remObj = game.items.get(itemID);
 
@@ -672,7 +673,9 @@ export class gActor extends Actor {
                 if (_basecitem != null) {
                     const _mod = await _basecitem.mods.find(x => x.index == modID);
 
-                    let myAtt = _mod.attribute;
+                    let _citemfinder = originalcIDs.filter(y => y.ciKey == _basecitem.ciKey);
+                    let citemattributes = _citemfinder[0].attributes;
+                    let myAtt = await auxMeth.autoParser(_mod.attribute, attributes, citemattributes, true);
                     let myAttValue = _mod.value;
                     let attProp = "value";
 
@@ -722,7 +725,9 @@ export class gActor extends Actor {
                 let _ccitem = await citems.find(y => y.id == itemID && y.mods.find(x => x.index == ccmodID));
                 if (_ccitem != null) {
                     let ccmod = await _ccitem.mods.find(x => x.index == ccmodID);
-                    let ccAtt = ccmod.attribute;
+                    let _citemfinder = originalcIDs.filter(y => y.ciKey == _ccitem.ciKey);
+                    let citemattributes = _citemfinder[0].attributes;
+                    let ccAtt = await auxMeth.autoParser(ccmod.attribute, attributes, citemattributes, true);
 
                     attributes[ccAtt].value = attributes[ccAtt].prev;
 
@@ -735,7 +740,9 @@ export class gActor extends Actor {
                 let _ccitem = await citems.find(y => y.id == itemID && y.mods.find(x => x.index == ccmodID));
                 if (_ccitem != null) {
                     let ccmod = await _ccitem.mods.find(x => x.index == ccmodID);
-                    let ccAtt = ccmod.attribute;
+                    let _citemfinder = originalcIDs.filter(y => y.ciKey == _ccitem.ciKey);
+                    let citemattributes = _citemfinder[0].attributes;
+                    let ccAtt = await auxMeth.autoParser(ccmod.attribute, attributes, citemattributes, true);
                     if (ccmod.exec)
                         if (attributes[ccAtt] != null)
                             attributes[ccAtt].value = attributes[ccAtt].prev;
@@ -746,8 +753,11 @@ export class gActor extends Actor {
             let listmods = toRemoveObj.mods.filter(y => y.type == "LIST");
             for (let j = 0; j < listmods.length; j++) {
                 let modID = listmods[j];
-                let myAtt = modID.attribute;
-                let myAttValue = modID.value;
+                let _ccitem = await citems.find(y => y.id == itemID && y.mods.find(x => x.index == modID.index));
+                let _citemfinder = originalcIDs.filter(y => y.ciKey == _ccitem.ciKey);
+                let citemattributes = _citemfinder[0].attributes;
+                let myAtt = await auxMeth.autoParser(modID.attribute, attributes, citemattributes, true);
+                let myAttValue = await auxMeth.autoParser(modID.value, attributes, toRemoveObj.attributes, true);
                 let myAttListEdit = modID.listmod;
                 let splitter = myAttValue.split(",");
 
@@ -1463,8 +1473,11 @@ export class gActor extends Actor {
         for (let i = 0; i < createmods.length; i++) {
             let mod = createmods[i];
             //console.log(mod);
-            let modAtt = mod.attribute;
-            let mod_defvalue = mod.value;
+            let _citemfinder = originalcIDs.filter(y => y.ciKey == mod.ciKey);
+            let citemattributes = _citemfinder[0].attributes;
+
+            let modAtt = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
+            let mod_defvalue = await auxMeth.autoParser(mod.value, attributes, citemattributes, true);
             if (!hasProperty(attributes, modAtt)) {
                 setProperty(attributes, modAtt, {});
                 setProperty(attributes[modAtt], "id", mod.citem + "_" + mod.index);
@@ -1557,7 +1570,9 @@ export class gActor extends Actor {
         for (let i = 0; i < setmods.length; i++) {
             let mod = setmods[i];
             //console.log(mod);
-            let modAtt = mod.attribute;
+            let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
+
+            let modAtt = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
             let attProp = "value";
             let modvable = "modified";
             let setvble = "isset";
@@ -1660,7 +1675,8 @@ export class gActor extends Actor {
         const addmods = mods.filter(y => y.type == "ADD");
         for (let i = 0; i < addmods.length; i++) {
             let mod = addmods[i];
-            let modAtt = mod.attribute;
+            let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
+            let modAtt = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
             let attProp = "value";
             let modvable = "modified";
             let setvble = "isset";
@@ -1842,7 +1858,8 @@ export class gActor extends Actor {
         for (let r = 0; r < 2; r++) {
             for (let i = 0; i < addmods.length; i++) {
                 let mod = addmods[i];
-                let modAtt = mod.attribute;
+                let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
+                let modAtt = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
                 let attProp = "value";
                 let modvable = "modified";
                 let setvble = "isset";
@@ -2105,7 +2122,8 @@ export class gActor extends Actor {
 
         for (let i = 0; i < listmods.length; i++) {
             let mod = listmods[i];
-            let attKey = mod.attribute;
+            let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
+            let attKey = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
             let attValue = mod.value;
             let editType = mod.listmod;
 
