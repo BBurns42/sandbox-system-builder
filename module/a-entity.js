@@ -3889,8 +3889,10 @@ export class gActor extends Actor {
             let rolltype = document.getElementsByClassName("roll-type-select");
             let rtypevalue = rolltype[0].value;
             let rvalue = 0;
-            if (rtypevalue == "gmroll")
+            if (rtypevalue == "gmroll") {
+                gmmode = true;
                 rvalue = 1;
+            }
 
             var wrapper = document.createElement('div');
             wrapper.innerHTML = newhtml;
