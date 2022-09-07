@@ -745,7 +745,7 @@ export class sItemSheet extends ItemSheet {
                                     input = document.createElement("SELECT");
                                     input.className = "input-med";
                                     input.setAttribute("name", property.attKey);
-                                    var rawlist = property.listoptions;
+                                    var rawlist = await auxMeth.autoParser(property.listoptions, null, attributes, true);
                                     var listobjects = rawlist.split(',');
 
                                     for (var n = 0; n < listobjects.length; n++) {

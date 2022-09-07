@@ -935,7 +935,7 @@ ${dialogPanel.data.data.title}
                     finalContent += `
 <select  class="rdialogInput select-${panelProperty.data.data.attKey} ${panelProperty.data.data.inputgroup} ${defvalue}" title="${panelProperty.data.data.tooltip}" attKey ="${panelProperty.data.data.attKey}"  data-type="String">
 `;
-                    let options = panelProperty.data.data.listoptions.split(",");
+                    let options = (await auxMeth.autoParser(panelProperty.data.data.listoptions, this.actor.data.data.attributes, null, true)).split(",");
                     for (let j = 0; j < options.length; j++) {
                         finalContent += `
 <option  value="${options[j]}">${options[j]}</option>
@@ -2198,7 +2198,7 @@ ${dialogPanel.data.data.title}
                     sInput.insertAdjacentHTML('beforeend', "{{#select data.data.attributes." + property.data.attKey + ".value}}");
 
                     //IM ON IT
-                    var rawlist = property.data.listoptions;
+                    var rawlist = await auxMeth.autoParser(property.data.listoptions, actor.data.data.attributes, null, true);
                     var listobjects = rawlist.split(',');
 
                     for (var i = 0; i < listobjects.length; i++) {
@@ -4099,7 +4099,7 @@ ${dialogPanel.data.data.title}
                                                 }
 
                                                 //IM ON IT
-                                                var rawlist = propdata.listoptions;
+                                                var rawlist = await auxMeth.autoParser(propdata.listoptions, attributes, ciObject.attributes, true);
                                                 var listobjects = rawlist.split(',');
                                                 //console.log(ciObject.attributes[propKey].value);
                                                 for (let y = 0; y < listobjects.length; y++) {

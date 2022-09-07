@@ -696,7 +696,7 @@ export class gActor extends Actor {
                                     let pdatatype = seedprop?.data.data.datatype || "other";
 
                                     if (pdatatype == "list") {
-                                        let options = seedprop.data.data.listoptions.split(",");
+                                        let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, toRemoveObj.attributes, true)).split(",");
                                         let optIndex = options.indexOf(actorAtt[attProp]);
                                         let newvalue = optIndex - myAttValue;
 
@@ -1783,7 +1783,7 @@ export class gActor extends Actor {
                             let pdatatype = seedprop?.data.data.datatype || "other";
 
                             if (pdatatype == "list") {
-                                let options = seedprop.data.data.listoptions.split(",");
+                                let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, _citem.attributes, true)).split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex + finalvalue;
                                 if (newvalue + 1 > options.length)
@@ -1826,7 +1826,7 @@ export class gActor extends Actor {
                             //console.log("removing add");
                             _mod.exec = false;
                             if (seedprop.data.data.datatype == "list") {
-                                let options = seedprop.data.data.listoptions.split(",");
+                                let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, _citem.attributes, true)).split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex - finalvalue;
                                 console.log(options);
@@ -2148,6 +2148,8 @@ export class gActor extends Actor {
                 if (seedprop != null)
                     if (seedprop.data.data.datatype == "list") {
 
+                        let splitter = (await auxMeth.autoParser(attValue, attributes, _citem.attributes, true)).split(',');
+
                         if (attributes[attKey].listedit == null)
                             attributes[attKey].listedit = {};
                         if (editType == "INCLUDE") {
@@ -2157,7 +2159,6 @@ export class gActor extends Actor {
 
                             }
 
-                            let splitter = attValue.split(',');
                             for (let i = 0; i < splitter.length; i++) {
                                 let myoption = splitter[i];
                                 if (!attributes[attKey].listedit.add.includes(myoption))
@@ -2176,7 +2177,6 @@ export class gActor extends Actor {
 
                             }
 
-                            let splitter = attValue.split(',');
                             for (let i = 0; i < splitter.length; i++) {
                                 let myoption = splitter[i];
                                 if (!attributes[attKey].listedit.remove.includes(myoption))
