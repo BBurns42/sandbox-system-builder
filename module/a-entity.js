@@ -3595,6 +3595,7 @@ export class gActor extends Actor {
         rollexp = await auxMeth.autoParser(rollexp, actorattributes, citemattributes, true, false, number);
 
         //Remove conditionalexp and save it
+        rollexp = rollexp.replace(/\n|\r|\r\n/g, "<br>");
         let condid = rollexp.match(/(?<=\&\&)(.*?)(?=\&\&)/g);
         if (condid != null) {
             for (let j = 0; j < condid.length; j++) {
@@ -3802,7 +3803,10 @@ export class gActor extends Actor {
                 if (thiscond.length > 1) {
                     thiscond = thiscond.replace(/(?<=[\s|;|+|\-|*|\/\(|&|:])total(?=[\s|;|+|\-|*|\/\)])/g, rolltotal);
 
-                    let condblocks = thiscond.split(";");
+                    //Only split the first ;
+                    let condblocksregexp = /(?:;)(.*?$)/;
+                    let condblocks = thiscond.split(";", 1);
+                    condblocks.push(thiscond.match(condblocksregexp)[1]);
                     let checktype = condblocks[0];
                     let mycondition = 0;
                     checktype = checktype.replace(/(?<=[\s|;|+|\-|*|\/\(|&|:])total(?=[\s|;|+|\-|*|\/\)])/g, rolltotal);

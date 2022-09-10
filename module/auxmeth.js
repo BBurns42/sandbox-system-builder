@@ -1035,8 +1035,7 @@ export class auxMeth {
                 if (attributes != null) {
                     let myatt = attributes[rawattname];
 
-
-                    if (attIsList == true) {
+                    if (myatt != null && attIsList == true) {
                         let { remove, add } = myatt.listedit || {};
                         remove = remove || [];
                         add = add || [];
@@ -1662,8 +1661,10 @@ export class auxMeth {
                     let nonvalidscalecheck = scaleresult[i].match(nonvalidscale);
                     //console.log(scaleresult[i]);
                     if (!nonvalidscalecheck) {
-                        let limits = scaleresult[i].split(",");
-                        //console.log(limits[0]);
+                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis or number -- (,(#:)
+                        let limitsregexp = /(,)(?=[^,]\(|\d+[:])/g;
+                        let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
+                        //console.log(limits);
                         let value = limits[0];
                         if (isNaN(value) && !value.includes("$") && !value.includes("min") && !value.includes("max")) {
                             let roll = new Roll(limits[0]);
@@ -1676,13 +1677,15 @@ export class auxMeth {
                         let limitArray = [];
 
                         for (let j = 1; j < limits.length; j++) {
-                            let splitter = limits[j].split(":");
+                            //Only split the first :
+                            let splitterregexp = /(?::)(.*?$)/;
+                            let splitter = limits[j].split(":", 1);
+                            splitter.push(limits[j].match(splitterregexp)[1]);
                             let scale = splitter[0];
-                            //console.log(scale);
+                            //console.log(splitter);
 
                             let noncondition = /\bif\[|\bmax\(|\bmin\(|\bsum\(|\%\[|\bfloor\(|\bceil\(|\bcount[E|L|H]\(|\?\[|[\+\-\*\/]/g;
                             let nonconditioncheck = scale.match(noncondition);
-
                             if (nonconditioncheck) {
                                 //console.log("no number");
                                 //
