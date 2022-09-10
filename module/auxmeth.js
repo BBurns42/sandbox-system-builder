@@ -1661,8 +1661,8 @@ export class auxMeth {
                     let nonvalidscalecheck = scaleresult[i].match(nonvalidscale);
                     //console.log(scaleresult[i]);
                     if (!nonvalidscalecheck) {
-                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis or number -- (,(#:)
-                        let limitsregexp = /(,)(?=[^,]\(|\d+[:])/g;
+                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis, number, or math symbol
+                        let limitsregexp = /,(?=\s*[0-9()+\-*.\/]*:)/g;
                         let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
                         //console.log(limits);
                         let value = limits[0];
