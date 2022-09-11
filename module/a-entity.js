@@ -3027,6 +3027,7 @@ export class gActor extends Actor {
         let initiative = false;
         let gmmode = false;
         let blindmode = false;
+        let selfmode = false;
         let nochat = false;
         let initrollexp = rollexp;
         let showResult = true;
@@ -3049,6 +3050,9 @@ export class gActor extends Actor {
 
             if (rollid[n] == "blind")
                 blindmode = true;
+
+            if (rollid[n] == "selfroll")
+                selfmode = true;
 
             if (rollid[n] == "nochat")
                 nochat = true;
@@ -3454,7 +3458,7 @@ export class gActor extends Actor {
             if (finalvalue != 0 && impTotal != 0)
                 finalvalue += ",-" + impTotal;
 
-            console.log(finalvalue);
+            //console.log(finalvalue);
 
             rollformula = rollformula.replace(re, sRoll.expr);
             rollexp = rollexp.replace(re, finalvalue);
@@ -3548,6 +3552,9 @@ export class gActor extends Actor {
 
                 if (parseid[j] == "blind") // TODO: This is checked early... Remove?
                     blindmode = true;
+
+                if (parseid[j] == "selfroll") // TODO: This is checked early... Remove?
+                    selfmode = true;
 
                 if (parseid[j] == "nochat") // TODO: This is checked early... Remove?
                     nochat = true;
@@ -3900,16 +3907,22 @@ export class gActor extends Actor {
             showresult: showResult
         };
 
-
-
         if (!nochat) {
             let newhtml = await renderTemplate("systems/sandbox/templates/dice.html", rollData);
             let rolltype = document.getElementsByClassName("roll-type-select");
             let rtypevalue = rolltype[0].value;
             let rvalue = 0;
-            if (rtypevalue == "gmroll") {
+            if (rtypevalue == "gmroll" && !(gmmode || blindmode || selfmode)) {
                 gmmode = true;
-                rvalue = 1;
+                rvalue = 4;
+            }
+            if (rtypevalue == "blindroll" && !(gmmode || blindmode || selfmode)) {
+                blindmode = true;
+                rvalue = 4;
+            }
+            if (rtypevalue == "selfroll" && !(gmmode || blindmode || selfmode)) {
+                selfmode = true;
+                rvalue = 4;
             }
 
             var wrapper = document.createElement('div');
@@ -3929,6 +3942,8 @@ export class gActor extends Actor {
 
             if (gmmode)
                 messageData.whisper = ChatMessage.getWhisperRecipients('GM');
+            if (selfmode)
+                messageData.whisper = [game.userId];
 
             //console.log(blindmode);
 

@@ -1011,16 +1011,12 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
         };
 
         await renderTemplate("systems/sandbox/templates/sbmessage.html", msgData).then(async newhtml => {
-
             while (html.firstChild) {
                 html.removeChild(html.lastChild);
             }
 
             html[0].innerHTML = newhtml;
-
-
         });
-
     }
 
     let deletebutton = $(html).find(".roll-message-delete")[0];
@@ -1032,7 +1028,6 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             });
             auxMeth.rollToMenu();
         }
-
         else {
             deletebutton.style.display = "none";
         }
@@ -1049,7 +1044,8 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
         hide = true;
     }
 
-    if (!game.user.isGM && hide && (game.user.id != data.author.id)) {
+    //Why let GM see self/private rolls? Did this do something else?
+    if (/*!game.user.isGM &&*/ hide && (game.user.id != data.author.id)) {
         //console.log(html);
         //console.log(_html);
         html.hide();
@@ -1066,9 +1062,7 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     let citemlink = $(html).find(".roll-citemlink")[0];
 
     if (detail == null) {
-
         return;
-
     }
 
     if (result == null) {
@@ -1080,7 +1074,6 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     }
 
     if (clickmain == null) {
-
         return;
     }
 
@@ -1184,7 +1177,6 @@ Hooks.on("renderDialog", async (app, html, data) => {
     }
 
     if (app.data.citemText) {
-
         htmlDom.addEventListener("keydown", function (event) {
             event.stopPropagation();
         }, true);
@@ -1194,7 +1186,6 @@ Hooks.on("renderDialog", async (app, html, data) => {
         t_area[0].disabled = true;
         t_area[0].addEventListener("change", (event) => {
             app.data.dialogValue = event.target.value;
-
         });
 
         let lock_content = htmlDom.getElementsByClassName("lockcontent");
@@ -1263,7 +1254,6 @@ Hooks.on("renderDialog", async (app, html, data) => {
     }
 
     if (app.data.rollDialog) {
-
         let checkbtns = htmlDom.getElementsByClassName("checkbox");
 
         for (let i = 0; i < checkbtns.length; i++) {
