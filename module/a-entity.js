@@ -1829,10 +1829,6 @@ export class gActor extends Actor {
                                 let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, _citem.attributes, true)).split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex - finalvalue;
-                                console.log(options);
-                                console.log(optIndex);
-                                console.log(finalvalue);
-                                console.log(newvalue);
                                 if (newvalue < 0)
                                     newvalue = 0;
                                 myAtt[attProp] = options[newvalue];
@@ -2120,72 +2116,73 @@ export class gActor extends Actor {
         //console.log(mods);
         const listmods = mods.filter(y => y.type == "LIST");
 
-        for (let i = 0; i < listmods.length; i++) {
-            let mod = listmods[i];
-            let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
-            let attKey = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
-            let attValue = mod.value;
-            let editType = mod.listmod;
+        // ALONDAAR -- 
+        // SORT THE MODS BY WHICH ATTRIBUTE/LIST-KEY THEY ARE AFFECTING
+        // This allows each list-key's "listedit.add" to be nullified, and rebuilt correctly
+        // For cases where the "attValue" below can change due to parsing or other cases.
+        let sortedlistmods = listmods.reduce(function (sortedlistmods2, limod) {
+            (sortedlistmods2[limod.attribute] = sortedlistmods2[limod.attribute] || []).push(limod);
+            return sortedlistmods2;
+        }, {})
+        let sortedKeys = Object.keys(sortedlistmods)
 
-            //console.log(mod);
+        for (let i = 0; i < sortedKeys.length; i++) {
+            let subList = sortedlistmods[sortedKeys[i]];
+            for (let k = 0; k < subList.length; k++) {
+                let mod = subList[k];
+                let citemattributes = originalcIDs.filter(y => y.ciKey == mod.ciKey)[0].attributes;
+                let attKey = await auxMeth.autoParser(mod.attribute, attributes, citemattributes, true);
+                let attValue = mod.value;
+                let editType = mod.listmod;
+                //console.log(mod);
 
-            let citem = citemIDs.find(y => y.id == mod.citem);
-            //let _citem = game.items.get(mod.citem).data.data;
-            let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-            let _citem = _citemfinder.data.data;
+                let citem = citemIDs.find(y => y.id == mod.citem);
+                let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                let _citem = _citemfinder.data.data;
 
-            let jumpmod = false;
-            if (mod.condop != "NON" && mod.condop != null) {
-                jumpmod = await this.checkModConditional(actorData, mod, citem);
-            }
+                let jumpmod = false;
+                if (mod.condop != "NON" && mod.condop != null) {
+                    jumpmod = await this.checkModConditional(actorData, mod, citem);
+                }
 
-            if (!jumpmod) {
+                if (!jumpmod) {
+                    const myAtt = attributes[attKey];
+                    let seedprop = await auxMeth.getTElement(myAtt.id, "property", attKey);
 
-                const myAtt = attributes[attKey];
-                //let seedprop = game.items.get(myAtt.id);
-                let seedprop = await auxMeth.getTElement(myAtt.id, "property", attKey);
+                    if (seedprop != null)
+                        if (seedprop.data.data.datatype == "list") {
+                            let splitter = (await auxMeth.autoParser(attValue, attributes, _citem.attributes, true)).split(',');
 
-                if (seedprop != null)
-                    if (seedprop.data.data.datatype == "list") {
+                            if (attributes[attKey].listedit == null || k == 0)
+                                attributes[attKey].listedit = {};
 
-                        let splitter = (await auxMeth.autoParser(attValue, attributes, _citem.attributes, true)).split(',');
+                            if (editType == "INCLUDE") {
+                                if (attributes[attKey].listedit.add == null) {
+                                    attributes[attKey].listedit.add = [];
+                                }
 
-                        if (attributes[attKey].listedit == null)
-                            attributes[attKey].listedit = {};
-                        if (editType == "INCLUDE") {
-                            if (attributes[attKey].listedit.add == null) {
-                                attributes[attKey].listedit.add = [];
+                                for (let j = 0; j < splitter.length; j++) {
+                                    let myoption = splitter[j];
+                                    if (!attributes[attKey].listedit.add.includes(myoption))
+                                        !attributes[attKey].listedit.add.push(myoption);
+                                }
+                            }
+
+                            if (editType == "REMOVE") {
+                                if (attributes[attKey].listedit.remove == null) {
+                                    attributes[attKey].listedit.remove = [];
+                                }
+
+                                for (let j = 0; j < splitter.length; j++) {
+                                    let myoption = splitter[j];
+                                    if (!attributes[attKey].listedit.remove.includes(myoption))
+                                        !attributes[attKey].listedit.remove.push(myoption);
+                                }
 
 
                             }
-
-                            for (let i = 0; i < splitter.length; i++) {
-                                let myoption = splitter[i];
-                                if (!attributes[attKey].listedit.add.includes(myoption))
-                                    !attributes[attKey].listedit.add.push(myoption);
-                            }
-
-
                         }
-
-
-
-                        if (editType == "REMOVE") {
-                            if (attributes[attKey].listedit.remove == null) {
-                                attributes[attKey].listedit.remove = [];
-
-
-                            }
-
-                            for (let i = 0; i < splitter.length; i++) {
-                                let myoption = splitter[i];
-                                if (!attributes[attKey].listedit.remove.includes(myoption))
-                                    !attributes[attKey].listedit.remove.push(myoption);
-                            }
-
-
-                        }
-                    }
+                }
             }
         }
 
@@ -3601,7 +3598,6 @@ export class gActor extends Actor {
             for (let j = 0; j < condid.length; j++) {
                 let condidexpr = condid[j];
                 if (condidexpr.length > 2) {
-                    //console.log(condidexpr);
                     let conddtoreplace = "&&" + condid[j] + "&&";
                     let separador = ""
                     if (j < condid.length - 1)
