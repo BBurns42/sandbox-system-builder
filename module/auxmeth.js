@@ -142,6 +142,9 @@ export class auxMeth {
 
     static async getTElement(id, type = null, key = null) {
         //console.log(id + " " + type + " " + key);
+        if (id != null && id.match(/_\d+/g) != null) // Skip IDs that are from CREATE mods (ie, oaisjdo123_# <--)
+            return
+
         let myElem = game.items.get(id);
 
         let propKey = "";
@@ -1661,7 +1664,7 @@ export class auxMeth {
                     let nonvalidscalecheck = scaleresult[i].match(nonvalidscale);
                     //console.log(scaleresult[i]);
                     if (!nonvalidscalecheck) {
-                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis, number, or math symbol
+                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis or number -- (,(#:)
                         let limitsregexp = /,(?=\s*[0-9()+\-*.\/]*:)/g;
                         let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
                         //console.log(limits);

@@ -2785,8 +2785,10 @@ export class gActor extends Actor {
                     _attAuto = "automax";
                 }
 
-                //console.log("calculating auto " + _rawattname + " " + _attAuto);
+                if (attributes[_rawattname].created) // Skip over CREATE mod properties. They won't be found anywhere here.
+                    return rawexp;
 
+                //console.log("calculating auto " + _rawattname + " " + _attAuto);
                 //let propertybase = await game.items.filter(y => y.data.type == "property" && y.data.data.attKey == _rawattname);
                 let property = await auxMeth.getTElement(null, "property", _rawattname);
                 //let property = propertybase[0];
