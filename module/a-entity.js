@@ -2788,7 +2788,8 @@ export class gActor extends Actor {
                     _attAuto = "automax";
                 }
 
-                if (attributes[_rawattname].created) // Skip over CREATE mod properties. They won't be found anywhere here.
+                // Skip over props with dots (table.totals, etc.) and CREATE mod properties. They won't be found anywhere here.
+                if (_rawattname.match('.') != null || ('created' in attributes[_rawattname] && attributes[_rawattname].created))
                     return rawexp;
 
                 //console.log("calculating auto " + _rawattname + " " + _attAuto);
