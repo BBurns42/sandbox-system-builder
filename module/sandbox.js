@@ -116,7 +116,7 @@ Hooks.once("init", async function () {
      * @type {String}
      */
 
-    CONFIG.debug.hooks = true;
+    //CONFIG.debug.hooks = true;
     CONFIG.Actor.documentClass = gActor;
     CONFIG.Item.documentClass = gItem;
     CONFIG.Token.documentClass = sToken;
