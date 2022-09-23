@@ -1714,9 +1714,7 @@ export class gActor extends Actor {
                     }
                 }
 
-
                 if (myAtt.created || checker) {
-
                     let value = mod.value;
                     if (value == null)
                         value = 0;
@@ -1825,13 +1823,18 @@ export class gActor extends Actor {
                         if ((!citem.isreset || _citem.usetype == "PAS") && _mod.exec && ((citem.isactive && jumpmod) || !citem.isactive) && !myAtt.default && !citem.ispermanent) {
                             //console.log("removing add");
                             _mod.exec = false;
-                            if (seedprop.data.data.datatype == "list") {
-                                let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, _citem.attributes, true)).split(",");
-                                let optIndex = options.indexOf(myAtt[attProp]);
-                                let newvalue = optIndex - finalvalue;
-                                if (newvalue < 0)
-                                    newvalue = 0;
-                                myAtt[attProp] = options[newvalue];
+                            if (seedprop != undefined && seedprop != null) {
+                                if (seedprop.data.data.datatype == "list") {
+                                    let options = (await auxMeth.autoParser(seedprop.data.data.listoptions, attributes, _citem.attributes, true)).split(",");
+                                    let optIndex = options.indexOf(myAtt[attProp]);
+                                    let newvalue = optIndex - finalvalue;
+                                    if (newvalue < 0)
+                                        newvalue = 0;
+                                    myAtt[attProp] = options[newvalue];
+                                }
+                                else {
+                                    myAtt[attProp] = Number(myAtt[attProp]) - Number(finalvalue);
+                                }
                             }
                             else {
                                 myAtt[attProp] = Number(myAtt[attProp]) - Number(finalvalue);
@@ -2789,6 +2792,7 @@ export class gActor extends Actor {
                     return rawexp;
 
                 //console.log("calculating auto " + _rawattname + " " + _attAuto);
+
                 //let propertybase = await game.items.filter(y => y.data.type == "property" && y.data.data.attKey == _rawattname);
                 let property = await auxMeth.getTElement(null, "property", _rawattname);
                 //let property = propertybase[0];
@@ -2959,13 +2963,20 @@ export class gActor extends Actor {
                         }
 
                         if (mode == "set") {
-                            //let dataType = game.items.find(y => y.id == targetattributes[parseprop].id).data.data.datatype;
+                            let dataType = "simpletext";
                             let propData = await auxMeth.getTElement(targetattributes[parseprop].id, "property", parseprop);
                             if (propData == null || propData == undefined) {
-                                attvalue = parsevalue;
-                                continue;
-                            }
-                            let dataType = propData.data.data.datatype;
+                                if ('created' in targetattributes[parseprop]) { // Catch CREATE mod properties
+                                    if (targetattributes[parseprop].created)
+                                        ;
+                                    else
+                                        continue;
+                                }
+                                else
+                                    continue;
+                            } else
+                                dataType = propData.data.data.datatype;
+
                             if (dataType == "checkbox") {
                                 if (parsevalue != "false" && parsevalue != "0")
                                     attvalue = "true";
