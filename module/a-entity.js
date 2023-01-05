@@ -3,504 +3,445 @@ import { auxMeth } from "./auxmeth.js";
 
 export class gActor extends Actor {
 
-    prepareData() {
-        super.prepareData();
+prepareData() { // v10
+  super.prepareData();
+  // Get the Actor's data object
+  const actorData = this; 
+  const data = actorData.system; 
+  const flags = this.flags;
+  if (!hasProperty(flags, "ischeckingauto")) {
+    setProperty(flags, "ischeckingauto", false);
+  }
+  if (!hasProperty(flags, "hasupdated")) {
+    setProperty(flags, "hasupdated", true);
+  }
+  if (!hasProperty(flags, "scrolls")) {
+    setProperty(flags, "scrolls", {});
+  }
+  // Prepare Character data
+  //console.log("preparing data");
+  if (data.istemplate) {
+    if (!hasProperty(flags, "tabarray")) {
+      setProperty(flags, "tabarray", []);
+    }
+    if (!hasProperty(flags, "rows")) {
+      setProperty(flags, "rows", 0);
+      setProperty(flags, "rwidth", 0);
+    }
+  }
+  if (!hasProperty(flags, "sandbox")) {
+    setProperty(flags, "sandbox", {});
+  }
+  if (!hasProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id)) {
+    setProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id, 0);
+  }
+  //console.log(this);
+}
 
-        // Get the Actor's data object
-        const actorData = this.data;
-        const data = actorData.data;
-        const flags = actorData.flags;
+prepareDerivedData() {  // v10  
+  if (!hasProperty(this.flags, "sbupdated")) {
+    setProperty(this.flags, "sbupdated", 0);
+  }
+  if (!hasProperty(this.system, "biovisible")) {
+    setProperty(this.system, "biovisible", false);
+  }
+}
 
-        if (!hasProperty(flags, "ischeckingauto")) {
-            setProperty(flags, "ischeckingauto", false);
-        }
+async _preCreate(data, options, user) { // v10
+  await super._preCreate(data, options, user);
+  if (this.system != null)
+    if (this.system.istemplate)
+      this.updateSource({ "system.istemplate": false });
+}
 
-        if (!hasProperty(flags, "hasupdated")) {
-            setProperty(flags, "hasupdated", true);
-        }
+async _preUpdate(updateData, options, userId) { //v10
+  //        let upclon = duplicate(updateData);
+  //console.log(updateData);
+  if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+      let myuser = userId;
+  }
+  else {
+      return;
+  }
+  let noTemplate = true;
+  if (updateData.istemplate) {
+      noTemplate = false;
+  }
+  if (!this.system.istemplate && updateData.system != null && noTemplate) {
+      let actor = duplicate(this);
+      let newtoken;
+      //console.log(actor);
+      //I AM TRYING TO MERGE UPDATE DATA TO A DUPLICATE ACTOR, TO RETURN THE RESULTING ACTOR
+      let uData = await this.getFinalActorData(actor, updateData.system);
+      //console.log(uData);
+      //HERE I APPLY THE AUTO CALCULATIONS TO THE RETURNED ACTOR
+      let adata = await this.actorUpdater(uData);
+      adata = await this.actorUpdater(adata);
+      //console.log(adata);
 
-        if (!hasProperty(flags, "scrolls")) {
-            setProperty(flags, "scrolls", {});
-        }
+      //COMPARES RETURNED ACTOR DATA TO THE ORIGINAL UPDATEDATA, AND ADDS WHATERVER IS MISSING
+      let newattributes = await this.compareKeys(this.system.attributes, adata.system.attributes);
+      
+      let newcitems = await this.comparecItems(this.system.citems, adata.system.citems);
+      let newrolls = await this.compareValues(this.system.rolls, adata.system.rolls);
+      let maindata = updateData.system;
+      setProperty(maindata, "selector", adata.selector);
+      if (newattributes)
+          setProperty(maindata, "attributes", newattributes);
+      if (newcitems.length > 0) {
+          setProperty(maindata, "citems", newcitems);
+      }
+      else {
+          if (updateData.citems)
+              updateData.citems = adata.citems;
+      }
+      if (newrolls)
+          setProperty(maindata, "rolls", newrolls);
+  }
+  super._preUpdate(updateData, options, userId);
+}
 
-        // Prepare Character data
-        //console.log("preparing data");
-        if (data.istemplate) {
+async createAttProps(actorData, updateData, key) { //v10
+  const n = actorData.attributes;
+  n[key] = {};
+  const c = actorData.attributes[key];
+  let a = updateData.attributes[key]
+  for (var f in updateData.attributes[key]) {
+    let b = a[f];
+    c[f] = b;
+    //console.log(f + " " + b);
+  }
+}
 
-            if (!hasProperty(flags, "tabarray")) {
-                setProperty(flags, "tabarray", []);
+async getFinalActorData(actor, updateData) { //v10
+  const actorData = actor.system;
+  //MERGE ATTRIBUTES
+  let attributes;
+  let attKeys = await Object.keys(actorData.attributes);
+  //console.log(attKeys);
+  if (updateData.attributes)
+      attributes = updateData.attributes;
+  if (updateData.istemplate)
+      actorData.istemplate = true;
+  if (updateData.gtemplate)
+      actorData.gtemplate = updateData.gtemplate;
+  //console.log(actorData.attributes);
+  for (var key in attributes) {
+    if (attKeys.includes(key)) {
+      if (attributes[key].id != null)
+        actorData.attributes[key].id = attributes[key].id;
+        //Checkbox group implementation
+        if (attributes[key].checkgroup != null)
+          actorData.attributes[key].checkgroup = attributes[key].checkgroup;
+
+          // if (actorData.attributes[key].checkgroup != null) {
+          //     if (attributes[key].value == "on")
+          //         attributes[key].value = true;
+          // }
+
+        //Checkbox group implementation
+        if (actorData.attributes[key].checkgroup != null && attributes[key].modified) {
+          if (actorData.attributes[key].checkgroup != "" && !actorData.attributes[key].value) {
+            let checkgroup = actorData.attributes[key].checkgroup;
+            let chkgroupArray = checkgroup.split(";");
+            for (const [propKey, propValues] of Object.entries(actorData.attributes)) {
+              let propKeyObj = game.items.find(y => y.system.attKey == propKey);
+              if (propKeyObj != null && propKeyObj != undefined && propKeyObj != "") //skip mismatch data (CREATE mod)
+                if (propKeyObj.system.datatype == "checkbox" && propKey != key) {
+                  let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
+                  for (let z = 0; z < chkgroupArray.length; z++) {
+                    let checkKey = chkgroupArray[z];
+                    let parsedKey = await auxMeth.autoParser(checkKey, actorData.attributes, null, true);
+                    if (pointerchkgroupArray.includes(parsedKey))
+                      propValues.value = false;
+                  }
+                }
             }
-
-            if (!hasProperty(flags, "rows")) {
-                setProperty(flags, "rows", 0);
-                setProperty(flags, "rwidth", 0);
+            if (updateData.citems) {
+              for (let r = 0; r < updateData.citems.length; r++) {
+                for (const [propKey, propValues] of Object.entries(updateData.citems[r].attributes)) {
+                  if (propKey != propObj.system.attKey) {
+                    let propKeyObj = game.items.find(y => y.system.attKey == propKey);
+                    if (propKeyObj != null && propKeyObj != "" && propKeyObj != undefined) {
+                      let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
+                      for (let z = 0; z < chkgroupArray.length; z++) {
+                        let checkKey = chkgroupArray[z];
+                        let parsedKey = await auxMeth.autoParser(checkKey, this.actor.system.attributes, citem.attributes, true);
+                        if (pointerchkgroupArray.includes(parsedKey))
+                          propValues.value = false;
+                      }
+                    }
+                  }
+                }
+              }
             }
-
-
+          }
         }
 
-        if (!hasProperty(flags, "sandbox")) {
-            setProperty(flags, "sandbox", {});
+        //console.log(key + " checkgroup: " + actorData.attributes[key].checkgroup + " value: " + attributes[key].value);
+        if (attributes[key].value != null) {
+          actorData.attributes[key].value = attributes[key].value;
         }
+        if (attributes[key].modified != null)
+          actorData.attributes[key].modified = attributes[key].modified;
+        if (attributes[key].max != null)
+          actorData.attributes[key].max = attributes[key].max;
+        if (attributes[key].modmax != null)
+          actorData.attributes[key].modmax = attributes[key].modmax;
+        if (attributes[key].maxadd != null)
+          actorData.attributes[key].maxadd = attributes[key].maxadd;
+        if (attributes[key].listedit != null)
+          actorData.attributes[key].listedit = attributes[key].listedit;
+        if (actorData.attributes[key].istable && hasProperty(attributes[key], "tableitems"))
+          actorData.attributes[key].tableitems = attributes[key].tableitems;
+        if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")) {
+          for (var totkey in attributes[key].totals) {
+            actorData.attributes[key].totals[totkey] = attributes[key].totals[totkey];
+          }
 
-        if (!hasProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id)) {
-            setProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id, 0);
-        }
-
-
-
-
-        //console.log(this);
-
-    }
-
-    prepareDerivedData() {
-        //console.log("llo");
-
-
-
-        if (!hasProperty(this.data.flags, "sbupdated")) {
-            setProperty(this.data.flags, "sbupdated", 0);
-        }
-
-        if (!hasProperty(this.data.data, "biovisible")) {
-            setProperty(this.data.data, "biovisible", false);
         }
     }
-
-    async _preCreate(data, options, user) {
-
-        await super._preCreate(data, options, user);
-        if (data.data != null)
-            if (data.data.istemplate)
-                this.data.update({ "data.istemplate": false });
+    else {
+      //console.log("adding " + key)
+      await this.createAttProps(actorData, updateData, key);
     }
+  }
 
-    async _preUpdate(updateData, options, userId) {
-        //        let upclon = duplicate(updateData);
-        //console.log(updateData);
-        if (this.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER || this.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM) {
-            let myuser = userId;
+  //MERGE ROLLS
+  let rolls;
+  let rollKeys = Object.keys(actorData.rolls);
+  if (updateData.rolls)
+    rolls = updateData.rolls;
+  for (var key in rolls) {
+    if (rollKeys.includes(key)) {
+      actorData.rolls[key].value = rolls[key].value;
+    }
+  }
+
+  //MERGE CITEMS
+  let citems;
+  if (updateData.citems) {
+      citems = updateData.citems;
+      actorData.citems = citems;
+  }
+  //console.log(citems);
+  return actor;
+}
+
+async compareValues(data1, data2) { //v10
+  var result = {};
+  var keys = Object.keys(data1);
+  for (var key in data2) {
+    //console.log(data1[key].value + " vs " + data2[key].value);
+    if (!keys.includes(key) || data1[key].value !== data2[key].value) {
+        result[key] = {};
+        result[key].value = data2[key].value;
+    }
+  }
+  return result;
+}
+
+async compareKeys(data1, data2) { //v10
+  var result = {};
+  for (var key in data2) {
+    let noProp = false;
+    if (data1[key] == null) {
+      noProp = true;
+    }
+    for (var subkey in data2[key]) {
+      let createKey = false;
+      let noSubKey = false;
+      if (!noProp) {
+        if (data1[key][subkey] == null) {
+          createKey = true;
         }
         else {
-            return;
+          if (data1[key][subkey] !== data2[key][subkey])
+            createKey = true;
+          }
+      }
+      else {
+        createKey = true;
+      }
+      if (createKey) {
+        if (result[key] == null)
+          result[key] = {};
+        if (data2[key][subkey] != null) {
+          result[key][subkey] = data2[key][subkey];
         }
-
-        let noTemplate = true;
-        if (updateData.istemplate) {
-            noTemplate = false;
-        }
-
-        if (!this.data.data.istemplate && updateData.data != null && noTemplate) {
-
-            let actor = duplicate(this.data);
-            let newtoken;
-            //console.log(actor);
-
-            //I AM TRYING TO MERGE UPDATE DATA TO A DUPLICATE ACTOR, TO RETURN THE RESULTING ACTOR
-            let uData = await this.getFinalActorData(actor, updateData.data);
-
-            //console.log(uData);
-
-            //HERE I APPLY THE AUTO CALCULATIONS TO THE RETURNED ACTOR
-            let adata = await this.actorUpdater(uData);
-            adata = await this.actorUpdater(adata);
-            //console.log(adata);
-
-            //COMPARES RETURNED ACTOR DATA TO THE ORIGINAL UPDATEDATA, AND ADDS WHATERVER IS MISSING
-            let newattributes = await this.compareKeys(this.data.data.attributes, adata.data.attributes);
-            let newcitems = await this.comparecItems(this.data.data.citems, adata.data.citems);
-            let newrolls = await this.compareValues(this.data.data.rolls, adata.data.rolls);
-
-            let maindata = updateData.data;
-
-            setProperty(maindata, "selector", adata.data.selector);
-
-            if (newattributes)
-                setProperty(maindata, "attributes", newattributes);
-            if (newcitems.length > 0) {
-                setProperty(maindata, "citems", newcitems);
-            }
-            else {
-                if (updateData.data.citems)
-                    updateData.data.citems = adata.data.citems;
-            }
-
-            if (newrolls)
-                setProperty(maindata, "rolls", newrolls);
-
-        }
-
-        super._preUpdate(updateData, options, userId);
-
+      }
     }
+  }
+  //console.log(result);
+  return result;
+}
 
-    async createAttProps(actorData, updateData, key) {
-
-        const n = actorData.attributes;
-        n[key] = {};
-        const c = actorData.attributes[key];
-
-        let a = updateData.attributes[key]
-        for (var f in updateData.attributes[key]) {
-
-            let b = a[f];
-            c[f] = b;
-
-            //console.log(f + " " + b);
-        }
-
-
+async comparecItems(data1, data2) { //v10
+  var result = [];
+  var keys = Object.keys(data1);
+  for (let i = 0; i < data2.length; i++) {
+    if (!data1.includes(data2[i])) {
+      result.push(data2[i]);
     }
-
-    async getFinalActorData(actor, updateData) {
-
-        const actorData = actor.data;
-
-        //MERGE ATTRIBUTES
-        let attributes;
-        let attKeys = await Object.keys(actorData.attributes);
-        //console.log(attKeys);
-        if (updateData.attributes)
-            attributes = updateData.attributes;
-
-        if (updateData.istemplate)
-            actorData.istemplate = true;
-
-        if (updateData.gtemplate)
-            actorData.gtemplate = updateData.gtemplate;
-
-        //console.log(actorData.attributes);
-        for (var key in attributes) {
-
-            if (attKeys.includes(key)) {
-                if (attributes[key].id != null)
-                    actorData.attributes[key].id = attributes[key].id;
-
-                //Checkbox group implementation
-                if (attributes[key].checkgroup != null)
-                    actorData.attributes[key].checkgroup = attributes[key].checkgroup;
-
-                // if (actorData.attributes[key].checkgroup != null) {
-                //     if (attributes[key].value == "on")
-                //         attributes[key].value = true;
-                // }
-
-                //Checkbox group implementation
-                if (actorData.attributes[key].checkgroup != null && attributes[key].modified) {
-
-                    if (actorData.attributes[key].checkgroup != "" && !actorData.attributes[key].value) {
-                        let checkgroup = actorData.attributes[key].checkgroup;
-                        let chkgroupArray = checkgroup.split(";");
-
-                        for (const [propKey, propValues] of Object.entries(actorData.attributes)) {
-                            let propKeyObj = game.items.find(y => y.data.data.attKey == propKey);
-                            if (propKeyObj != null && propKeyObj != undefined && propKeyObj != "") //skip mismatch data (CREATE mod)
-                                if (propKeyObj.data.data.datatype == "checkbox" && propKey != key) {
-                                    let pointerchkgroupArray = propKeyObj.data.data.checkgroup.split(";");
-                                    for (let z = 0; z < chkgroupArray.length; z++) {
-                                        let checkKey = chkgroupArray[z];
-                                        let parsedKey = await auxMeth.autoParser(checkKey, actorData.attributes, null, true);
-                                        if (pointerchkgroupArray.includes(parsedKey))
-                                            propValues.value = false;
-                                    }
-                                }
-
-                        }
-                        if (updateData.citems) {
-                            for (let r = 0; r < updateData.citems.length; r++) {
-                                for (const [propKey, propValues] of Object.entries(updateData.citems[r].attributes)) {
-                                    if (propKey != propObj.data.data.attKey) {
-                                        let propKeyObj = game.items.find(y => y.data.data.attKey == propKey);
-                                        if (propKeyObj != null && propKeyObj != "" && propKeyObj != undefined) {
-                                            let pointerchkgroupArray = propKeyObj.data.data.checkgroup.split(";");
-                                            for (let z = 0; z < chkgroupArray.length; z++) {
-                                                let checkKey = chkgroupArray[z];
-                                                let parsedKey = await auxMeth.autoParser(checkKey, this.actor.data.data.attributes, citem.attributes, true);
-                                                if (pointerchkgroupArray.includes(parsedKey))
-                                                    propValues.value = false;
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                }
-
-                //console.log(key + " checkgroup: " + actorData.attributes[key].checkgroup + " value: " + attributes[key].value);
-                if (attributes[key].value != null) {
-                    actorData.attributes[key].value = attributes[key].value;
-                }
-
-
-                if (attributes[key].modified != null)
-                    actorData.attributes[key].modified = attributes[key].modified;
-                if (attributes[key].max != null)
-                    actorData.attributes[key].max = attributes[key].max;
-                if (attributes[key].modmax != null)
-                    actorData.attributes[key].modmax = attributes[key].modmax;
-                if (attributes[key].maxadd != null)
-                    actorData.attributes[key].maxadd = attributes[key].maxadd;
-
-                if (attributes[key].listedit != null)
-                    actorData.attributes[key].listedit = attributes[key].listedit;
-
-                if (actorData.attributes[key].istable && hasProperty(attributes[key], "tableitems"))
-                    actorData.attributes[key].tableitems = attributes[key].tableitems;
-
-                if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")) {
-                    for (var totkey in attributes[key].totals) {
-                        actorData.attributes[key].totals[totkey] = attributes[key].totals[totkey];
-                    }
-
-                }
-
-            }
-            else {
-                //console.log("adding " + key)
-                await this.createAttProps(actorData, updateData, key);
-
-            }
-        }
-
-        //MERGE ROLLS
-        let rolls;
-        let rollKeys = Object.keys(actorData.rolls);
-        if (updateData.rolls)
-            rolls = updateData.rolls;
-        for (var key in rolls) {
-            if (rollKeys.includes(key)) {
-                actorData.rolls[key].value = rolls[key].value;
-            }
-        }
-
-        //MERGE CITEMS
-        let citems;
-
-        if (updateData.citems) {
-            citems = updateData.citems;
-            actorData.citems = citems;
-        }
-
-        //console.log(citems);
-
-        return actor;
+    else {
+      if (data2[i] != data1[i]) {
+        result.push(data2[i]);
+      }
     }
+  }
+  return result;
+}
 
-    async compareValues(data1, data2) {
-        var result = {};
-        var keys = Object.keys(data1);
-        for (var key in data2) {
-            //console.log(data1[key].value + " vs " + data2[key].value);
-            if (!keys.includes(key) || data1[key].value !== data2[key].value) {
-                result[key] = {};
-                result[key].value = data2[key].value;
-            }
-        }
 
-        return result;
+getActorSheetAppWindow(){
+  let sheet=null;
+  try{        
+    // in v9 actor-JUbqädmwqpomd
+    // in v10 gActorSheet-Actor-Ip0xrpFBKOtw2JuJ
+    sheet=document.getElementById("gActorSheet-Actor-" + this.id);
+  }
+  catch(err){
+    console.warn("Sandbox | a-entity.getActorSheetAppWindow | Error getting actor sheet window." + err.message);
+  }
+  return sheet;
+}
+
+getTokenActorSheetAppWindow(){
+  let sheet=null;
+  try{        
+    // in v9 actor-imBaWUXi839TFMBe-M8nW7HUagycvLpIO    
+    // in v10 gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
+    // gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
+    sheet = document.getElementById("gActorSheet-Scene-" + canvas.id + "-Token-" + this.token.id);
+  }
+  catch(err){
+    console.warn("Sandbox | a-entity.getTokenActorSheetAppWindow | Error getting token actor sheet window." + err.message);
+  }
+  return sheet;
+}
+
+getCompendiumActorSheetAppWindow(compendium){
+  let sheet=null;
+  try{        
+    // in v10 gActorSheet-Compendium-world-monsters-PbY9XcLCKKGrlvtU    
+    sheet = document.getElementById("gActorSheet-Compendium-" + compendium.metadata.packageType + "-" + compendium.metadata.name +"-" + this.id);
+  }
+  catch(err){
+    console.warn("Sandbox | a-entity.getCompendiumActorSheetAppWindow | Error getting token actor sheet window." + err.message);
+  }
+  return sheet;
+}
+
+async listSheets() {  //v10
+  let templates = await auxMeth.getSheets();
+  this.system.sheets = templates;
+ 
+  let charsheet;
+  if (this.isToken == false) {
+    // check if in a compendium
+    if(this.compendium!=null){
+      // compendium actor
+      charsheet = this.getCompendiumActorSheetAppWindow(this.compendium)
+    } else {
+      // normal
+      charsheet = this.getActorSheetAppWindow();
     }
+  }
+  else {
+    charsheet = this.getTokenActorSheetAppWindow();
+  }
+  let sheets = charsheet.getElementsByClassName("selectsheet");
+  if (sheets == null)
+    return;
+  let selector = sheets[0];
+  if (selector == null)
+    return;
+  var length = selector.options.length;
+  for (let j = length - 1; j >= 0; j--) {
+    selector.options[j] = null;
+  }
+  for (let k = 0; k < templates.length; k++) {
+    var opt = document.createElement('option');
+    opt.appendChild(document.createTextNode(templates[k]));
+    opt.value = templates[k];
+    selector.appendChild(opt);
+  }
+  selector.value = this.system.gtemplate;
+}
 
-    async compareKeys(data1, data2) {
-        var result = {};
-        for (var key in data2) {
-            let noProp = false;
+async updateModifiedData(originaldata, extradata) { //v10
+  let existingData = await duplicate(originaldata);
+  for (let prop in extradata) {
+      if (extradata[prop] === null || extradata[prop] === undefined)
+          delete extradata[prop];
+      existingData[prop] = extradata[prop];
+  }
+  let newData = await this.actorUpdater(existingData);
+  //console.log(newData);
+  return newData;
+}
 
-            if (data1[key] == null) {
-                noProp = true;
-
-            }
-
-            for (var subkey in data2[key]) {
-
-                let createKey = false;
-                let noSubKey = false;
-
-                if (!noProp) {
-                    if (data1[key][subkey] == null) {
-                        createKey = true;
-                    }
-
-                    else {
-                        if (data1[key][subkey] !== data2[key][subkey])
-                            createKey = true;
-                    }
-                }
-                else {
-                    createKey = true;
-                }
-
-                if (createKey) {
-
-                    if (result[key] == null)
-                        result[key] = {};
-
-                    if (data2[key][subkey] != null) {
-                        result[key][subkey] = data2[key][subkey];
-                    }
-
-                }
-            }
-
-        }
-
-        //console.log(result);
-
-        return result;
-    }
-
-    async comparecItems(data1, data2) {
-
-        var result = [];
-        var keys = Object.keys(data1);
-
-        for (let i = 0; i < data2.length; i++) {
-            if (!data1.includes(data2[i])) {
-                result.push(data2[i]);
-            }
-
-            else {
-                if (data2[i] != data1[i]) {
-                    result.push(data2[i]);
-                }
-            }
-
-        }
-
-        return result;
-    }
-
-    async listSheets() {
-
-        let templates = await auxMeth.getSheets();
-        this.data.data.sheets = templates;
-
-        //let charsheet = document.getElementById("actor-"+this.id);
-
-        let charsheet;
-        if (this.token == null) {
-            charsheet = document.getElementById("actor-" + this.id);
+//Overrides update method
+async update(data, options = {}) {
+    //console.log("updating");
+    //console.log("alla");
+    //console.log(data);
+    //console.log(options);
+    let newdata = {};
+    let scrollTop;
+    if (data != null) {
+        if (data["citems"] != null) {
+            newdata = {};
+            setProperty(newdata, "data", {});
+            newdata.citems = data["citems"];
         }
         else {
-            charsheet = document.getElementById("actor-" + this.id + "-" + this.token.data.id);
+            newdata = data;
         }
-        let sheets = charsheet.getElementsByClassName("selectsheet");
-
-        if (sheets == null)
-            return;
-
-        let selector = sheets[0];
-
-        if (selector == null)
-            return;
-
-        var length = selector.options.length;
-
-        for (let j = length - 1; j >= 0; j--) {
-            selector.options[j] = null;
+        if (data.biovisible != null) {
+            options.diff = false;
         }
-
-        for (let k = 0; k < templates.length; k++) {
-            var opt = document.createElement('option');
-            opt.appendChild(document.createTextNode(templates[k]));
-            opt.value = templates[k];
-            selector.appendChild(opt);
-        }
-
-        selector.value = this.data.data.gtemplate;
+        //newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = await this.sheet.scrollbarSet;
     }
-
-    async updateModifiedData(originaldata, extradata) {
-
-        let existingData = await duplicate(originaldata);
-        for (let prop in extradata) {
-            if (extradata[prop] === null || extradata[prop] === undefined)
-                delete extradata[prop];
-            existingData[prop] = extradata[prop];
+    //console.log(newdata);
+    if (this.system.gtemplate != null) {
+        if (newdata == null) {
+            setProperty(newdata, "flags", {});
         }
-        let newData = await this.actorUpdater(existingData);
-        //console.log(newData);
-        return newData;
+        if (!newdata.flags) {
+            newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = scrollTop;
+        }
+        else {
+            if (!hasProperty(newdata.flags, "sandbox"))
+                setProperty(newdata.flags, "sandbox", {});
+            newdata.flags.sandbox["scrolls_" + game.user.id + "_" + this.id] = scrollTop;
+        }
     }
-
-    //Overrides update method
-    async update(data, options = {}) {
-
-        //console.log("updating");
-        //console.log("alla");
-        //console.log(data);
-        //console.log(options);
-        let newdata = {};
-        let scrollTop;
-
-        if (data != null) {
-
-            if (data["data.citems"] != null) {
-                newdata = {};
-                setProperty(newdata, "data", {});
-                newdata.data.citems = data["data.citems"];
-            }
-            else {
-                newdata = data;
-            }
-
-            if (data.biovisible != null) {
-                options.diff = false;
-            }
-
-            //newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = await this.sheet.scrollbarSet;
-
-
-        }
-
-        //console.log(newdata);
-
-        if (this.data.data.gtemplate != null) {
-
-            if (newdata == null) {
-                setProperty(newdata, "flags", {});
-            }
-
-            if (!newdata.flags) {
-                newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = scrollTop;
-            }
-
-            else {
-                if (!hasProperty(newdata.flags, "sandbox"))
-                    setProperty(newdata.flags, "sandbox", {});
-                newdata.flags.sandbox["scrolls_" + game.user.id + "_" + this.id] = scrollTop;
-            }
-        }
-
-        //console.log(newdata);
-
-        return super.update(newdata, options);
-
-    }
+    //console.log(newdata);
+    return super.update(newdata, options);
+}
 
     async addcItem(ciTem, addedBy = null, data = null, number = null) {
         //console.log("adding citems");
         //console.log(ciTem);
 
         if (data == null) {
-            data = this.data;
+            data = this.system;
         }
 
         let newdata = duplicate(data);
-        let citems = data.data.citems;
+        let citems = data.citems;
         if (citems == null || citems.length == 0)
             citems = [];
-        const attributes = data.data.attributes;
+        const attributes = data.attributes;
 
         let citemData;
 
-        if (!hasProperty(ciTem.data.data.groups)) {
-            citemData = ciTem.data._source.data;
+        if (!hasProperty(ciTem.system.groups)) {
+            citemData = ciTem._source.system;
         }
         else {
-            citemData = ciTem.data.data;
+            citemData = ciTem.system;
         }
 
         let itemKey = "";
@@ -509,13 +450,13 @@ export class gActor extends Actor {
         setProperty(newItem, itemKey, {});
         newItem[itemKey].id = ciTem.id;
         newItem[itemKey].ikey = itemKey;
-        newItem[itemKey].name = ciTem.data.name;
-        let ciKey = ciTem.data.data.ciKey;
+        newItem[itemKey].name = ciTem.name;
+        let ciKey = ciTem.system.ciKey;
         if (ciKey == "")
             ciKey = ciTem.id;
-        newItem[itemKey].ciKey = ciTem.data.data.ciKey;
+        newItem[itemKey].ciKey = ciTem.system.ciKey;
 
-        if (!data.data.istemplate) {
+        if (!data.istemplate) {
             if (number == null)
                 number = 1;
             newItem[itemKey].number = number;
@@ -528,22 +469,26 @@ export class gActor extends Actor {
 
                 //let _groupcheck = await game.items.get(ciTem.data.data.groups[j].id);
                 let _groupcheck = await auxMeth.getTElement(citemData.groups[j].id, "group", citemData.groups[j].ikey);
-                let groupID = citemData.groups[j].id;
-                if (_groupcheck.data.data.isUnique) {
-                    for (let i = citems.length - 1; i >= 0; i--) {
-                        //let citemObj = game.items.get(citems[i].id);
-                        let citemObj = await auxMeth.getcItem(citems[i].id, citems[i].ciKey);
-                        let hasgroup = citemObj.data.data.groups.some(y => y.id == groupID);
+                
+                if(_groupcheck!=null){
+                  if (_groupcheck.system.isUnique) {
+                    let groupID = citemData.groups[j].id;
+                      for (let i = citems.length - 1; i >= 0; i--) {
+                          //let citemObj = game.items.get(citems[i].id);
+                          let citemObj = await auxMeth.getcItem(citems[i].id, citems[i].ciKey);
+                          let hasgroup = citemObj.system.groups.some(y => y.id == groupID);
 
-                        if (hasgroup) {
-                            //                            newdata = await this.deletecItem(citems[i].id, true,data);
-                            //                            citems = newdata.data.citems;
-                            citems[i].todelete = true;
-                        }
+                          if (hasgroup) {
+                              //                            newdata = await this.deletecItem(citems[i].id, true,data);
+                              //                            citems = newdata.data.citems;
+                              citems[i].todelete = true;
+                          }
 
-                    }
+                      }
+                  }
+                } else {
+                  console.warn(`Sandbox | a-entity.addcItem | Unable to find group(${citemData.groups[j].name}) for unique check for item ${newItem[itemKey].name}`);
                 }
-
             }
 
             //newItem[itemKey].attributes = ciTem.data.data.attributes;
@@ -572,7 +517,7 @@ export class gActor extends Actor {
 
                 let myprop = await auxMeth.getTElement("NONE", "property", key);
                 if (myprop != null) {
-                    let defvalue = myprop.data.data.defvalue;
+                    let defvalue = myprop.system.defvalue;
                     let isauto = defvalue.match(/@|{|,|;|%|\[/g);
                     if (isauto) {
                         let newvalue = await auxMeth.autoParser(defvalue, attributes, citemData.attributes, false);
@@ -582,7 +527,7 @@ export class gActor extends Actor {
 
             }
 
-            newItem[itemKey].attributes.name = ciTem.data.name;
+            newItem[itemKey].attributes.name = ciTem.name;
             newItem[itemKey].rolls = {};
             newItem[itemKey].lastroll = 0;
 
@@ -625,7 +570,7 @@ export class gActor extends Actor {
         await citems.push(newItem[itemKey]);
         //console.log(citems);
 
-        data.flags.haschanged = true;
+        this.flags.haschanged = true;
 
         return citems;
 
@@ -641,13 +586,13 @@ export class gActor extends Actor {
 
         let newdata;
         if (thisData == null) {
-            newdata = duplicate(this.data);
+            newdata = duplicate(this);
         }
         else {
             newdata = thisData;
         }
-        const attributes = newdata.data.attributes;
-        const citems = newdata.data.citems;
+        const attributes = newdata.system.attributes;
+        const citems = newdata.system.citems;
         let toRemove = citems.find(y => y.id == itemID || y.ciKey == itemID);
         //let remObj = game.items.get(itemID);
 
@@ -660,7 +605,7 @@ export class gActor extends Actor {
         //console.log(remObj);
 
         if (remObj != null && citems.length > 0 && (toRemove.isactive || toRemove.usetype == "PAS")) {
-            let toRemoveObj = remObj.data.data;
+            let toRemoveObj = remObj.system;
 
             //Remove values added to attributes
             let addsetmods = toRemoveObj.mods.filter(y => y.type == "ADD");
@@ -682,18 +627,18 @@ export class gActor extends Actor {
                             myAtt = myAtt.replace(".max", "");
                         }
                         const actorAtt = attributes[myAtt];
-                        let seedprop = game.items.find(y => y.data.data.attKey == myAtt);
+                        let seedprop = game.items.find(y => y.system.attKey == myAtt);
 
                         if (actorAtt != null) {
                             if (addsetmods[i].type == "ADD") {
-                                let jumpmod = await this.checkModConditional(this.data, addsetmods[i], _basecitem);
+                                let jumpmod = await this.checkModConditional(this.system, addsetmods[i], _basecitem);
                                 //console.log("cItem NO cumple condicional: " + jumpmod);
                                 if (((toRemove.isactive && !toRemoveObj.ispermanent) || (toRemoveObj.usetype == "PAS" && !toRemoveObj.selfdestruct)) && !jumpmod) {
 
-                                    let pdatatype = seedprop?.data.data.datatype || "other";
+                                    let pdatatype = seedprop?.system.datatype || "other";
 
                                     if (pdatatype == "list") {
-                                        let options = seedprop.data.data.listoptions.split(",");
+                                        let options = seedprop.system.listoptions.split(",");
                                         let optIndex = options.indexOf(actorAtt[attProp]);
                                         let newvalue = optIndex - myAttValue;
 
@@ -778,7 +723,7 @@ export class gActor extends Actor {
         }
 
         citems.splice(citems.indexOf(toRemove), 1);
-        this.data.flags.haschanged = true;
+        this.flags.haschanged = true;
 
         //        if(this.isToken){
         //
@@ -793,27 +738,27 @@ export class gActor extends Actor {
     }
 
     async updateCItems() {
-        const citems = this.data.data.citems;
+        const citems = this.system.citems;
         for (let i = 0; i < citems.length; i++) {
             let citem = citems[i];
             //let citemTemplate = game.items.get(citems[i].id);
             let citemTemplate = await auxMeth.getcItem(citems[i].id, citems[i].ciKey);
 
-            if (citemTemplate != null && hasProperty(citemTemplate.data.data, "groups")) {
-                for (let j = 0; j < citemTemplate.data.data.groups.length; j++) {
-                    let groupID = citemTemplate.data.data.groups[j];
+            if (citemTemplate != null && hasProperty(citemTemplate.system, "groups")) {
+                for (let j = 0; j < citemTemplate.system.groups.length; j++) {
+                    let groupID = citemTemplate.system.groups[j];
                     //let group = game.items.get(groupID.id);
                     let group = await auxMeth.getTElement(groupID.id, "group", groupID.ikey);
 
                     if (group != null) {
-                        for (let y = 0; y < group.data.data.properties.length; y++) {
-                            let property = group.data.data.properties[y];
+                        for (let y = 0; y < group.system.properties.length; y++) {
+                            let property = group.system.properties[y];
                             if (property.isconstant && citem.attributes[property.ikey]) {
 
                                 if (citem.attributes[property.ikey] != null) {
-                                    if (citemTemplate.data.data.attributes[property.ikey] != null)
-                                        if (citem.attributes[property.ikey].value != citemTemplate.data.data.attributes[property.ikey].value) {
-                                            citem.attributes[property.ikey].value = citemTemplate.data.data.attributes[property.ikey].value;
+                                    if (citemTemplate.system.attributes[property.ikey] != null)
+                                        if (citem.attributes[property.ikey].value != citemTemplate.system.attributes[property.ikey].value) {
+                                            citem.attributes[property.ikey].value = citemTemplate.system.attributes[property.ikey].value;
                                         }
                                 }
 
@@ -858,7 +803,7 @@ export class gActor extends Actor {
             let attribute = attArray[i];
             let attID;
             //console.log(attribute);
-            let propertypool = await game.items.filter(y => y.data.type == "property" && y.data.data.attKey == attribute);
+            let propertypool = await game.items.filter(y => y.type == "property" && y.system.attKey == attribute);
             let property = propertypool[0];
 
             if (property != null) {
@@ -870,12 +815,12 @@ export class gActor extends Actor {
 
                 if (!hasProperty(attributes[attribute], "id")) {
 
-                    await setProperty(attributes[attribute], "id", property.data.id);
-                    attID = property.data.id;
+                    await setProperty(attributes[attribute], "id", property.id);
+                    attID = property.id;
 
                 }
 
-                let defvalue = await auxMeth.autoParser(property.data.data.defvalue, attributes, null, false);
+                let defvalue = await auxMeth.autoParser(property.system.defvalue, attributes, null, false);
 
                 if (!hasProperty(attributes[attribute], "value")) {
                     //console.log("novalue");
@@ -913,9 +858,9 @@ export class gActor extends Actor {
             let citemObjBase = await auxMeth.getcItem(ciID, citemIDs[n].ciKey);
 
             if (citemObjBase != null) {
-                let citemObj = citemObjBase.data.data;
+                let citemObj = citemObjBase.system;
                 if (!hasProperty(citemObj, "ciKey"))
-                    citemObj = citemObjBase.data._source.data;
+                    citemObj = citemObjBase._source.system;
 
                 for (let i = 0; i < citemObj.mods.length; i++) {
                     let toaddMod = duplicate(citemObj.mods[i]);
@@ -937,8 +882,9 @@ export class gActor extends Actor {
     }
 
     async execITEMmods(mods, data) {
+      
         let result = {};
-        let citemIDs = data.data.citems;
+        let citemIDs = data.system.citems;
         let newcitem = false;
         let updatecItem = true;
         const itemmods = mods.filter(y => y.type == "ITEM");
@@ -956,10 +902,10 @@ export class gActor extends Actor {
             //console.log(mod);
             //let _citem = game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-            let _citem = _citemfinder.data.data;
+            let _citem = _citemfinder.system;
             //console.log(_citem);
             if (!hasProperty(_citem, "ciKey"))
-                _citem = _citemfinder.data._source.data;
+                _citem = _citemfinder._source.system;
 
             let citem = citemIDs.find(y => y.id == mod.citem || y.ciKey == mod.ciKey);
             //console.log(citem);
@@ -1018,7 +964,7 @@ export class gActor extends Actor {
                                 let cindex = citemIDs.indexOf(citemmod);
                                 console.log("removing " + itemtoadd.name);
                                 let duplicanto = await this.deletecItem(itemtoadd.id, true, data);
-                                citemIDs = duplicanto.data.citems;
+                                citemIDs = duplicanto.citems;
                                 await mods.splice(mods.findIndex(e => e.citem === itemtoadd.id), 1);
                             }
 
@@ -1068,9 +1014,7 @@ export class gActor extends Actor {
     }
 
     async setInputColor() {
-
-        const citemIDs = this.data.data.citems;
-
+        const citemIDs = this.system.citems;
         for (let j = 0; j < citemIDs.length; j++) {
             const mods = citemIDs[j].mods;
             if (mods != null) {
@@ -1079,11 +1023,11 @@ export class gActor extends Actor {
                         const thismod = mods[i];
 
                         let charsheet;
-                        if (this.token == null) {
-                            charsheet = document.getElementById("actor-" + this.id);
+                        if (this.token == null) {                            
+                            charsheet = this.getActorSheetAppWindow();
                         }
-                        else {
-                            charsheet = document.getElementById("actor-" + this.id + "-" + this.token.data.id);
+                        else {                            
+                            charsheet = this.getTokenActorSheetAppWindow();
                         }
 
                         if (charsheet != null) {
@@ -1111,8 +1055,8 @@ export class gActor extends Actor {
         //console.log(mod);
         //console.log(data);
         //const mycitem = auxMeth.getcItem(mod.citem,mod.ciKey);
-        const citemIDs = data.data.citems;
-        const attributes = data.data.attributes;
+        const citemIDs = data.citems;
+        const attributes = data.attributes;
         let condAtt = mod.condat;
         let jumpmod = false;
 
@@ -1179,18 +1123,18 @@ export class gActor extends Actor {
 
     async setdefcItems(actorData) {
         //ADDS defauls CITEMS
-        const citemIDs = actorData.data.citems;
+        const citemIDs = actorData.system.citems;
 
         let citems;
 
-        let mytemplate = actorData.data.gtemplate;
+        let mytemplate = actorData.system.gtemplate;
         if (mytemplate != "Default") {
-            let _template = await game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == mytemplate);
+            let _template = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == mytemplate);
 
             if (_template != null) {
-                for (let k = 0; k < _template.data.data.citems.length; k++) {
-                    let mycitemId = _template.data.data.citems[k].id;
-                    let mycitemiKey = _template.data.data.citems[k].ciKey;
+                for (let k = 0; k < _template.system.citems.length; k++) {
+                    let mycitemId = _template.system.citems[k].id;
+                    let mycitemiKey = _template.system.citems[k].ciKey;
                     //let mycitem = game.items.get(mycitemId);
                     let mycitem = await auxMeth.getcItem(mycitemId, mycitemiKey);
                     let citeminActor = await citemIDs.find(y => y.id == mycitemId || y.ciKey == mycitemiKey);
@@ -1210,7 +1154,7 @@ export class gActor extends Actor {
 
     async removeDropcITems(actorData) {
         //Removes cITems marked for removal CITEMS
-        const citemIDs = actorData.data.citems;
+        const citemIDs = actorData.system.citems;
         let toreturn;
         for (let k = 0; k < citemIDs.length; k++) {
             let mycitem = citemIDs[k];
@@ -1224,8 +1168,8 @@ export class gActor extends Actor {
 
     async checkcItemConsistency(actorData) {
         //Removes cITems marked for removal CITEMS
-        const citemIDs = actorData.data.citems;
-        const attributes = actorData.data.attributes;
+        const citemIDs = actorData.system.citems;
+        const attributes = actorData.system.attributes;
 
         for (let k = 0; k < citemIDs.length; k++) {
             const mycitem = citemIDs[k];
@@ -1239,15 +1183,15 @@ export class gActor extends Actor {
             }
 
             if (mycitem.ciKey == null)
-                mycitem.ciKey = cIOrigTemplate.data.data.ciKey;
+                mycitem.ciKey = cIOrigTemplate.system.ciKey;
 
             let cITemplate = await duplicate(cIOrigTemplate);
             let requestUpdate = false;
             let updatecItem = false;
 
             //TODO CHECK FOR CHANGED ATTRIBUTES IN ORIGINAL CITEM
-            for (let j = 0; j < cITemplate.data.groups.length; j++) {
-                let myGroup = cITemplate.data.groups[j];
+            for (let j = 0; j < cITemplate.system.groups.length; j++) {
+                let myGroup = cITemplate.system.groups[j];
                 //let myGroupTemp = game.items.get(myGroup.id);
                 let myGroupTemp = await auxMeth.getTElement(myGroup.id, "group", myGroup.ikey);
                 //If no group remove cItem
@@ -1256,7 +1200,7 @@ export class gActor extends Actor {
                     break;
                 }
 
-                let groupProps = myGroupTemp.data.data.properties;
+                let groupProps = myGroupTemp.system.properties;
 
                 for (let j = 0; j < groupProps.length; j++) {
                     let myPropId = groupProps[j].id;
@@ -1264,15 +1208,15 @@ export class gActor extends Actor {
                     let myProp = await auxMeth.getTElement(myPropId, "property", groupProps[j].ikey);
                     if (myProp == null)
                         break;
-                    let att = myProp.data.data.attKey;
-                    let tempAtt = cITemplate.data.attributes[att];
+                    let att = myProp.system.attKey;
+                    let tempAtt = cITemplate.system.attributes[att];
                     let newvalue;
 
                     if (tempAtt != null) {
 
                         if (hasProperty(mycitem.attributes, att)) {
                             if (groupProps[j].isconstant && tempAtt.value != mycitem.attributes[att].value) {
-                                if (actorData.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER || actorData.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM)
+                                if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM)
                                     mycitem.attributes[att].value = tempAtt.value;
 
                             }
@@ -1285,18 +1229,18 @@ export class gActor extends Actor {
 
                     else {
                         updatecItem = true;
-                        if (myProp.data.data.datatype === "simplenumeric") {
-                            newvalue = await auxMeth.autoParser(myProp.data.data.defvalue, attributes, cITemplate.data.attributes, false);
+                        if (myProp.system.datatype === "simplenumeric") {
+                            newvalue = await auxMeth.autoParser(myProp.system.defvalue, attributes, cITemplate.system.attributes, false);
                         }
 
                         else {
-                            newvalue = await auxMeth.autoParser(myProp.data.data.defvalue, attributes, cITemplate.data.attributes, true);
+                            newvalue = await auxMeth.autoParser(myProp.system.defvalue, attributes, cITemplate.system.attributes, true);
                         }
 
                         //GUARDA Y LUEGO ACCEDE
                         if (game.user.isGM) {
-                            setProperty(cITemplate.data.attributes, att, {});
-                            cITemplate.data.attributes[att].value = newvalue;
+                            setProperty(cITemplate.system.attributes, att, {});
+                            cITemplate.system.attributes[att].value = newvalue;
                         }
 
                         else {
@@ -1307,7 +1251,7 @@ export class gActor extends Actor {
                     }
 
                     if (!hasProperty(mycitem.attributes, att)) {
-                        if (this.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER || this.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM) {
+                        if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER|| this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
                             setProperty(mycitem.attributes, att, {});
                             setProperty(mycitem.attributes[att], "value", newvalue);
                         }
@@ -1322,11 +1266,11 @@ export class gActor extends Actor {
 
             if (game.user.isGM) {
                 if (updatecItem) {
-                    await cIOrigTemplate.update({ "data.attributes": cITemplate.data.attributes });
+                    await cIOrigTemplate.update({ "system.attributes": cITemplate.system.attributes });
                 }
 
-                for (let i = 0; i < cITemplate.data.mods.length; i++) {
-                    let originalmod = cITemplate.data.mods[i];
+                for (let i = 0; i < cITemplate.system.mods.length; i++) {
+                    let originalmod = cITemplate.system.mods[i];
                     let mymod = mycitem.mods.find(y => y.index == originalmod.index);
                     if (mymod == null) {
                         await mycitem.mods.push({
@@ -1390,7 +1334,7 @@ export class gActor extends Actor {
         let ithaschanged = false;
         //console.log(actorData);
 
-        const attributes = actorData.data.attributes;
+        const attributes = actorData.system.attributes;
 
 
         //console.log(this.data.data.attributes);
@@ -1423,24 +1367,24 @@ export class gActor extends Actor {
 
         //CHECKING CI ITEMS
         actorData = await this.removeDropcITems(actorData);
-        actorData.data.citems = await this.setdefcItems(actorData);
-        actorData.data.citems = await this.checkcItemConsistency(actorData);
+        actorData.citems = await this.setdefcItems(actorData);
+        actorData.citems = await this.checkcItemConsistency(actorData);
 
         let mods = [];
         let resMods = true;
 
         while (resMods) {
 
-            mods = await this.getMods(actorData.data.citems);
+            mods = await this.getMods(actorData.citems);
             let newmodcitems = await this.execITEMmods(mods, actorData);
             resMods = newmodcitems.iterate;
 
-            actorData.data.selector = newmodcitems.selector;
+            actorData.selector = newmodcitems.selector;
             if (resMods) {
                 newcitem = true;
                 ithaschanged = true;
 
-                actorData.data.citems = newmodcitems.citems;
+                actorData.citems = newmodcitems.citems;
             }
             // console.log(resMods.citems);
         }
@@ -1448,7 +1392,7 @@ export class gActor extends Actor {
         //console.log(mods);
         //actorData.data.citems = this.checkActorMods(actorData.data.citems,mods);
 
-        const citemIDs = actorData.data.citems;
+        const citemIDs = actorData.system.citems;
         let originalcIDs = duplicate(citemIDs);
         //console.log(citemIDs);
 
@@ -1456,7 +1400,7 @@ export class gActor extends Actor {
         if (mods.length > 0)
             await this.checkAttConsistency(attributes, mods);
 
-        const rolls = actorData.data.rolls;
+        const rolls = actorData.system.rolls;
 
         //CREATE MODS
         const createmods = mods.filter(y => y.type == "CREATE");
@@ -1483,21 +1427,21 @@ export class gActor extends Actor {
             let attribute = attributearray[i];
             let attdata = attributes[attribute];
             //let property = await game.items.get(actorData.data.attributes[attribute].id);
-            let property = await auxMeth.getTElement(actorData.data.attributes[attribute].id, "property", attribute);
-            const actorAtt = actorData.data.attributes[attribute];
+            let property = await auxMeth.getTElement(actorData.system.attributes[attribute].id, "property", attribute);
+            const actorAtt = actorData.system.attributes[attribute];
 
             if (property != null) {
-                if (actorAtt.value === "" && property.data.data.auto == "" && !property.data.data.defvalue.includes(".max}")) {
-                    if (property.data.data.defvalue != "" || (property.data.data.datatype == "checkbox")) {
+                if (actorAtt.value === "" && property.system.auto == "" && !property.system.defvalue.includes(".max}")) {
+                    if (property.system.defvalue != "" || (property.system.datatype == "checkbox")) {
 
                         //console.log("defaulting " + attribute);
 
                         //console.log(property.data.data.defvalue);
                         let exprmode = false;
-                        if (property.data.data.datatype == "simpletext" || property.data.data.datatype == "textarea")
+                        if (property.system.datatype == "simpletext" || property.system.datatype == "textarea")
                             exprmode = true;
-                        let newValue = await auxMeth.autoParser(property.data.data.defvalue, attributes, null, exprmode);
-                        if (property.data.data.datatype == "checkbox") {
+                        let newValue = await auxMeth.autoParser(property.system.defvalue, attributes, null, exprmode);
+                        if (property.system.datatype == "checkbox") {
 
                             if (newValue == null) {
                                 newValue = false;
@@ -1529,13 +1473,13 @@ export class gActor extends Actor {
                 if (actorAtt.max == null || actorAtt.max == "")
                     attdata.maxblocked = false;
 
-                if (property.data.data.automax != null) {
-                    if (property.data.data.automax != "") {
+                if (property.system.automax != null) {
+                    if (property.system.automax != "") {
                         //console.log(property.data.data.automax);
                         if (!hasProperty(attdata, "maxblocked"))
                             attdata.maxblocked = false;
                         if (!attdata.maxblocked) {
-                            actorAtt.max = await auxMeth.autoParser(property.data.data.automax, attributes, null, false);
+                            actorAtt.max = await auxMeth.autoParser(property.system.automax, attributes, null, false);
                             //console.log(attribute +" max to " + actorAtt.max);
                         }
 
@@ -1586,7 +1530,7 @@ export class gActor extends Actor {
 
                 //let _citem = await game.items.get(mod.citem).data.data; CUIDAO AQUI mod.cIKEy as puesto
                 let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-                let _citem = _citemfinder.data.data;
+                let _citem = _citemfinder.system;
 
                 finalvalue = await auxMeth.autoParser(value, attributes, citem.attributes, true, false, citem.number);
                 //console.log(finalvalue);
@@ -1683,7 +1627,7 @@ export class gActor extends Actor {
 
             //let _citem = await game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-            let _citem = _citemfinder.data.data;
+            let _citem = _citemfinder.system;
 
             if (hasProperty(attributes, modAtt)) {
 
@@ -1693,7 +1637,7 @@ export class gActor extends Actor {
                 let seedprop = await auxMeth.getTElement(myAtt.id, "property", modAtt);
                 let checker = false;
                 if (seedprop != null) {
-                    if (seedprop != null && ((seedprop.data.data.automax == "" && attProp == "max") || (seedprop.data.data.auto == "" && attProp == "value")) && (seedprop.data.data.datatype == "simplenumeric" || seedprop.data.data.datatype == "radio" || seedprop.data.data.datatype == "badge" || seedprop.data.data.datatype == "list")) {
+                    if (seedprop != null && ((seedprop.system.automax == "" && attProp == "max") || (seedprop.system.auto == "" && attProp == "value")) && (seedprop.system.datatype == "simplenumeric" || seedprop.system.datatype == "radio" || seedprop.system.datatype == "badge" || seedprop.system.datatype == "list")) {
                         checker = true;
                     }
                 }
@@ -1764,10 +1708,10 @@ export class gActor extends Actor {
                         if (!_mod.exec || (myAtt[modvable] && !_mod.once)) {
                             myAtt.prev = myAtt[attProp];
 
-                            let pdatatype = seedprop?.data.data.datatype || "other";
+                            let pdatatype = seedprop?.system.datatype || "other";
 
                             if (pdatatype == "list") {
-                                let options = seedprop.data.data.listoptions.split(",");
+                                let options = seedprop.system.listoptions.split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex + finalvalue;
                                 if (newvalue + 1 > options.length)
@@ -1789,9 +1733,9 @@ export class gActor extends Actor {
                             _mod.attribute = modAtt;
 
                             if (seedprop != null) {
-                                if (attProp == "value" && myAtt.max != "" && seedprop.data.data.automax != "") {
+                                if (attProp == "value" && myAtt.max != "" && seedprop.system.automax != "") {
 
-                                    if (myAtt[attProp] > myAtt.max && seedprop.data.data.maxtop) {
+                                    if (myAtt[attProp] > myAtt.max && seedprop.system.maxtop) {
                                         myAtt[attProp] = myAtt.max;
                                         ithaschanged = true;
                                     }
@@ -1809,8 +1753,8 @@ export class gActor extends Actor {
                         if ((!citem.isreset || _citem.usetype == "PAS") && _mod.exec && ((citem.isactive && jumpmod) || !citem.isactive) && !myAtt.default && !citem.ispermanent) {
                             //console.log("removing add");
                             _mod.exec = false;
-                            if (seedprop.data.data.datatype == "list") {
-                                let options = seedprop.data.data.listoptions.split(",");
+                            if (seedprop.system.datatype == "list") {
+                                let options = seedprop.system.listoptions.split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex - finalvalue;
                                 console.log(options);
@@ -1863,7 +1807,7 @@ export class gActor extends Actor {
 
                 //let _citem = game.items.get(mod.citem).data.data;
                 let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-                let _citem = _citemfinder.data.data;
+                let _citem = _citemfinder.system;
 
                 //console.log("entering " + mod.name + " " + jumpmod + " for" + modAtt);
                 if (hasProperty(attributes, modAtt)) {
@@ -1874,7 +1818,7 @@ export class gActor extends Actor {
                     let seedprop = await auxMeth.getTElement(myAtt.id, "property", modAtt);
                     let checker = false;
                     if (seedprop != null) {
-                        if ((((seedprop.data.data.automax != "" && attProp == "max") || (seedprop.data.data.auto != "" && attProp == "value")) && (seedprop.data.data.datatype == "simplenumeric" || seedprop.data.data.datatype == "radio" || seedprop.data.data.datatype == "badge")))
+                        if ((((seedprop.system.automax != "" && attProp == "max") || (seedprop.system.auto != "" && attProp == "value")) && (seedprop.system.datatype == "simplenumeric" || seedprop.system.datatype == "radio" || seedprop.system.datatype == "badge")))
                             checker = true;
                     }
 
@@ -1972,9 +1916,9 @@ export class gActor extends Actor {
                                 //console.log("adding auto Add to " + modAtt + " autoadd " + myAtt["autoadd"]);
 
                                 if (seedprop != null) {
-                                    if (attProp == "value" && myAtt.max != "" && seedprop.data.data.automax != "") {
+                                    if (attProp == "value" && myAtt.max != "" && seedprop.system.automax != "") {
                                         //console.log("changemax");
-                                        if (myAtt[attProp] > myAtt.max && seedprop.data.data.maxtop) {
+                                        if (myAtt[attProp] > myAtt.max && seedprop.system.maxtop) {
                                             myAtt[attProp] = myAtt.max;
                                             ithaschanged = true;
                                         }
@@ -2055,7 +1999,7 @@ export class gActor extends Actor {
             let citem = citemIDs.find(y => y.id == mod.citem);
             //let _citem = game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-            let _citem = _citemfinder.data.data;
+            let _citem = _citemfinder.system;
 
             let jumpmod = false;
             if (mod.condop != "NON" && mod.condop != null) {
@@ -2114,7 +2058,7 @@ export class gActor extends Actor {
             let citem = citemIDs.find(y => y.id == mod.citem);
             //let _citem = game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-            let _citem = _citemfinder.data.data;
+            let _citem = _citemfinder.system;
 
             let jumpmod = false;
             if (mod.condop != "NON" && mod.condop != null) {
@@ -2128,7 +2072,7 @@ export class gActor extends Actor {
                 let seedprop = await auxMeth.getTElement(myAtt.id, "property", attKey);
 
                 if (seedprop != null)
-                    if (seedprop.data.data.datatype == "list") {
+                    if (seedprop.system.datatype == "list") {
 
                         if (attributes[attKey].listedit == null)
                             attributes[attKey].listedit = {};
@@ -2176,19 +2120,19 @@ export class gActor extends Actor {
             let attribute = attributearray[i];
             let attdata = attributes[attribute];
             //let property = await game.items.get(actorData.data.attributes[attribute].id);
-            let property = await auxMeth.getTElement(actorData.data.attributes[attribute].id, "property", attribute);
-            const actorAtt = actorData.data.attributes[attribute];
+            let property = await auxMeth.getTElement(actorData.system.attributes[attribute].id, "property", attribute);
+            const actorAtt = actorData.system.attributes[attribute];
             if (property != null) {
 
                 let mydefvalue = 0;
 
-                if (property.data.data.datatype == "simplenumeric" || property.data.data.datatype == "radio" || property.data.data.datatype == "badge") {
+                if (property.system.datatype == "simplenumeric" || property.system.datatype == "radio" || property.system.datatype == "badge") {
 
-                    if (property.data.data.defvalue != "") {
-                        mydefvalue = property.data.data.defvalue;
+                    if (property.system.defvalue != "") {
+                        mydefvalue = property.system.defvalue;
                     }
 
-                    if (property.data.data.auto == "" && actorAtt.value === "") {
+                    if (property.system.auto == "" && actorAtt.value === "") {
                         ithaschanged = true;
                         actorAtt.value = await auxMeth.autoParser(mydefvalue, attributes, null, false);
                     }
@@ -2197,7 +2141,7 @@ export class gActor extends Actor {
                     actorAtt.max = parseInt(actorAtt.max);
                 }
 
-                if (property.data.data.datatype == "checkbox") {
+                if (property.system.datatype == "checkbox") {
 
                     if (actorAtt.value === true || actorAtt.value === false) {
 
@@ -2222,7 +2166,7 @@ export class gActor extends Actor {
 
             else {
                 if (!attdata.created) {
-                    delete actorData.data.attributes[attribute];
+                    delete actorData.system.attributes[attribute];
 
                     ithaschanged = true;
                 }
@@ -2240,14 +2184,14 @@ export class gActor extends Actor {
         }
         //console.log(citemIDs);
         //CONSUMABLES ACTIVE TURN BACK INTO INACTIVE, AND DELETE SELFDESTRUCTIBLE
-        if (citemIDs != null && !actorData.data.istemplate) {
+        if (citemIDs != null && !actorData.istemplate) {
             for (let n = citemIDs.length - 1; n >= 0; n--) {
 
                 let cItemTest = await auxMeth.getcItem(citemIDs[n].id, citemIDs[n].ciKey);
                 if (cItemTest != null) {
 
                     //MANAGE CITEM USES & MAXUSES
-                    let citemObj = cItemTest.data.data;
+                    let citemObj = cItemTest.system;
                     let citmAttr = citemIDs[n].attributes;
                     let citmNum = citemIDs[n].number;
                     let myMaxuses = await auxMeth.autoParser(citemObj.maxuses, attributes, citmAttr, false);
@@ -2268,7 +2212,7 @@ export class gActor extends Actor {
                         let groupprops = [];
 
                         if (cigroup != null)
-                            groupprops = cigroup.data.data.properties;
+                            groupprops = cigroup.system.properties;
 
 
                         for (let x = 0; x < groupprops.length; x++) {
@@ -2276,8 +2220,8 @@ export class gActor extends Actor {
                             let propdata = await auxMeth.getTElement(groupprops[x].id, "property", groupprops[x].ikey);
                             if (propdata == null)
                                 break;
-                            let propKey = propdata.data.data.attKey;
-                            let propauto = propdata.data.data.auto;
+                            let propKey = propdata.system.attKey;
+                            let propauto = propdata.system.auto;
 
                             if (propauto != "") {
                                 propauto = await propauto.replace(/\#{name}/g, citemIDs[n].name);
@@ -2285,7 +2229,7 @@ export class gActor extends Actor {
                                 propauto = await propauto.replace(/\#{uses}/g, citemIDs[n].uses);
                                 let rawvalue = await auxMeth.autoParser(propauto, attributes, citmAttr, false, false, citmNum);
 
-                                if (isNaN(rawvalue) && propdata.data.data.datatype != "simpletext") {
+                                if (isNaN(rawvalue) && propdata.system.datatype != "simpletext") {
                                     //console.log(rawvalue);
                                     let afinal = new Roll(rawvalue);
                                     await afinal.evaluate({ async: true });
@@ -2367,8 +2311,8 @@ export class gActor extends Actor {
                 if (tableObj == null)
                     continue;
 
-                let totalGroupID = tableObj.data.data.group.id;
-                let totalGroupIKey = tableObj.data.data.group.ikey;
+                let totalGroupID = tableObj.system.group.id;
+                let totalGroupIKey = tableObj.system.group.ikey;
                 //FREE TABLE AUTO PROP CALCULATION
                 if (t_Prop.tableitems != null) {
 
@@ -2376,14 +2320,14 @@ export class gActor extends Actor {
                     let groupObj = await auxMeth.getTElement(totalGroupID, "group", totalGroupIKey);
                     if (groupObj == null)
                         continue;
-                    let groupProps = groupObj.data.data.properties;
+                    let groupProps = groupObj.system.properties;
                     for (let k = 0; k < groupProps.length; k++) {
                         //let tableProp = game.items.get(groupProps[k].id);
                         let tableProp = await auxMeth.getTElement(groupProps[k].id, "property", groupProps[k].ikey);
                         if (tableProp == null)
                             break;
-                        let propauto = tableProp.data.data.auto;
-                        let freepropKey = tableProp.data.data.attKey;
+                        let propauto = tableProp.system.auto;
+                        let freepropKey = tableProp.system.attKey;
                         let freevalue;
                         if (propauto != "") {
                             for (let d = 0; d < t_Prop.tableitems.length; d++) {
@@ -2402,7 +2346,7 @@ export class gActor extends Actor {
 
                 let gcitems;
 
-                if (!tableObj.data.data.isfreetable) {
+                if (!tableObj.system.isfreetable) {
                     gcitems = await citemIDs.filter(y => y.groups.some(x => x.ikey == totalGroupIKey));
                 }
                 else {
@@ -2439,7 +2383,7 @@ export class gActor extends Actor {
                 if (cItemTest != null) {
                     //let citemObj = game.items.get(citemIDs[n].id).data.data;
                     //let citemObjfinder = await auxMeth.getcItem(citemIDs[n].id,citemIDs[n].ciKey);
-                    let citemObj = cItemTest.data.data;
+                    let citemObj = cItemTest.system;
                     if (citemObj.usetype == "PAS" && citemObj.selfdestruct) {
 
                         for (let i = 0; i < citemObj.mods.length; i++) {
@@ -2469,7 +2413,7 @@ export class gActor extends Actor {
                                     finalvalue = value;
                                 }
 
-                                const myAtt = actorData.data.attributes[modAtt];
+                                const myAtt = actorData.attributes[modAtt];
 
                                 if (attProp == "value")
                                     myAtt.value += Number(finalvalue);
@@ -2505,7 +2449,7 @@ export class gActor extends Actor {
         let ithaschanged = false;
         var parser = new DOMParser();
 
-        let htmlcode = await auxMeth.getTempHTML(this.data.data.gtemplate);
+        let htmlcode = await auxMeth.getTempHTML(this.system.gtemplate);
 
         if (htmlcode == null) {
             ui.notifications.warn("Please rebuild character sheet before assigning, a-entity");
@@ -2521,7 +2465,7 @@ export class gActor extends Actor {
             //console.log(newAtt);
             let attId = newAtt.getAttribute("attId");
             let attKey = newAtt.getAttribute("name");
-            attKey = attKey.replace("data.attributes.", '');
+            attKey = attKey.replace("system.attributes.", '');
             attKey = attKey.replace(".value", '');
             let properKey;
             if (attId != null) {
@@ -2530,7 +2474,7 @@ export class gActor extends Actor {
             }
 
             if (properKey != null)
-                sheetAtts.push(properKey.data.data.attKey);
+                sheetAtts.push(properKey.system.attKey);
 
         }
         //console.log(sheetAtts);
@@ -2539,8 +2483,8 @@ export class gActor extends Actor {
             let attribute = attributearray[i];
             let findme = sheetAtts.filter(y => y == attribute);
             //console.log("setting: " + attribute + " findme " + findme.length);
-            if (actorData.data.attributes[attribute] != null) {
-                let attID = actorData.data.attributes[attribute].id;
+            if (actorData.system.attributes[attribute] != null) {
+                let attID = actorData.system.attributes[attribute].id;
                 //console.log("setting: " + attribute);
                 ithaschanged = await this.setAutoProp(attID, attributes, attribute, findme, ithaschanged, secondround);
             }
@@ -2568,11 +2512,11 @@ export class gActor extends Actor {
             //Check the Auto value
             if (property != null) {
                 let exprmode = false;
-                if (property.data.data.datatype != "simplenumeric" && property.data.data.datatype != "radio") {
+                if (property.system.datatype != "simplenumeric" && property.system.datatype != "radio") {
                     exprmode = true;
                 }
 
-                rawexp = property.data.data.auto;
+                rawexp = property.system.auto;
 
                 if (rawexp.includes(".totals")) {
                     actorAtt.hastotals = true;
@@ -2691,7 +2635,7 @@ export class gActor extends Actor {
                     actorAtt.value = newvalue;
                     //TEST TO DELETE
                     //if (property.data.data.datatype != "simpletext" && !secondround)
-                    if (property.data.data.datatype != "simpletext") {
+                    if (property.system.datatype != "simpletext") {
                         actorAtt.value = Number(newvalue) + Number(actorAtt.autoadd);
                         if (!secondround)
                             actorAtt.autoadd = 0;
@@ -2703,9 +2647,9 @@ export class gActor extends Actor {
                     //console.log("defaulting " + attribute + " to " + actorAtt.value + " after adding: " + actorAtt.autoadd);
                 }
 
-                if (property.data.data.automax !== "") {
+                if (property.system.automax !== "") {
 
-                    rawexp = property.data.data.automax;
+                    rawexp = property.system.automax;
 
                     rawexp = await this.expandPropsP(rawexp, attributes);
 
@@ -2716,7 +2660,7 @@ export class gActor extends Actor {
 
 
                     //TEST TO DELETE
-                    if (property.data.data.datatype != "simpletext") {
+                    if (property.system.datatype != "simpletext") {
 
                         maxval = Number(maxval) + Number(actorAtt.maxadd);
 
@@ -2739,7 +2683,7 @@ export class gActor extends Actor {
                     }
 
 
-                    if (parseInt(actorAtt.value) > actorAtt.max && property.data.data.maxtop) {
+                    if (parseInt(actorAtt.value) > actorAtt.max && property.system.maxtop) {
                         actorAtt.value = actorAtt.max;
                     }
 
@@ -2785,13 +2729,13 @@ export class gActor extends Actor {
                     let exchanger = attributes[_rawattname][_attProp];
                     let attAutoAdd = Number(attributes[_rawattname]["autoadd"]);
                     //console.log(property);
-                    if (property.data.data[_attAuto] != "") {
+                    if (property.system[_attAuto] != "") {
                         //console.log("expanding: " + _rawattname + " = " + property.data.data[_attAuto]);
-                        if (property.data.data[_attAuto].includes("$<"))
+                        if (property.system[_attAuto].includes("$<"))
                             rawexp = await this.parseRegs(rawexp, attributes);
                         //console.log("isset?: " + this.data.data.attributes[_rawattname].isset);
                         if (!attributes[_rawattname].isset) {
-                            exchanger = await this.expandPropsP(property.data.data[_attAuto], attributes);
+                            exchanger = await this.expandPropsP(property.system[_attAuto], attributes);
                         }
                         else {
                             exchanger = attributes[_rawattname].value;
@@ -2799,7 +2743,7 @@ export class gActor extends Actor {
 
                     }
 
-                    if (property.data.data.datatype != "simpletext" && attAutoAdd != null && attAutoAdd != 0)
+                    if (property.system.datatype != "simpletext" && attAutoAdd != null && attAutoAdd != 0)
                         exchanger = "((" + exchanger + ")+(" + attAutoAdd + "))";
 
                     rawexp = rawexp.replace(tochange, exchanger);
@@ -2895,7 +2839,7 @@ export class gActor extends Actor {
         if (newData == null)
             data = this.data;
 
-        if (!data.data.istemplate)
+        if (!data.system.istemplate)
             newData = await this.checkPropAuto(data);
         //newData = await this.checkPropAuto(data);
 
@@ -2924,9 +2868,9 @@ export class gActor extends Actor {
                 if (target != null) {
                     let targetattributes = null;
                     if (target != "SELF")
-                        targetattributes = target.actor.data.data.attributes;
+                        targetattributes = target.actor.system.attributes;
                     else
-                        targetattributes = this.data.data.attributes;
+                        targetattributes = this.system.attributes;
 
                     if (targetattributes != null && targetattributes[parseprop] != null) {
                         let attvalue = targetattributes[parseprop].value;
@@ -2948,7 +2892,7 @@ export class gActor extends Actor {
                                 attvalue = parsevalue;
                                 continue;
                             }
-                            let dataType = propData.data.data.datatype;
+                            let dataType = propData.system.datatype;
                             if (dataType == "checkbox") {
                                 if (parsevalue != "false" && parsevalue != "0")
                                     attvalue = "true";
@@ -2969,7 +2913,7 @@ export class gActor extends Actor {
                         if (target != "SELF")
                             await this.requestToGM(this, target.id, parseprop, attvalue);
                         else
-                            await this.update({ [`data.attributes.${parseprop}.value`]: attvalue });
+                            await this.update({ [`system.attributes.${parseprop}.value`]: attvalue });
                     }
                     else {
                         console.warn("Property key: '" + parseprop + "' not found on target.");
@@ -3059,13 +3003,13 @@ export class gActor extends Actor {
         let rollformula = rollexp;
 
         //Roll modifiers generated by MODs of ROLL type
-        let actorrolls = this.data.data.rolls;
+        let actorrolls = this.system.rolls;
 
         //Rolls defined by expression
         let subrolls = [];
 
         //Check roll mode
-        let rollmode = this.data.data.rollmode;
+        let rollmode = this.system.rollmode;
         if (citemattributes != null) {
             rollname = rollname.replace(/\#{name}/g, citemattributes.name);
             rollname = rollname.replace(/\#{active}/g, isactive);
@@ -3097,7 +3041,7 @@ export class gActor extends Actor {
                 if (blocks[2] != null)
                     replacewith = blocks[2];
 
-                let mycitem = this.data.data.citems.find(ci => ci.name == blocks[0]);
+                let mycitem = this.system.citems.find(ci => ci.name == blocks[0]);
                 if (mycitem != null) {
                     let citemAtt = mycitem.attributes[blocks[1]];
                     if (citemAtt != null) {
@@ -3123,7 +3067,7 @@ export class gActor extends Actor {
                 let idtoreplace = "#{target|" + targetexp[j] + "}";
                 let newid;
                 if (target != null) {
-                    let targetattributes = target.actor.data.data.attributes;
+                    let targetattributes = target.actor.system.attributes;
                     newid = await auxMeth.autoParser("__" + idexpr + "__", targetattributes, null, true);
                 }
 
@@ -3714,6 +3658,8 @@ export class gActor extends Actor {
         formula = formula.replace(/\~/g, "");
 
         //ROLL EXPRESSION - ROLL TOTAL
+        // some final adjustmets to get rid of surplus brackets 2   * 0))
+        rollexp = rollexp.replace(/[()]/g, "");
         let partroll = new Roll(rollexp);
         roll = await partroll.evaluate({ async: true });
         if (game.dice3d != null && !nochat) {
@@ -3727,10 +3673,10 @@ export class gActor extends Actor {
         }
 
         rolltotal = roll.total;
-        if (this.data.data.mod == "" || this.data.data.mod == null)
-            this.data.data.mod = 0;
+        if (this.system.mod == "" || this.system.mod == null)
+            this.system.mod = 0;
 
-        rolltotal = parseInt(rolltotal) + parseInt(this.data.data.mod) + extramod;
+        rolltotal = parseInt(rolltotal) + parseInt(this.system.mod) + extramod;
 
         if (roll.formula.charAt(0) != "-" || roll.formula.charAt(0) != "0")
             multiroll.push(roll);
@@ -3866,7 +3812,7 @@ export class gActor extends Actor {
             actor: this.name,
             flavor: rollname,
             formula: formula + extramodstring,
-            mod: this.data.data.mod,
+            mod: this.system.mod,
             result: rolltotal,
             dice: rolldice,
             subdice: subrolls,
@@ -3996,12 +3942,12 @@ export class gActor extends Actor {
             //console.log(attvalue);
             //console.log(myactor);
             if (myactor.istoken) {
-                await mytoken.update({ [`actorData.data.attributes.${attkey}.value`]: attvalue });
+                await mytoken.update({ [`actorData.attributes.${attkey}.value`]: attvalue });
             }
             else {
                 //console.log("updating linked token");
                 //let actorref = game.actors.get(myactor.data.id);
-                await mytoken.actor.update({ [`data.attributes.${attkey}.value`]: attvalue });
+                await mytoken.actor.update({ [`system.attributes.${attkey}.value`]: attvalue });
                 //actorref.data.data.attributes[attkey].value = attvalue;
                 //await actorref.update(actorref.data,{diff:false});
             }
@@ -4041,16 +3987,16 @@ export class gActor extends Actor {
         if (!game.user.isGM)
             return;
         let actorOwner = game.actors.get(data.ownerID);
-        let ownercItems = duplicate(actorOwner.data.data.citems);
+        let ownercItems = duplicate(actorOwner.system.citems);
         let cItem = ownercItems.find(y => y.id == data.citemID);
         cItem.number -= data.number;
 
         let actorReceiver = game.actors.get(data.actorID);
-        let receivercItems = duplicate(actorReceiver.data.data.citems);
+        let receivercItems = duplicate(actorReceiver.system.citems);
 
 
         try {
-            await actorOwner.update({ "data.citems": ownercItems });
+            await actorOwner.update({ "system.citems": ownercItems });
             return true;
         }
         catch (err) {
@@ -4060,7 +4006,7 @@ export class gActor extends Actor {
                 cItemRec.number -= data.number;
             }
 
-            await actorReceiver.update({ "data.citems": receivercItems });
+            await actorReceiver.update({ "system.citems": receivercItems });
         }
 
 
@@ -4074,10 +4020,10 @@ export class gActor extends Actor {
         let mytoken = canvas.tokens.get(data.tokenId);
         //console.log(mytoken);
         if (data.istoken) {
-            await mytoken.update({ [`actorData.data.attributes.${data.attkey}.value`]: data.attvalue });
+            await mytoken.update({ [`actorData.attributes.${data.attkey}.value`]: data.attvalue });
         }
         else {
-            await mytoken.actor.update({ [`data.attributes.${data.attkey}.value`]: data.attvalue });
+            await mytoken.actor.update({ [`system.attributes.${data.attkey}.value`]: data.attvalue });
         }
 
     }

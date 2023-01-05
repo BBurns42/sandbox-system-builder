@@ -7,8 +7,8 @@ export class gItem extends Item {
         super.prepareData();
 
         // Get the Actor's data object
-        const itemData = this.data;
-        const data = itemData.data;
+        const itemData = this;
+        const data = itemData.system;
         const flags = itemData.flags;
 
         if (!hasProperty(data.attributes, "name") && itemData.type == "cItem") {
@@ -31,60 +31,51 @@ export class gItem extends Item {
     async _preUpdate(updateData, options, userId) {
         //console.log(updateData);
         if (updateData.name) {
-            setProperty(updateData, "data", {});
-            setProperty(updateData.data, "attributes", {});
-            setProperty(updateData.data.attributes, "name", updateData.name);
+            setProperty(updateData, "system", {});
+            setProperty(updateData.system, "attributes", {});
+            setProperty(updateData.system.attributes, "name", updateData.name);
         }
     }
 
-    async _preCreate(createData, options, userId) {
-        await super._preCreate(createData, options, userId);
-        let image = "";
-        if (this.data.img == 'icons/svg/item-bag.svg') {
-            if (this.type == "cItem") {
-                image = "systems/sandbox/docs/icons/sh_citem_icon.png";
-
-
-            }
-
-            if (this.type == "sheettab") {
-                image = "systems/sandbox/docs/icons/sh_tab_icon.png";
-            }
-
-            if (this.type == "group") {
-                image = "systems/sandbox/docs/icons/sh_group_icon.png";
-            }
-
-            if (this.type == "panel") {
-                image = "systems/sandbox/docs/icons/sh_panel_icon.png";
-            }
-
-            if (this.type == "multipanel") {
-                image = "systems/sandbox/docs/icons/sh_panel_icon.png";
-            }
-
-            if (this.type == "property") {
-                image = "systems/sandbox/docs/icons/sh_prop_icon.png";
-            }
-
-            if (image != "")
-                this.data.update({ img: image });
-        }
-
-        if (createData.type == "cItem")
-            if (createData.data != null)
-                if (createData.data.ciKey != null)
-                    if (createData.data.ciKey != "") {
-                        let is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == createData.data.ciKey && y.data.name != createData.name);
-
-                        if (is_here) {
-
-                            await this.data.update({ "data.ciKey": "" });
-                        }
-
-                    }
-
+  async _preCreate(createData, options, userId) {
+    await super._preCreate(createData, options, userId);
+    let image = "";        
+    if (this.img == 'icons/svg/item-bag.svg') {
+      if (this.type == "cItem") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_citem.svg";
+      }
+      if (this.type == "sheettab") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_sheettab.svg";
+      }
+      if (this.type == "group") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_group.svg";
+      }
+      if (this.type == "panel") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_panel.svg";
+      }
+      if (this.type == "multipanel") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_multipanel.svg";
+      }
+      if (this.type == "property") {
+        //image = "systems/sandbox/styles/icons/itemtypes/sb_item_property.svg";
+        // since simpletext is deafult use that icon
+        image="systems/sandbox/styles/icons/propertytypes/sb_property_simpletext.svg";
+      }
+      if (image != ""){
+        this.updateSource({ "img": image });
+      }
     }
+
+    if (createData.type == "cItem")
+      if (createData.system != null)
+        if (createData.system.ciKey != null)
+          if (createData.system.ciKey != "") {
+            let is_here = game.items.filter(y => Boolean(y.system.ciKey)).find(y => y.system.ciKey == createData.system.ciKey && y.name != createData.name);
+            if (is_here) {
+              await this.updateSource({ "system.ciKey": "" });              
+            }
+          }
+  }
 
 
 

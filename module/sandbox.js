@@ -4,6 +4,10 @@
  * Software License: GNU GPLv3
  */
 
+// export const needed by SystemSettingsForm
+export const _system_ignore_settings=[];       // array of strings containing settings that should not be displayed, can be empty []
+
+
 // Import Modules
 import { gActorSheet } from "./gactorsheet.js";
 import { sItemSheet } from "./sitemsheet.js";
@@ -12,6 +16,21 @@ import { gItem } from "./i-entity.js";
 import { SBOX } from "./config.js";
 import { auxMeth } from "./auxmeth.js";
 import { sToken } from "./sandboxtoken.js";
+import { SandboxToolsForm } from "./sb-tools-form.js";
+import { SandboxAPI } from "./sb-api.js";
+import { DropDownMenu } from "./dropdownmenu.js";
+import { SystemSettingsForm } from "./system-settings-form.js";
+import { SBBugReport } from "./sb-bug-report.js";
+
+import { sb_settings_menus } from "./sb-settings-registration.js";
+import { sb_settings_registration } from "./sb-settings-registration.js";
+import { SETTINGATTRIBUTE } from "./sb-setting-constants.js";
+import { sb_item_sheet_get_game_setting } from "./sb-setting-constants.js";
+import { ITEMATTRIBUTE } from "./sb-itemsheet-constants.js"
+import { ITEM_SHEET_HEIGHT }           from "./sb-itemsheet-constants.js";
+import { ITEM_SHEET_PROPERTY_HEIGHT }           from "./sb-itemsheet-constants.js";
+import { ITEM_SHEET_DEFAULT_WIDTH }           from "./sb-itemsheet-constants.js";
+import { ITEM_SHEET_TABS }           from "./sb-itemsheet-constants.js";
 
 // ALONDAAR this function creates a macro when data is dragged to the macro hotbar
 async function createSandboxMacro(data, slot) {
@@ -26,7 +45,7 @@ async function createSandboxMacro(data, slot) {
     rollData.tableKey = await placeholderParser(rollData.tableKey);
 
     // Do not put whitespace above the start of the macro,
-    // or else (command === m.data.command) is always false
+    // or else (command === m.command) is always false
     const command =
         `let rollData = {
     attrID: ${rollData.attrID},
@@ -43,23 +62,27 @@ async function createSandboxMacro(data, slot) {
 // For checking Free Table ID's
 let originalActorId = "${data.actorId}";
 
-const speaker = ChatMessage.getSpeaker();
-let actor;
-if (speaker.token) actor = game.actors.tokens[speaker.token];
-if (!actor) actor = game.actors.get(speaker.actor);
-if (actor) {
+const sourcespeaker = ChatMessage.getSpeaker(); // speaker is alwasy defined in v10 macros
+let sourceactor;                // actor is always defined in v10 macros
+if (sourcespeaker.token){
+  sourceactor = game.actors.tokens[sourcespeaker.token];
+}
+if (!sourceactor) {
+  sourceactor = game.actors.get(sourcespeaker.actor);
+}
+if (sourceactor) {
     let letsContinue = true;
     // Check if actor possess the citem
     if(rollData.citemKey != null)
-        if(!actor.data.data.citems.find(ci => ci.ciKey === rollData.citemKey))
+        if(!sourceactor.system.citems.find(ci => ci.ciKey === rollData.citemKey))
             return ui.notifications.warn("Current actor does not possess the required citem.");
 
     // Check if the free table item still exists
     if(rollData.isFree)
-        if(!actor.data.data.attributes[rollData.tableKey].tableitems.find(ti => ti.id === rollData.citemID))
+        if(!sourceactor.system.attributes[rollData.tableKey].tableitems.find(ti => ti.id === rollData.citemID))
             return ui.notifications.warn("Current actor does not possess the referenced Free Table id.");
         // Check if the selected actor is the original
-        else if (actor.data._id != originalActorId)
+        else if (sourceactor.id != originalActorId)
             await Dialog.confirm({
                 title: "ARE YOU SURE ABOUT THAT?",
                 content: "You are about to roll a Free Table id that isn't from the same actor you created the macro from.<br><br>This may have unintended results due to targetting a different id owned by that actor.",
@@ -69,7 +92,7 @@ if (actor) {
             });
 
         if(letsContinue)
-            actor.sheet._onRollCheck(${rollData.attrID}, ${rollData.attKey}, ${rollData.citemID}, ${rollData.citemKey}, ${rollData.ciRoll}, ${rollData.isFree}, ${rollData.tableKey}, ${rollData.useData});
+            sourceactor.sheet._onRollCheck(${rollData.attrID}, ${rollData.attKey}, ${rollData.citemID}, ${rollData.citemKey}, ${rollData.ciRoll}, ${rollData.isFree}, ${rollData.tableKey}, ${rollData.useData});
     } else
     ui.notifications.warn("Couldn't find actor. Select a token.");`;
 
@@ -78,7 +101,7 @@ if (actor) {
         actorName = "GM";
     let macroName = "[" + actorName + "] " + rollData.tag;
 
-    let macro = game.macros.contents.find(m => (m.name === macroName) && (m.data.command === command));
+    let macro = game.macros.contents.find(m => (m.name === macroName) && (m.command === command));
     if (!macro) {
         macro = await Macro.create({
             name: macroName,
@@ -86,9 +109,9 @@ if (actor) {
             img: rollData.img,
             command: command,
             flags: {},
-            permission: game.actors.get(data.actorId).data.permission
+            permission: game.actors.get(data.actorId).permission
         });
-        ui.notifications.warn('Macro created.');
+        ui.notifications.info('Macro created.');
     }
 
     await game.user.assignHotbarMacro(macro, slot);
@@ -108,6 +131,18 @@ async function placeholderParser(str) {
 /* -------------------------------------------- */
 
 Hooks.once("init", async function () {
+    if (game.modules.get("custom-css")!=null){
+      const mymodule = await import('../../../modules/custom-css/SettingsForm.js');
+      const foo = mymodule.default; // Default export
+      const SettingsForm = mymodule.SettingsForm; // Named export
+      game.system.customcssform=SettingsForm;
+    } else {
+      game.system.customcssform=null;
+    }
+  
+    // DropDown menu listeners
+    DropDownMenu.eventListeners();
+    
     console.log(`Initializing Sandbox System`);
 
     /**
@@ -115,7 +150,7 @@ Hooks.once("init", async function () {
      * @type {String}
      */
 
-    CONFIG.debug.hooks = true;
+    CONFIG.debug.hooks = false;
     CONFIG.Actor.documentClass = gActor;
     CONFIG.Item.documentClass = gItem;
     CONFIG.Token.documentClass = sToken;
@@ -129,120 +164,48 @@ Hooks.once("init", async function () {
     auxMeth.registerShowMod();
     auxMeth.registerShowSimpleRoll();
     auxMeth.registerShowRollMod();
-
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
     Actors.registerSheet("dnd5e", gActorSheet, { makeDefault: true });
     Items.unregisterSheet("core", ItemSheet);
     Items.registerSheet("dnd5e", sItemSheet, { makeDefault: true });
 
-    game.settings.register("sandbox", "showADV", {
-        name: "Show Roll with Advantage option",
-        hint: "If checked, 1d20,ADV,DIS options will be displayed under the Actor's name",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
-    });
 
-    game.settings.register("sandbox", "showSimpleRoller", {
-        name: "Show d20 Roll icon option",
-        hint: "If checked a d20 icon will be displayed under the Actor's name",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
+    sb_settings_menus();
+    sb_settings_registration();
+    console.log('Sandbox  | Register Handlebar Helper');
+    Handlebars.registerHelper('eachProperty', function(context, options) {      
+        var ret = "";
+        for(var prop in context)
+        {
+          if(context.hasOwnProperty(prop)){
+            ret = ret + options.fn({property:prop.toString(),value:context[prop]});
+          }
+        }
+        return ret;
     });
-
-    game.settings.register("sandbox", "consistencycheck", {
-        name: "Check cItem Consistency",
-        hint: "If checked, when rebuilding template, every cItem will be evaluated for consistency. WARNING: May take several minutes in big systems",
-        scope: "world",
-        config: false,
-        default: false,
-        type: Boolean,
+    Handlebars.registerHelper('sb_concat', function() {
+      var outStr = '';
+      for (var arg in arguments) {
+        if (typeof arguments[arg] != 'object') {
+          outStr += arguments[arg];
+        }
+      }
+      return outStr;
     });
-
-    game.settings.register("sandbox", "showDC", {
-        name: "Show DC window",
-        hint: "If checked a DC box will appear at the bottom of the screen",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
+    
+    Handlebars.registerHelper('sb_item_icon', function(itemid) {
+      
+      let outStr='';
+      let item=game.items.get(itemid);
+      if (item!=null){
+        outStr=item.img;
+      }
+      return outStr;
     });
-
-    game.settings.register("sandbox", "showLastRoll", {
-        name: "Show Last Roll window",
-        hint: "If checked a box displaying the results of the last Roll will appear at the bottom of the screen",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
-    });
-
-    game.settings.register("sandbox", "diff", {
-        name: "GM difficulty",
-        hint: "This is linked to the DC Box at the bottom of the screen",
-        scope: "world",
-        config: false,
-        default: 0,
-        type: Number,
-    });
-
-    game.settings.register("sandbox", "rollmod", {
-        name: "Show Roll Modifier",
-        hint: "This number will be added to the total of all rolls",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
-
-    game.settings.register("sandbox", "tokenOptions", {
-        name: "Token Options",
-        hint: "You can specify bar1 under token on the template Token tab",
-        scope: "world",
-        config: true,
-        default: 0,
-        type: Boolean,
-    });
-
-    game.settings.register("sandbox", "customStyle", {
-        name: "CSS Style file",
-        hint: "You can specify a custom styling file. If default wanted, leave blank",
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    game.settings.register("sandbox", "initKey", {
-        name: "Initiative Attribute Key",
-        hint: "After editing, please refresh instance",
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    game.settings.register("sandbox", "auxsettext1", {
-        name: "Auxiliary settings text 1",
-        hint: "After editing, please refresh instance",
-        scope: "world",
-        config: false,
-        default: null,
-        type: String,
-    });
-
-    game.settings.register("sandbox", "idDict", {
-        name: "Dictionary IDs for importing cItems",
-        hint: "As cItems dont have word keys, this ensures faster lokup",
-        scope: "world",
-        config: false,
-        default: null,
-        type: String,
-    });
+    
+    
+    
 
     Combat.prototype.rollInitiative = async function (ids, { formula = null, updateTurn = true, messageOptions = {} } = {}) {
 
@@ -266,13 +229,15 @@ Hooks.once("init", async function () {
             updates.push({ _id: id, initiative: roll.total });
 
             // Construct chat message data
+            
             let messageData = foundry.utils.mergeObject({
                 speaker: {
                     scene: this.scene.id,
                     actor: combatant.actor?.id,
                     token: combatant.token?.id,
-                    alias: combatant.name
+                    alias: combatant.name                    
                 },
+                
                 flavor: game.i18n.format("COMBAT.RollsInitiative", { name: combatant.name }),
                 flags: { "core.initiativeRoll": true }
             }, messageOptions);
@@ -309,7 +274,6 @@ Hooks.once("init", async function () {
         return roll.evaluate({ async: false });
     };
 
-
     Combatant.prototype._getInitiativeFormula = async function () {
 
         let initF = await game.settings.get("sandbox", "initKey");
@@ -318,8 +282,8 @@ Hooks.once("init", async function () {
             formula = "@{" + initF + "}"
         }
 
-        formula = await auxMeth.autoParser(formula, this.actor.data.data.attributes, null, true, false);
-        formula = await auxMeth.autoParser(formula, this.actor.data.data.attributes, null, true, false);
+        formula = await auxMeth.autoParser(formula, this.actor.system.attributes, null, true, false);
+        formula = await auxMeth.autoParser(formula, this.actor.system.attributes, null, true, false);
 
         console.log("aqui1");
 
@@ -369,7 +333,7 @@ Hooks.once("init", async function () {
             const docs = await this.documentClass.createDocuments(chunk, options);
             let dictext = game.settings.get("sandbox", "idDict");
             let arrdisct = {};
-            if (dictext != "")
+            if (dictext != null)
                 arrdisct = JSON.parse(dictext);
             else {
                 arrdisct.ids = {};
@@ -377,10 +341,10 @@ Hooks.once("init", async function () {
             let register = false;
             for (let i = 0; i < docs.length; i++) {
                 let mydoc = docs[i];
-                if (hasProperty(mydoc, "data"))
-                    if (hasProperty(mydoc.data, "data"))
-                        if (hasProperty(mydoc.data.data, "ciKey")) {
-                            arrdisct.ids[mydoc.data.data.ciKey] = mydoc.id;
+                if (hasProperty(mydoc, "system"))
+                    
+                        if (hasProperty(mydoc.system, "ciKey")) {
+                            arrdisct.ids[mydoc.system.ciKey] = mydoc.id;
                             register = true;
                         }
 
@@ -406,7 +370,7 @@ Hooks.once("init", async function () {
     WorldCollection.prototype.importFromCompendium = async function (pack, id, updateData = {}, options = {}) {
         //console.log("importing");
         const cls = this.documentClass;
-        if (pack.metadata.entity !== cls.documentName) {
+        if (pack.metadata.type !== cls.documentName) {
             throw new Error(`The ${pack.documentName} Document type provided by Compendium ${pack.collection} is incorrect for this Collection`);
         }
 
@@ -419,11 +383,11 @@ Hooks.once("init", async function () {
         console.log(`${vtt} | Importing ${cls.documentName} ${document.name} from ${pack.collection}`);
         this.directory.activate();
         let newObj = await this.documentClass.create(createData, options);
-        await auxMeth.registerDicID(id, newObj.id, newObj.data.data.ciKey);
+        await auxMeth.registerDicID(id, newObj.id, newObj.system.ciKey);
         return newObj;
     };
 
-         JournalEntry.prototype.show = async function (mode = "text", force = false) {
+    JournalEntry.prototype.show = async function (mode = "text", force = false) {
         if (!this.isOwner) throw new Error("You may only request to show Journal Entries which you own.");
         return new Promise((resolve) => {
             game.socket.emit("showEntry", this.uuid, mode, force, entry => {
@@ -437,6 +401,9 @@ Hooks.once("init", async function () {
             });
         });
     }; 
+    
+
+    
 
     CONFIG.Combat.initiative = {
         formula: "1d20",
@@ -457,11 +424,14 @@ Hooks.once("init", async function () {
         }
     });
 
-
+    let oAPI = new SandboxAPI();
+    oAPI.initialize();
 });
 
 Hooks.once('ready', async () => {
     //console.log("ready!");
+    
+    
     Hooks.on("hotbarDrop", (bar, data, slot) => createSandboxMacro(data, slot)); // ALONDAAR
 
     //Custom styling
@@ -483,9 +453,10 @@ Hooks.once('ready', async () => {
     if (game.user.isGM) {
 
         game.data.rolldc = 3;
-
-        let basedoc = document.getElementsByClassName("vtt game system-sandbox");
-
+        // in v10 body class is changed
+        //let basedoc = document.getElementsByClassName("vtt game system-sandbox");
+        let basedoc = document.getElementsByClassName("vtt system-sandbox");
+        
         let hotbar = document.createElement("DIV");
         hotbar.className = "dcroll-bar";
         hotbar.setAttribute("id", "dcroll-bar");
@@ -583,6 +554,9 @@ Hooks.once('ready', async () => {
 
 });
 
+
+
+
 Hooks.on("renderSidebarTab", createExportButtons);
 
 function createExportButtons(sidebar, jq) {
@@ -594,26 +568,138 @@ function createExportButtons(sidebar, jq) {
         return;
     //NEW SETTINGS OPTIONS
     let settingstab = jq.get(0).querySelector('#settings-game');
+    // with drop down 
+    // check if module Custom CSS is installed and activated
+    let isCustomCSSActive=false;
+    if (game.modules.get("custom-css")!=null){
+      isCustomCSSActive=game.modules.get("custom-css").active;
+    }
+    let menuItems=[
+      {
+        name: "Build Actor Templates",
+        icon: "<i class='fas fa-rotate fa-fw'></i>",
+        tooltip:"Build(or re-builds) actor templates",
+        condition:true,
+        callback: html => {
+          let api=game.system.api;
+          api.BuildActorTemplates(); 
+        }
+      },  
+      {
+        name: "Custom CSS",
+        tooltip:"Display module Custom CSS",
+        icon: "<i class='fas fa-file-code fa-fw'></i>",
+        condition:isCustomCSSActive,
+        callback: html => {
+          let f = new game.system.customcssform();
+          f.render(true,{focus:true});
+        }
+      },
+      {
+        name: "JSON Export",
+        icon: "<i class='fas fa-file-export fa-fw'></i>",
+        tooltip:"Run JSON Export tool",
+        condition:true,
+        callback: html => {auxMeth.exportBrowser();}
+      },
+      {
+        name: "JSON Import",
+        tooltip:"Run JSON Import tool",
+        icon: "<i class='fas fa-file-import fa-fw'></i>",
+        condition:true,
+        callback: html => {auxMeth.getImportFile();}
+      },
+      {
+        name: "Sandbox Settings",
+        tooltip:"Display Sandbox System Settings",
+        icon: "<i class='fas fa-cog fa-fw'></i>",
+        condition:true,
+        callback: html => {console.log(html)
+          let f = new SystemSettingsForm();
+          f.render(true,{focus:true});
+        }
+      },  
+      {
+        name: "Sandbox Tools",
+        tooltip:"Display Sandbox Tools",
+        icon: "<i class='fas fa-toolbox fa-fw'></i>",
+        condition:true,
+        callback: html => {
+          let f = new SandboxToolsForm();
+          f.render(true,{focus:true});
+        }
+      },
+      {
+        name: "Bug Report",
+        tooltip:"Display Bug Report Form",
+        icon: "<i class='fas fa-bug fa-fw'></i>",
+        condition:true,
+        callback: html => {
+          SBBugReport();
+        }
+      }      
+    ];     
 
-    let exportButton = document.createElement("BUTTON");
-    exportButton.textContent = "EXPORT SANDBOX JSON";
-
-    exportButton.addEventListener("click", (event) => {
-        auxMeth.exportBrowser();
-
-    });
-
-    let importButton = document.createElement("BUTTON");
-    importButton.textContent = "IMPORT SANDBOX JSON";
-
-    importButton.addEventListener("click", (event) => {
-        auxMeth.getImportFile();
-
-    });
-
-    settingstab.appendChild(exportButton);
-    settingstab.appendChild(importButton);
+    // new h2 after
+    let sandboxheader=document.createElement("H2");
+    sandboxheader.innerHTML = `${game.system.title}`;
+    
+    
+    let sandboxheader_parent = jq.get(0).querySelector('#settings > h2:nth-child(5)');
+    let game_details=jq.get(0).querySelector('#game-details');
+    
+    settingstab.parentNode.insertBefore(sandboxheader,game_details.nextSibling);
+    //
+    let sandboxquickmenu=document.createElement("UL");
+    
+    let htmlmenubar=document.createElement("LI");
+    htmlmenubar.className += " sb-menu-bar";
+    for(let menuitem of menuItems ){
+      if(menuitem.condition){
+        let menubutton=document.createElement("A");
+        menubutton.innerHTML=menuitem.icon ;
+        menubutton.setAttribute("title",menuitem.name);
+        menubutton.className += " sb-menu-bar-button";
+        menubutton.addEventListener("click",menuitem.callback);
+        htmlmenubar.appendChild(menubutton);
+      }
+    }
+    
+    sandboxquickmenu.innerHTML=`<li><i id="sb-game-system-sandbox-quickmenu-icon" class="fas fa-bars" title="Show Sandbox Quick Menu"></i> Sandbox Tools</li>`;
+    sandboxquickmenu.setAttribute("id", "sb-game-system-sandbox-quickmenu");
+    //settingstab.parentNode.insertBefore(sandboxquickmenu,sandboxheader.nextSibling)
+    
+    settingstab.parentNode.insertBefore(htmlmenubar,sandboxheader.nextSibling);
+    //new DropDownMenu(jq, "#sb-game-system-sandbox-quickmenu", menuItems);
+    
+    
+    
+    
 }
+
+
+Hooks.on("updateSystemSetting", async(moduleId) => {
+  //console.warn('Sandbox | updateSystemSetting:' + moduleId);
+  if(moduleId="sandbox"){
+    // get specific settings that need special handling
+    const SETTING_CITEM_ICON_SIZE = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.SETTING_CITEM_ICON_SIZE.ID);
+    let root = document.querySelector(':root');  
+    let rootStyles = getComputedStyle(root);  
+    let iconsize = rootStyles.getPropertyValue('--sb-table-citem-icon-size');    
+    if (SETTING_CITEM_ICON_SIZE>=0) {   
+      root.style.setProperty('--sb-table-citem-icon-size', SETTING_CITEM_ICON_SIZE + 'px');
+    }
+    // check all open windows
+    for (let app in ui.windows){
+      // if actor or item sheet
+      if(ui.windows[app].options.baseApplication=='ActorSheet' || ui.windows[app].options.baseApplication=='ItemSheet'){
+        // render the sheet
+        ui.windows[app].render(true);
+      }
+    }
+  }
+});
+
 
 //COPIED FROM A MODULE. TO SHOW A SHIELD ON A TOKEN AND LINK THE ATTRIBUTE
 Hooks.on("hoverToken", (token, hovered) => {
@@ -624,16 +710,16 @@ Hooks.on("hoverToken", (token, hovered) => {
     if (token.actor == null)
         return;
 
-    if (token.actor.data.data.tokenshield == null)
+    if (token.actor.system.tokenshield == null)
         return;
 
-    let shieldprop = token.actor.data.data.tokenshield;
+    let shieldprop = token.actor.system.tokenshield;
     //console.log(shieldprop);
 
-    if (token.actor.data.data.attributes[shieldprop] == null)
+    if (token.actor.system.attributes[shieldprop] == null)
         return;
 
-    let ca = token.actor.data.data.attributes[shieldprop].value;
+    let ca = token.actor.system.attributes[shieldprop].value;
 
     let template = $(`
 <div class="section">
@@ -666,7 +752,7 @@ Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
     //
     if (updateData.name) {
 
-        if (!actor.data.data.istemplate) {
+        if (!actor.system.istemplate) {
             if (!updateData.token)
                 setProperty(updateData, "token", {});
             updateData.token.name = updateData.name;
@@ -680,10 +766,10 @@ Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
     }
 
 
-    if (updateData["data.rollmode"]) {
-        if (!hasProperty(updateData, "data"))
-            setProperty(updateData, "data", {});
-        updateData.data.rollmode = updateData["data.rollmode"];
+    if (updateData["system.rollmode"]) {
+        if (!hasProperty(updateData, "system"))
+            setProperty(updateData, "system", {});
+        updateData.data.rollmode = updateData["system.rollmode"];
     }
 
     //console.log(updateData);
@@ -700,18 +786,39 @@ Hooks.on("preUpdateItem", async (item, updateData, options, userId) => {
     //await actor.sheet.setTokenOptions(actor.data);
     //    let newname = actor.data.name;
     //
-    if (item.data.type == "cItem" && game.user.isGM) {
-
-        if (item.data.data.ciKey == "") {
-            if (!hasProperty(updateData, "data"))
-                setProperty(updateData, "data", {});
-            updateData.data.ciKey = item.id;
+    if (item.type == "cItem" && game.user.isGM) {
+        if (item.system.ciKey == "") {
+            if (!hasProperty(updateData, "system"))
+                setProperty(updateData, "system", {});
+            updateData.system.ciKey = item.id;
         }
-
-
     }
-
-
+    const OPTION_AUTOGENERATE_PROPERTY_ICON = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_AUTOGENERATE_PROPERTY_ICON.ID);
+    if(item.type=="property" && OPTION_AUTOGENERATE_PROPERTY_ICON){
+      if(updateData.hasOwnProperty('system')){
+        let iconbasefilename="systems/sandbox/styles/icons/propertytypes/sb_property_";
+        let iconfile;
+        if(updateData.system.hasOwnProperty('datatype')){
+          // property and datatype change                              
+          if(updateData.system.datatype=="label" && item.system.labelformat=='D'){
+            iconfile=iconbasefilename + 'die.svg'; 
+          } else {
+            iconfile=iconbasefilename + updateData.system.datatype + '.svg'; 
+          }                               
+          updateData.img=iconfile;
+        } else if(updateData.system.hasOwnProperty('labelformat')){
+          if(item.system.datatype=="label" && updateData.system.labelformat=='D'){
+            iconfile=iconbasefilename + 'die.svg'; 
+          } else {
+            iconfile=iconbasefilename + item.system.datatype + '.svg'; 
+          }                               
+          updateData.img=iconfile;
+        }
+      }
+    }
+});
+Hooks.on("updateItem", async (item, updateData, options, userId) => {
+  //console.log('updateitem');
 });
 
 Hooks.on("createToken", async (token, options, userId) => {
@@ -762,32 +869,14 @@ Hooks.on("deleteActor", (actor) => {
 
 });
 
-//Hooks.on("updateActor", async (actor, updateData,options,userId) => {
-//
-//    if(actor.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actor.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM){
-//        let myuser = userId;
-//    }
-//    else{
-//        return;
-//    }
-//
-//    if(updateData.data!=null){
-//        if(!options.stopit && (updateData.data.attributes || updateData.data.citems)){
-//
-//            //let adata = await actor.actorUpdater(actor.data);
-//            //THIS UPDATE BELOW IS THE CULPRIT
-//            //await actor.update(actor.data,{stopit:true});
-//        }
-//    }
-//
-//});
+
 
 Hooks.on("closegActorSheet", (entity, eventData) => {
     //console.log(entity);
     //console.log(eventData);
     //console.log("closing sheet");
 
-    let character = entity.object.data;
+    let character = entity.object;
     if (character.flags.ischeckingauto)
         character.flags.ischeckingauto = false;
 
@@ -840,8 +929,8 @@ Hooks.on("createItem", async (entity) => {
     if (entity.type == "cItem" && game.user.isGM) {
         //console.log(entity);
 
-        if (entity.data.data.ciKey == "") {
-            entity.data.data.ciKey = entity.id;
+        if (entity.system.ciKey == "") {
+            entity.system.ciKey = entity.id;
             //do_update = true;
         }
         // else {
@@ -853,43 +942,71 @@ Hooks.on("createItem", async (entity) => {
 
         // }
 
-        for (let i = 0; i < entity.data.data.mods.length; i++) {
-            const mymod = entity.data.data.mods[i];
-            if (mymod.citem != entity.data.id) {
-                mymod.citem = entity.data.id;
+        for (let i = 0; i < entity.system.mods.length; i++) {
+            const mymod = entity.system.mods[i];
+            if (mymod.citem != entity.id) {
+                mymod.citem = entity.id;
                 do_update = true;
             }
 
         }
         //BEWARE OF THIS, THIS WAS NEEDED WHEN DUPLICATING CITEMS IN THE PAST!!
-        if (do_update)
-            await entity.update(entity.data, { diff: false });
+        if (do_update){
+          // Ramses00: commented te following
+          //  await entity.update(entity, { diff: false });
+        }
     }
 
 });
 
+function adaptItemSheetGeoMetrics (gItemSheet, html)  {
+  // make room for details menu by  increasing the item sheet window height                    
+  // for updates the return html is a form
+  const typeClass = gItemSheet.item.type;
+  if (html[0].nodeName !== 'FORM') {    
+    let sheetheight=ITEM_SHEET_HEIGHT[typeClass.toUpperCase()]; 
+    if (typeClass.toUpperCase() == 'PROPERTY') {
+      const datatype = gItemSheet.item.system.datatype;
+      sheetheight = ITEM_SHEET_PROPERTY_HEIGHT[datatype.toUpperCase()];
+    }
+    // center window
+    let newtop = (window.innerHeight - (sheetheight)) / 2;
+    if (newtop < 0) {
+      newtop = 0;
+    }
+    gItemSheet.setPosition({top: newtop});
+    gItemSheet.setPosition({height: sheetheight, width: ITEM_SHEET_DEFAULT_WIDTH});
+  }
+  const setdefaultitemtab = true;
+    if (setdefaultitemtab ) {
+      if (game.user.isGM) {
+        if (html[0].nodeName !== 'FORM') {
+          const detailstabname = ITEM_SHEET_TABS[typeClass.toUpperCase()].DETAILS;
+          // activate tab
+          gItemSheet._tabs[0].activate(detailstabname);
+        }
+      }
+    }
+};
+
 Hooks.on("rendersItemSheet", async (app, html, data) => {
     //console.log(app);
-
-    app.customCallOverride(html,app.object.data);
-
-    if (app.object.data.type == "cItem") {
+    app.customCallOverride(html,app.object);
+    if (app.object.type == "cItem") {
         app.refreshCIAttributes(html);
     }
-
-    if (app.object.data.type == "property") {
+    if (app.object.type == "property") {
         app.listMacros(html);
     }
-
     await app.scrollBarTest(html);
     app._setScrollStates();
-
-
+    
+    adaptItemSheetGeoMetrics(app,html);
+    
     html.find('.window-resizable-handle').mouseup(ev => {
         ev.preventDefault();
         app.scrollBarTest(html);
     });
-
 });
 
 Hooks.on("rendergActorSheet", async (app, html, data) => {
@@ -901,7 +1018,7 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
     if (actor.token == null)
         actor.listSheets();
     //if(!actor.data.data.istemplate && !actor.data.flags.ischeckingauto){
-    if (!actor.data.data.istemplate) {
+    if (!actor.system.istemplate) {
         await app.refreshCItems(html);
         app.handleGMinputs(html);
         app.refreshBadge(html);
@@ -934,6 +1051,17 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     //    console.log(app);
     //    console.log(data);
     //    console.log(html);
+    let speakerimg="icons/svg/mystery-man.svg"
+    let speakeractor=null;;
+    if(typeof data.message.speaker.actor==='string' ){        
+      speakeractor=game.actors.get(data.message.speaker.actor);
+      if(speakeractor!=null){
+        speakerimg=speakeractor.img;
+      }
+    } else {
+      // use user image
+      speakerimg = game.users.get(data.message.user).avatar
+    }
     let hide = false;
     let messageId = app.id;
     let msg = game.messages.get(messageId);
@@ -948,47 +1076,40 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     //        hide=true;
 
     //console.log(hide);
-    if (_html.includes("dice-roll") && !_html.includes("table-draw")) {
+    if (_html.includes("dice-roll") && !_html.includes("table-draw")) {                
         let rollData = {
             token: {
-                img: "icons/svg/d20-black.svg",
+                img: speakerimg,
                 name: "Free Roll"
             },
             actor: alias,
-            flavor: "Roll",
-            formula: app._roll.formula,
+            flavor: "Free Roll",
+            formula: app.rolls[0].formula,
             mod: 0,
-            result: app._roll.total,
-            dice: app._roll.dice,
-            user: realuser.data.name,
+            result: app.rolls[0].total,
+            dice: app.rolls[0].dice,
+            user: realuser.name,
             showresult: true
         };
-
-
         await renderTemplate("systems/sandbox/templates/dice.html", rollData).then(async newhtml => {
-
             let container = html[0];
-
             let content = html.find('.dice-roll');
             content.replaceWith(newhtml);
-
             _html = await html[0].outerHTML;
-
-
         });
-
+        // scroll to the bottom
+        const chatlog=document.querySelector("#chat-log");
+        chatlog.scrollTop = chatlog.scrollHeight;
     }
-
     //console.log(html);
-
     if (!_html.includes("roll-template")) {
         //console.log(_html);
         if (_html.includes("table-draw")) {
             let mytableID = data.message.flags.core.RollTable;
             let mytable = game.tables.get(mytableID);
-            let tableresult = mytable.getResultsForRoll(app._roll.total)[0].data.text;
+            let tableresult = mytable.getResultsForRoll(app.rolls[0].total)[0].text;
             html.find('.dice-roll');
-            if (mytable.data.permission.default == 0)
+            if (mytable.permission.default == 0)
                 hide = true;
         }
 
@@ -996,20 +1117,21 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             message: data.message.content,
             user: alias,
             isWhisper: data.isWhisper,
-            whisperTo: data.whisperTo
+            whisperTo: data.whisperTo,
+            token: {
+                img: speakerimg,
+                name: "Free Roll"
+            },
         };
-
         await renderTemplate("systems/sandbox/templates/sbmessage.html", msgData).then(async newhtml => {
-
             while (html.firstChild) {
                 html.removeChild(html.lastChild);
             }
-
             html[0].innerHTML = newhtml;
-
-
         });
-
+        // scroll to the bottom
+        const chatlog=document.querySelector("#chat-log");
+        chatlog.scrollTop = chatlog.scrollHeight;
     }
 
     let deletebutton = $(html).find(".roll-message-delete")[0];
@@ -1026,13 +1148,7 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             deletebutton.style.display = "none";
         }
     }
-
-
-
     //console.log(html);
-
-    //
-    //
     let iamWhispered = data.message.whisper.find(y => y == game.user.id);
     if (iamWhispered == null && data.message.whisper.length>0) {
         hide = true;
@@ -1117,8 +1233,7 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
 
         });
     }
-
-
+  
 });
 
 Hooks.on("renderDialog", async (app, html, data) => {
@@ -1134,7 +1249,7 @@ Hooks.on("renderDialog", async (app, html, data) => {
         let actorId = dialogDiv[0].getAttribute("actorId");
         let selectnum = dialogDiv[0].getAttribute("selectnum");
         const actor = game.actors.get(actorId);
-        setProperty(actor.data.flags, "selection", []);
+        setProperty(actor.flags, "selection", []);
         button.disabled = true;
 
         for (let i = 0; i < checkbtns.length; i++) {
@@ -1143,14 +1258,14 @@ Hooks.on("renderDialog", async (app, html, data) => {
 
                 let itemId = event.target.getAttribute("itemId");
                 if (event.target.checked) {
-                    actor.data.flags.selection.push(itemId);
+                    actor.flags.selection.push(itemId);
                 }
 
                 else {
-                    actor.data.flags.selection.splice(actor.data.flags.selection.indexOf(itemId), 1);
+                    actor.flags.selection.splice(actor.flags.selection.indexOf(itemId), 1);
                 }
 
-                let selected = actor.data.flags.selection.length;
+                let selected = actor.flags.selection.length;
 
                 if (selected != selectnum) {
                     button.disabled = true;
@@ -1334,8 +1449,8 @@ Hooks.on("renderDialog", async (app, html, data) => {
 
                 if (allfields[k].classList.contains("defvalue")) {
                     let deffield = allfields[k];
-                    let propDef = game.items.find(y => y.data.data.attKey == myKey);
-                    let defexpr = propDef.data.data.defvalue;
+                    let propDef = game.items.find(y => y.system.attKey == myKey);
+                    let defexpr = propDef.system.defvalue;
                     let finalvalue = defexpr;
 
                     if (isNaN(defexpr)) {
@@ -1343,7 +1458,7 @@ Hooks.on("renderDialog", async (app, html, data) => {
                         finalvalue = await auxMeth.autoParser(defexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number);
                     }
 
-                    if (propDef.data.data.datatype == "checkbox") {
+                    if (propDef.system.datatype == "checkbox") {
                         let checkfinal = false;
                         if (finalvalue === "true" || finalvalue)
                             checkfinal = true;
@@ -1374,20 +1489,20 @@ Hooks.on("renderDialog", async (app, html, data) => {
                     let changedvalue = event.target.value;
                     let changekey = event.target.getAttribute("attKey");
 
-                    let changeProp = game.items.find(y => y.data.data.attKey == changekey);
+                    let changeProp = game.items.find(y => y.system.attKey == changekey);
                     if (changeProp == null)
                         return;
 
-                    if (changeProp.data.data.datatype == "checkbox")
+                    if (changeProp.system.datatype == "checkbox")
                         changedvalue = event.target.checked;
 
                     dialogProps[changekey].value = changedvalue;
 
                     let autofield = autofields[k];
                     let propKey = autofield.getAttribute("attKey");
-                    let propObj = await game.items.find(y => y.data.data.attKey == propKey);
+                    let propObj = await game.items.find(y => y.system.attKey == propKey);
 
-                    let autoexpr = propObj.data.data.auto;
+                    let autoexpr = propObj.system.auto;
                     autoexpr = await auxMeth.parseDialogProps(autoexpr, dialogProps);
                     //console.log(autoexpr);
                     let finalvalue = await auxMeth.autoParser(autoexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number);

@@ -11,7 +11,7 @@ export class auxMeth {
 
         templates.push("Default");
 
-        let templatenames = game.actors.filter(y => y.data.data.istemplate);
+        let templatenames = game.actors.filter(y => y.system.istemplate);
 
         for (let i = 0; i < templatenames.length; i++) {
 
@@ -28,7 +28,7 @@ export class auxMeth {
         let jsontxt = game.settings.get("sandbox", "idDict");
         let idDict = {};
 
-        if (jsontxt != "") {
+        if (jsontxt != null) {
             idDict = JSON.parse(jsontxt);
         }
 
@@ -55,7 +55,7 @@ export class auxMeth {
         if (ciTemplate == null) {
             let jsontxt = game.settings.get("sandbox", "idDict");
 
-            if (jsontxt != "") {
+            if (jsontxt != null) {
                 let idDict = JSON.parse(jsontxt);
                 if (idDict.ids[id] != null) {
                     ciTemplate = game.items.get(idDict.ids[id]);
@@ -72,9 +72,9 @@ export class auxMeth {
 
         if (ciTemplate == null) {
             //let allcitems = ;
-            let is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == id);
+            let is_here = game.items.filter(y => Boolean(y.system.ciKey)).find(y => y.system.ciKey == id);
             if (!is_here)
-                is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == ciKey);
+                is_here = game.items.filter(y => Boolean(y.system.ciKey)).find(y => y.system.ciKey == ciKey);
 
             if (is_here) {
                 ciTemplate = is_here;
@@ -85,9 +85,9 @@ export class auxMeth {
         //To correct post 0.9
         if (ciTemplate == null) {
             //let allcitems = ;
-            let is_here = game.items.filter(y => Boolean(y.data._source.data.ciKey)).find(y => y.data._source.data.ciKey == id);
+            let is_here = game.items.filter(y => Boolean(y._source.system.ciKey)).find(y => y._source.system.ciKey == id);
             if (!is_here)
-                is_here = game.items.filter(y => Boolean(y.data._source.ciKey)).find(y => y.data._source.ciKey == ciKey);
+                is_here = game.items.filter(y => Boolean(y._source.system.ciKey)).find(y => y._source.system.ciKey == ciKey);
             if (is_here) {
                 ciTemplate = is_here;
                 await auxMeth.registerDicID(id, is_here.id, ciKey);
@@ -109,7 +109,7 @@ export class auxMeth {
                 let newciKey = id;
                 if (ciKey != null)
                     newciKey = ciKey;
-                let is_here = packContents.filter(y => Boolean(y.data.data)).find(y => y.data.data.ciKey == id || y.id == id || y.data.data.ciKey == newciKey);
+                let is_here = packContents.filter(y => Boolean(y.system)).find(y => y.system.ciKey == id || y.id == id || y.system.ciKey == newciKey);
                 if (is_here) {
                     locatedPack = pack;
                     locatedId = is_here.id;
@@ -159,15 +159,16 @@ export class auxMeth {
             propKey = "groupKey";
         }
         if (key != null && myElem != null)
-            if (myElem.data.data[propKey] != key)
+            if (myElem.system[propKey] != key)
                 myElem = null;
         if (myElem == null) {
-            myElem = await game.items.filter(y => Boolean(y.data.data[propKey])).find(y => y.data.data[propKey] == key);
+            myElem = await game.items.filter(y => Boolean(y.system[propKey])).find(y => y.system[propKey] == key);
         }
 
+ 
         //To correct post 0.9
         if (myElem == null) {
-            let is_here = game.items.filter(y => Boolean(y.data._source.data[propKey])).find(y => y.data._source.data[propKey] == id);
+            let is_here = game.items.filter(y => Boolean(y._source.system[propKey])).find(y => y._source.system[propKey] == id);
             if (is_here) {
                 myElem = is_here;
             }
@@ -180,7 +181,7 @@ export class auxMeth {
                 if (pack.documentName != "Item")
                     continue;
                 const packContents = await pack.getDocuments();
-                let is_here = packContents.filter(y => Boolean(y.data.data)).find(y => y.data.data[propKey] == key);
+                let is_here = packContents.filter(y => Boolean(y.system)).find(y => y.system[propKey] == key);
                 if (is_here) {
                     locatedPack = pack;
                     locatedId = is_here.id;
@@ -211,10 +212,10 @@ export class auxMeth {
         let mytemplate = gtemplate;
         if (gtemplate != "Default") {
 
-            let _template = await game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == gtemplate);
+            let _template = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == gtemplate);
 
             if (_template != null) {
-                html = _template.data.data._html;
+                html = _template.system._html;
             }
 
         }
@@ -256,7 +257,7 @@ export class auxMeth {
     }
 
     static async buildSheetHML() {
-        console.log("building base html");
+        console.log("Sandbox | buildSheetHML | Building base html");
         var parser = new DOMParser();
         var htmlcode = await auxMeth.retrieveBTemplate();
         let html = parser.parseFromString(htmlcode, 'text/html');
@@ -264,6 +265,26 @@ export class auxMeth {
     }
 
     //EXPORT TEST
+    static recurseFolders(folders,parentid){
+    let returnHTML='<ul class="sb-json-export-ul">'
+    let margin=0;
+      for (let i = 0; i < folders.length; i++) {
+        let thisfolder = folders[i];
+        if(thisfolder.folder!=null){
+          thisfolder=thisfolder.folder;
+        }
+        // ul approach
+        if(thisfolder.children.length>0){
+          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+        } else {
+          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+        }
+        returnHTML+= this.recurseFolders(thisfolder.children,thisfolder.id);
+        returnHTML +=`</li>`;
+      }
+      returnHTML+=`</ul>`;
+      return returnHTML;
+    }
 
     static exportBrowser() {
 
@@ -274,168 +295,96 @@ export class auxMeth {
         entities.folders = [];
 
         let allfolders = game.folders.contents.filter(y => y.type == "Item" || y.type == "Actor");
-        let itemfolders = game.folders.contents.filter(y => y.type == "Item" && y.data.parent == null);
-        let actorfolders = game.folders.contents.filter(y => y.type == "Actor" && y.data.parent == null);
+        
         //console.log(itemfolders);
-        let finalContent = `
-<div class="exportbrowser">
-`;
-        let endDiv = `
-</div>
-
-`;
-
-        finalContent += `
-<div class="new-row">ITEM FOLDERS</DIV>
-`;
-        for (let i = 0; i < itemfolders.length; i++) {
-            let thisfolder = itemfolders[i];
-
-            finalContent += `
-            <div class="new-row"><input class="exportDialog checkbox check-folder${i}" folderid ="${thisfolder.id}" type="checkbox">	
-`;
-            finalContent += `
-    <label class="exportlabel">${thisfolder.name}</label></div>
-    `;
-            let containedfolders = thisfolder.children;
-            for (let j = 0; j < containedfolders.length; j++) {
-                let subfolder = containedfolders[j];
-
-                finalContent += `
-                <div class="new-row" style="margin-left:30px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subfolder.id}" parentid="${thisfolder.id}" type="checkbox">	
-    `;
-                finalContent += `
-        <label class="exportlabel">${subfolder.name}</label></div>
-        `;
-                let subcontainedfolders = subfolder.children;
-                for (let k = 0; k < subcontainedfolders.length; k++) {
-                    let subsubfolder = subcontainedfolders[k];
-
-                    finalContent += `
-            <div class="new-row" style="margin-left:60px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subsubfolder.id}" parentid="${subfolder.id}" type="checkbox">	
-`;
-                    finalContent += `
-    <label class="exportlabel">${subsubfolder.name}</label></div>
-    `;
-                }
-            }
-        }
-
-        finalContent += `
-<div class="new-row">ACTOR FOLDERS</DIV>
-`;
-        for (let i = 0; i < actorfolders.length; i++) {
-            let thisfolder = actorfolders[i];
-
-            finalContent += `
-            <div class="new-row"><input class="exportDialog checkbox check-folder${i}" folderid ="${thisfolder.id}" type="checkbox">	
-`;
-            finalContent += `
-    <label class="exportlabel">${thisfolder.name}</label></div>
-    `;
-            let containedfolders = thisfolder.children;
-            for (let j = 0; j < containedfolders.length; j++) {
-                let subfolder = containedfolders[j];
-
-                finalContent += `
-                <div class="new-row" style="margin-left:30px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subfolder.id}" parentid="${thisfolder.id}" type="checkbox">	
-    `;
-                finalContent += `
-        <label class="exportlabel">${subfolder.name}</label></div>
-        `;
-                let subcontainedfolders = subfolder.children;
-                for (let k = 0; k < subcontainedfolders.length; k++) {
-                    let subsubfolder = subcontainedfolders[k];
-
-                    finalContent += `
-            <div class="new-row" style="margin-left:60px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subsubfolder.id}" parentid="${subfolder.id}" type="checkbox">	
-`;
-                    finalContent += `
-    <label class="exportlabel">${subsubfolder.name}</label></div>
-    `;
-                }
-            }
-        }
-
-
-        //         for (let i = 0; i < entities.folders.length; i++) {
-        //             finalContent += `
-        //     <div class="new-row">
-        //     `;
-
-        //             finalContent += `
-        //     <input class="exportDialog checkbox check-folder${i}" folderid ="${entities.folders[i].id}" type="checkbox">	
-        // `;
-        //             finalContent += `
-        //     <label class="exportlabel">${entities.folders[i].name}</label>
-        //     `;
-        //             finalContent += endDiv;
-        //         }
-
+        let rootItemFolders=game.folders.contents.filter(y => y.type == "Item" && y.depth == 1);
+        let rootActorFolders=game.folders.contents.filter(y => y.type == "Actor" && y.depth == 1);
+        let finalContent = `<div class="exportbrowser">`;
+        let endDiv = `</div>`;
+          
+        // ul approach
+        finalContent +=`<ul class="sb-json-export-ul">`;
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-folderroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-folderroot" folderid ="folderroot" type="checkbox">FOLDERS</label>`;
+        finalContent +=`<ul class="sb-json-export-ul">`;
+        // items
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-itemroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-itemroot" folderid ="itemroot" parentid="folderroot" type="checkbox">ITEMS</label>`;
+        finalContent += this.recurseFolders(rootItemFolders,"itemroot");
+        finalContent +=`</li>`;
+        // actors
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-actorroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-actorroot" folderid ="actorroot" parentid="folderroot" type="checkbox">ACTORS</label>`;
+        finalContent += this.recurseFolders(rootActorFolders,"actorroot");
+        finalContent +=`</li>`;
+        
+        finalContent +=`</ul>`;
+        finalContent +=`</li>`;
+        finalContent +=`</ul>`;
+        
         finalContent += endDiv;
 
         let d = new Dialog({
             title: "Choose folders to export",
-            content: finalContent,
+            content: finalContent,            
             buttons: {
-                one: {
+                ok: {
                     icon: '<i class="fas fa-check"></i>',
                     label: "OK",
+                    
                     callback: async (html) => {
+                        ui.notifications.info("Sandbox JSON Export started...")
                         let selectedfolder = html[0].getElementsByClassName("exportDialog");
-
                         for (let k = 0; k < selectedfolder.length; k++) {
                             let folderKey = selectedfolder[k].getAttribute("folderid");
-
                             if (selectedfolder[k].checked) {
-
                                 let theFolder = allfolders.find(y => y.id == folderKey);
-                                entities.folders.push(theFolder);
-                                for (let n = 0; n < theFolder.contents.length; n++) {
-                                    if (theFolder.contents[n].documentName == "Item") {
-                                        entities.items.push(theFolder.contents[n]);
-                                    }
-                                    if (theFolder.contents[n].documentName == "Actor") {
-                                        entities.actors.push(theFolder.contents[n]);
-                                    }
+                                if(theFolder!=null){
+                                  entities.folders.push(theFolder);
+                                  for (let n = 0; n < theFolder.contents.length; n++) {
+                                      if (theFolder.contents[n].documentName == "Item") {
+                                          entities.items.push(theFolder.contents[n]);
+                                      }
+                                      if (theFolder.contents[n].documentName == "Actor") {
+                                          entities.actors.push(theFolder.contents[n]);
+                                      }
+                                  }
                                 }
                             }
-
                         }
-
-                        auxMeth.exportTree(true, entities);
-
+                        let saveresult = await auxMeth.exportTree(true, entities);
+                        
+                        ui.notifications.info(`Exported completed`,{"permanent":true}); 
                     }
                 },
-                two: {
+                cancel: {
                     icon: '<i class="fas fa-times"></i>',
-                    label: "Cancel",
+                    label: "Cancel",                    
                     callback: () => { console.log("canceling selection"); }
                 }
             },
-            default: "one",
+            default: "cancel",
             exportDialog: true,
             close: () => console.log("cItem selection dialog was shown to player.")
         });
+        
+        d.options.height=600;
+        d.position.height=600;
+        d.options.resizable=true;
         d.render(true);
-
-
-
     }
 
     static exportTree(writeFile = true, groups = null) {
+        ui.notifications.info("Exporting data...");
         let allData = null;
         const metadata = {
             world: game.world.id,
             system: game.system.id,
-            coreVersion: game.data.version,
-            systemVersion: game.system.data.version
+            coreVersion: game.version,
+            systemVersion: game.system.version
         };
 
         allData = JSON.stringify(groups, null, 2);
 
-        console.log(`Exported ${groups.actors.length} Actors and ${groups.items.length} Items of the world`);
-
+        console.log(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items of the world`);
+        ui.notifications.info(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items`);  
         //Trigger file save procedure
         const filename = "export.json";
 
@@ -447,8 +396,10 @@ export class auxMeth {
     }
 
     static async writeJSONToFile(filename, data) {
-        saveDataToFile(data, "text/json", filename);
+        ui.notifications.info(`Saving exported data to file...`); 
+        saveDataToFile(data, "application/json", filename);
         console.log(`Saved to file ${filename}`);
+        
     }
 
     static async getImportFile() {
@@ -460,7 +411,7 @@ export class auxMeth {
 
     static async importTree(exportfilePath) {
         //let exportfilePath = "worlds/" + gameName + "/export.json";
-
+        ui.notifications.info(`Data import from file ${exportfilePath} started`); 
         const response = await fetch(exportfilePath);
         const importedPack = await response.json();
         const actors = importedPack.actors;
@@ -471,12 +422,12 @@ export class auxMeth {
 
         for (let i = 0; i < actors.length; i++) {
             let anactor = actors[i];
-            let istemplate = duplicate(anactor.data.istemplate);
+            let istemplate = duplicate(anactor.system.istemplate);
             let result = await Actor.create(anactor);
             if (anactor.folder)
                 result.setFlag('sandbox', 'folder', anactor.folder);
             result.setFlag('sandbox', 'istemplate', istemplate);
-            idCollection[anactor._id] = result.data._id;
+            idCollection[anactor._id] = result._id;
         }
 
         for (let i = 0; i < items.length; i++) {
@@ -484,46 +435,48 @@ export class auxMeth {
             let result = await Item.create(anitem);
             if (anitem.folder)
                 result.setFlag('sandbox', 'folder', anitem.folder);
-            idCollection[anitem._id] = result.data._id;
+            idCollection[anitem._id] = result._id;
         }
-
+         
+        ui.notifications.info(`Importing folders from file...`); 
         for (let i = 0; i < folders.length; i++) {
             let afolder = folders[i];
             let result = await Folder.create({ name: afolder.name, type: afolder.type });
-            if (afolder.parent)
-                result.realparent = afolder.parent;
-            idCollection[afolder._id] = result.data._id;
+            if (afolder.folder)
+                result.realparent = afolder.folder;
+            idCollection[afolder._id] = result._id;
         }
 
         for (let folder of game.folders.contents) {
             if (hasProperty(idCollection, folder.realparent))
-                folder.update({ "parent": idCollection[folder.realparent] });
+                folder.update({ "folder": idCollection[folder.realparent] });
         }
 
         console.log("folders imported");
-
+        ui.notifications.info(`Folders imported from file`); 
+        ui.notifications.info(`Importing items from file...`);
         for (let item of game.items.contents) {
             let finalitem = await duplicate(item);
             //console.log("importing item: " + finalitem.name);
 
-            if (item.data.type == "property") {
-                if (hasProperty(idCollection, finalitem.data.dialogID) && finalitem.data.dialogID != "")
-                    finalitem.data.dialogID = idCollection[finalitem.data.dialogID];
+            if (item.type == "property") {
+                if (hasProperty(idCollection, finalitem.dialogID) && finalitem.system.dialogID != "")
+                    finalitem.system.dialogID = idCollection[finalitem.system.dialogID];
 
-                if (hasProperty(idCollection, finalitem.data.group.id) && finalitem.data.group.id != "")
-                    finalitem.data.group.id = idCollection[finalitem.data.group.id];
+                if (hasProperty(idCollection, finalitem.system.group.id) && finalitem.system.group.id != "")
+                    finalitem.system.group.id = idCollection[finalitem.system.group.id];
             }
 
-            if (item.data.type == "panel" || item.data.type == "group") {
-                if (finalitem.data.properties.length > 0) {
-                    for (let property of finalitem.data.properties) {
+            if (item.type == "panel" || item.type == "group") {
+                if (finalitem.system.properties.length > 0) {
+                    for (let property of finalitem.system.properties) {
                         if (hasProperty(idCollection, property.id)) {
                             property.id = idCollection[property.id];
                         }
                         else {
                             let findprop = game.items.get(property.id);
                             if (findprop == null) {
-                                findprop = game.items.find(y => y.data.type == "property" && y.data.data.attKey == property.ikey);
+                                findprop = game.items.find(y => y.type == "property" && y.system.attKey == property.ikey);
                             }
                             if (findprop != null)
                                 property.id = findprop.id;
@@ -534,25 +487,25 @@ export class auxMeth {
                 }
             }
 
-            if (item.data.type == "multipanel" || item.data.type == "sheettab") {
-                if (finalitem.data.panels.length > 0) {
-                    for (let panel of finalitem.data.panels) {
+            if (item.type == "multipanel" || item.type == "sheettab") {
+                if (finalitem.system.panels.length > 0) {
+                    for (let panel of finalitem.system.panels) {
                         if (hasProperty(idCollection, panel.id))
                             panel.id = idCollection[panel.id];
                     }
                 }
             }
 
-            if (item.data.type == "cItem") {
-                if (finalitem.data.groups.length > 0) {
-                    for (let group of finalitem.data.groups) {
+            if (item.type == "cItem") {
+                if (finalitem.system.groups.length > 0) {
+                    for (let group of finalitem.system.groups) {
                         if (hasProperty(idCollection, group.id)) {
                             group.id = idCollection[group.id];
                         }
                         else {
                             let findgroup = game.items.get(group.id);
                             if (findgroup == null) {
-                                findgroup = game.items.find(y => y.data.type == "group" && y.data.data.groupKey == group.ikey);
+                                findgroup = game.items.find(y => y.type == "group" && y.system.groupKey == group.ikey);
                             }
                             if (findgroup != null)
                                 group.id = findgroup.id;
@@ -562,8 +515,8 @@ export class auxMeth {
                     }
                 }
 
-                if (item.data.data.mods.length > 0) {
-                    for (let mod of finalitem.data.mods) {
+                if (item.system.mods.length > 0) {
+                    for (let mod of finalitem.system.mods) {
                         if (mod.items.length > 0) {
                             for (let moditem of mod.items) {
                                 if (hasProperty(idCollection, moditem.id)) {
@@ -573,11 +526,11 @@ export class auxMeth {
                                 else {
                                     let findcitem = game.items.get(moditem.id);
                                     if (findcitem == null) {
-                                        findcitem = game.items.find(y => y.data.type == "cItem" && y.data.data.ciKey == moditem.id);
+                                        findcitem = game.items.find(y => y.type == "cItem" && y.system.ciKey == moditem.id);
                                     }
 
                                     if (findcitem == null) {
-                                        findcitem = game.items.find(y => y.data.type == "cItem" && y.name == moditem.name);
+                                        findcitem = game.items.find(y => y.type == "cItem" && y.name == moditem.name);
                                     }
 
                                     if (findcitem != null)
@@ -590,24 +543,24 @@ export class auxMeth {
                     }
                 }
 
-                if (item.data.data.dialogID != "")
-                    finalitem.data.dialogID = idCollection[finalitem.data.dialogID];
+                if (item.system.dialogID != "")
+                    finalitem.system.dialogID = idCollection[finalitem.system.dialogID];
             }
 
             let folderlink = idCollection[item.getFlag("sandbox", "folder")];
             if (folderlink) {
-                await item.update({ "data": finalitem.data, "folder": folderlink });
+                await item.update({ "system": finalitem.system, "folder": folderlink });
             }
             else {
-                await item.update({ "data": finalitem.data });
+                await item.update({ "system": finalitem.system });
             }
 
 
 
         }
-
+        ui.notifications.info(`Items imported from file`);
         console.log("items imported");
-
+        ui.notifications.info(`Importing actors from file...`);
         for (let actor of game.actors.contents) {
             let finalactor = await duplicate(actor);
             //console.log("importing actor: " + finalactor.name);
@@ -616,8 +569,8 @@ export class auxMeth {
                     if (hasProperty(idCollection, finalactor.token.actorId))
                         finalactor.token.actorId = idCollection[finalactor.token.actorId];
 
-            if (actor.data.data.citems.length > 0)
-                for (let citem of finalactor.data.citems) {
+            if (actor.system.citems.length > 0)
+                for (let citem of finalactor.system.citems) {
                     if (hasProperty(idCollection, citem.id)) {
                         citem.id = idCollection[citem.id];
                         citem.addedBy = idCollection[citem.addedBy];
@@ -637,34 +590,35 @@ export class auxMeth {
                     }
                 }
 
-            if (actor.data.data.tabs.length > 0)
-                for (let tab of finalactor.data.tabs) {
+            if (actor.system.tabs.length > 0)
+                for (let tab of finalactor.system.tabs) {
                     if (hasProperty(idCollection, tab.id)) {
                         tab.id = idCollection[tab.id];
 
                     }
                 }
 
-            for (var key in finalactor.data.attributes) {
-                if (finalactor.data.attributes[key].id != null) {
-                    if (hasProperty(idCollection, finalactor.data.attributes[key].id))
-                        finalactor.data.attributes[key].id = idCollection[finalactor.data.attributes[key].id];
+            for (var key in finalactor.system.attributes) {
+                if (finalactor.system.attributes[key].id != null) {
+                    if (hasProperty(idCollection, finalactor.system.attributes[key].id))
+                        finalactor.system.attributes[key].id = idCollection[finalactor.system.attributes[key].id];
                 }
             }
 
             let folderlink = await idCollection[actor.getFlag("sandbox", "folder")];
-            finalactor.data.istemplate = await actor.getFlag("sandbox", "istemplate");
+            finalactor.system.istemplate = await actor.getFlag("sandbox", "istemplate");
 
             if (folderlink) {
-                await actor.update({ "data": finalactor.data, "folder": folderlink });
+                await actor.update({ "system": finalactor.system, "folder": folderlink });
             }
             else {
-                await actor.update({ "data": finalactor.data });
+                await actor.update({ "system": finalactor.system });
             }
 
 
         }
-
+        ui.notifications.info(`Actors imported from file`);
+        ui.notifications.info(`Import from file completed`);
         console.log("Actors & Import Finished");
     }
 
@@ -2167,7 +2121,7 @@ export class auxMeth {
             for (let i = game.messages.size - 1; i >= 0; i--) {
                 let amessage = game.messages.contents[i];
                 if (!found) {
-                    if (amessage.data.content.includes("roll-template")) {
+                    if (amessage.content.includes("roll-template")) {
                         found = true;
                         lastmessage = amessage;
                     }
@@ -2179,7 +2133,7 @@ export class auxMeth {
 
             if (lastmessage == null)
                 return;
-            let msgContent = lastmessage.data.content;
+            let msgContent = lastmessage.content;
 
             tester.innerHTML = msgContent;
         }
@@ -2204,6 +2158,15 @@ export class auxMeth {
 
         hotbar[0].appendChild(rollMenu);
     }
-
+    
+  static sb_two_col_card(left,right,type='table'){
+      let htmltable=`
+        <div class="sb-two-col-card-wrapper" title="`+right+`">
+      <div class="sb-two-col-card-image-in-` +type+`">`+left+`</div>  
+      <div class="sb-two-col-card-name">`+right+`</div>
+    </div>
+        `;
+      return htmltable;
+    }
 }
 

@@ -4,14 +4,19 @@
  */
 
 import { auxMeth } from "./auxmeth.js";
+import { activateHelpers } from "./sb-itemsheet-helpers.js";
+import { SETTINGATTRIBUTE }           from "./sb-setting-constants.js";
+import { sb_item_sheet_get_game_setting } from "./sb-setting-constants.js";
+import { sb_custom_dialog_confirm } from "./sb-custom-dialogs.js";
 export class sItemSheet extends ItemSheet {
 
     /** @override */
     static get defaultOptions() {
+      
         return mergeObject(super.defaultOptions, {
             classes: ["sandbox", "sheet", "item"],
             width: 520,
-            height: 500,
+            height: 875,
             tabs: [{ navSelector: ".sheet-tabs", contentSelector: ".sheet-body", initial: "description" }]
         });
     }
@@ -21,22 +26,31 @@ export class sItemSheet extends ItemSheet {
     /** @override */
     get template() {
         const path = "systems/sandbox/templates/";
-        return `${path}/${this.item.data.type}.html`;
+        return `${path}/${this.item.type}.html`;
     }
 
 
     /** @override */
     async getData() {
 
-        if (this.item.data.type == "cItem")
+        if (this.item.type == "cItem")
             await this.checkStillUnique();
 
         const item = this.item;
         const data = super.getData();
-        data.flags = item.data.flags;
+        data.enrichedBiography = await TextEditor.enrichHTML(this.item.system.description, {async: true});
+        data.flags = item.flags;
+        // enable when dev
+        const OPTION_SHOW_ITEM_HELPERS= sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_SHOW_ITEM_HELPERS.ID);
+        if (OPTION_SHOW_ITEM_HELPERS){
+          data.showhelpers=true;
+        } else {
+          data.showhelpers=false;
+        }
+          
 
         //BEHOLD THE BEST DEBUGGER LINE ON SANDBOX!
-        //console.log(data);
+        //console.warn(data);
 
         return data;
 
@@ -68,7 +82,7 @@ export class sItemSheet extends ItemSheet {
             let namechain = obj.split(".");
             let name = namechain[1];
             let index = namechain[0];
-            const propis = this.item.data.data.properties;
+            const propis = this.item.system.properties;
             const prop = propis[index];
 
             if (prop.isconstant) {
@@ -81,7 +95,7 @@ export class sItemSheet extends ItemSheet {
             //this.item.data.data.properties = propis;
             //this.item.update(this.item.data);
 
-            this.item.update({ "data.properties": this.item.data.data.properties });
+            this.item.update({ "system.properties": this.item.system.properties });
         });
 
         // Checks if a Mod is executable only one
@@ -89,7 +103,7 @@ export class sItemSheet extends ItemSheet {
             const li = $(ev.currentTarget);
             const value = ev.target.value;
             let index = li.attr("index");
-            const mod = this.item.data.data.mods[index];
+            const mod = this.item.system.mods[index];
 
             if (mod.once) {
                 mod.once = false;
@@ -98,7 +112,7 @@ export class sItemSheet extends ItemSheet {
                 mod.once = true;
             }
 
-            this.item.update({ "data.mods": this.item.data.data.mods });
+            this.item.update({ "system.mods": this.item.system.mods });
             //this.item.update(this.item.data);
         });
 
@@ -122,24 +136,37 @@ export class sItemSheet extends ItemSheet {
 
         });
 
+        html.find('.imgsrc-filepicker').click(ev => {
+
+            new FilePicker({
+                type: "image",
+                displayMode: "tiles",
+                current: this.item.system.imgsrc,
+                callback: imagePath => this.item.update({ "system.imgsrc": imagePath }),
+            }).browse(this.item.system.imgsrc);
+        });
+        
         html.find('.checkonPath').click(ev => {
 
             new FilePicker({
                 type: "image",
                 displayMode: "tiles",
-                current: this.item.data.data.onPath,
-                callback: imagePath => this.item.update({ "data.onPath": imagePath }),
-            }).browse(this.item.data.data.checkonPath);
+                current: this.item.system.onPath,
+                callback: imagePath => this.item.update({ "system.onPath": imagePath }),
+            }).browse(this.item.system.checkonPath);
         });
+        
+        //
+        
 
         html.find('.checkoffPath').click(ev => {
 
             new FilePicker({
                 type: "image",
                 displayMode: "tiles",
-                current: this.item.data.data.offPath,
-                callback: imagePath => this.item.update({ "data.offPath": imagePath }),
-            }).browse(this.item.data.data.checkoffPath);
+                current: this.item.system.offPath,
+                callback: imagePath => this.item.update({ "system.offPath": imagePath }),
+            }).browse(this.item.system.checkoffPath);
         });
 
         html.find('.tokeniconpath').click(ev => {
@@ -147,9 +174,9 @@ export class sItemSheet extends ItemSheet {
             new FilePicker({
                 type: "image",
                 displayMode: "tiles",
-                current: this.item.data.data.tokeniconpath,
-                callback: imagePath => this.item.update({ "data.tokeniconpath": imagePath }),
-            }).browse(this.item.data.data.tokeniconpath);
+                current: this.item.system.tokeniconpath,
+                callback: imagePath => this.item.update({ "system.tokeniconpath": imagePath }),
+            }).browse(this.item.system.tokeniconpath);
         });
 
         html.find('.mod-input').change(ev => {
@@ -163,13 +190,19 @@ export class sItemSheet extends ItemSheet {
             this.editmodInput(index, name, value);
         });
 
-        html.find('.mod-delete').click(ev => {
+        html.find('.mod-delete').click(async (ev) => {
             const li = $(ev.currentTarget);
             const value = ev.target.value;
             let obj = li.attr("name");
+            // ask user for confirmation
+            
             let namechain = obj.split(".");
             let index = namechain[0];
-            this.deletemodInput(index);
+            const bOkToProceed=await sb_custom_dialog_confirm('Confirm deletion?',`This will delete this MOD(<b>${this.item.system.mods[index].name}</b>)<br>Do you want to proceed?<br>` ); 
+            if(bOkToProceed){ 
+              
+              this.deletemodInput(index);
+            }
         });
 
         html.find('.modcitem-edit').click(async (ev) => {
@@ -181,15 +214,23 @@ export class sItemSheet extends ItemSheet {
             citem.sheet.render(true);
         });
 
-        html.find('.modcitem-delete').click(ev => {
-            const mods = this.item.data.data.mods;
+        html.find('.modcitem-delete').click(async(ev) => {
+            const mods = this.item.system.mods;
             let cindex = ev.target.parentElement.parentElement.getAttribute("cindex");
             let modId = ev.target.parentElement.parentElement.getAttribute("mod");
-            this.item.data.data.mods[modId].items.splice(cindex, 1);
-
-            this.item.update({ "data.mods": mods });
-            //this.item.update(this.item.data);
+            
+            // ask user for confirmation
+            const bOkToProceed=await sb_custom_dialog_confirm('Confirm deletion?',`This will delete <b>${this.item.system.mods[modId].items[cindex].name}</b> from this MOD(<b>${this.item.system.mods[modId].name}</b>)<br>Do you want to proceed?<br>` ); 
+            if(bOkToProceed){            
+              this.item.system.mods[modId].items.splice(cindex, 1);
+              this.item.update({ "system.mods": mods });
+            }
+            
         });
+
+
+        
+        activateHelpers(html, this.item);
 
         // Everything below here is only needed if the sheet is editable
         if (!this.options.editable) return;
@@ -223,17 +264,23 @@ export class sItemSheet extends ItemSheet {
         html.find('.item-delete').click(async (ev) => {
             const li = $(ev.currentTarget).parents(".property");
             let todelete = li.data("itemId");
+            
             let obj = subitems[todelete];
-            if (this.item.data.type == "cItem") {
-                //let group = game.items.get(obj.id);
-                let group = await auxMeth.getTElement(obj.id, "group", obj.ikey);
-                if (group.data.data.isUnique) {
-                    this.item.data.data.isUnique = false;
-                }
+            
+            // ask user for confirmation
+            const bOkToProceed=await sb_custom_dialog_confirm('Confirm deletion?',`This will delete <b>${obj.name}</b><br>Do you want to proceed?<br>` ); 
+            if(bOkToProceed){
+              if (this.item.type == "cItem") {
+                  //let group = game.items.get(obj.id);
+                  let group = await auxMeth.getTElement(obj.id, "group", obj.ikey);
+                  if (group.system.isUnique) {
+                      this.item.system.isUnique = false;
+                  }
+              }
+              const prop = subitems.splice(todelete, 1);
+              li.slideUp(200, () => this.render(false));
+              this.updateLists(subitems);
             }
-            const prop = subitems.splice(todelete, 1);
-            li.slideUp(200, () => this.render(false));
-            this.updateLists(subitems);
         });
 
         // Top Item
@@ -257,9 +304,9 @@ export class sItemSheet extends ItemSheet {
         html.find('.macroselector').change(ev => {
             ev.preventDefault();
             const li = $(ev.currentTarget);
-            this.item.update({ "data.macroid": li.value });
+            this.item.update({ "system.macroid": li.value });
         });
-
+        
     }
 
     async listMacros() {
@@ -291,18 +338,18 @@ export class sItemSheet extends ItemSheet {
             selector.appendChild(opt);
         }
 
-        if (this.item.data.data.macroid == "") {
+        if (this.item.system.macroid == "") {
             selector.value = ""
         }
         else {
-            selector.value = this.item.data.data.macroid;
+            selector.value = this.item.system.macroid;
         }
 
     }
 
     async checkItemsExisting() {
 
-        let panels = this.item.data.flags.panelarray;
+        let panels = this.item.flags.panelarray;
         let changed = false;
 
         for (let i = 0; i < panels.length; i++) {
@@ -346,28 +393,29 @@ export class sItemSheet extends ItemSheet {
         let dropmodcitem = false;
 
         try {
+            // 
             let dropdata = JSON.parse(event.dataTransfer.getData('text/plain'));
-            dropitem = game.items.get(dropdata.id);
+            dropitem = await Item.implementation.fromDropData(dropdata);
 
             let acceptableObj = "";
-            if (this.item.data.type == "panel" || this.item.data.type == "group") {
+            if (this.item.type == "panel" || this.item.type == "group") {
                 acceptableObj = "property";
             }
 
-            else if (this.item.data.type == "sheettab" || this.item.data.type == "multipanel") {
+            else if (this.item.type == "sheettab" || this.item.type == "multipanel") {
                 acceptableObj = "panel";
             }
 
             //else if(this.item.data.type=="cItem" && !this.item.data.data.isUnique){
-            else if (this.item.data.type == "cItem") {
+            else if (this.item.type == "cItem") {
                 acceptableObj = "group";
             }
 
-            else if (this.item.data.type == "property" && this.item.data.data.datatype == "table") {
+            else if (this.item.type == "property" && this.item.system.datatype == "table") {
                 acceptableObj = "group";
             }
 
-            else if (this.item.data.type == "property" && this.item.data.data.datatype != "table") {
+            else if (this.item.type == "property" && this.item.system.datatype != "table") {
                 acceptableObj = "panel";
             }
 
@@ -376,22 +424,22 @@ export class sItemSheet extends ItemSheet {
                 return false;
             }
 
-            if (dropitem.data.type !== acceptableObj) {
-                if (this.item.data.type == "sheettab" && (dropitem.data.type == "multipanel" || dropitem.data.type == "panel")) {
+            if (dropitem.type !== acceptableObj) {
+                if (this.item.type == "sheettab" && (dropitem.type == "multipanel" || dropitem.type == "panel")) {
 
                 }
 
-                else if (this.item.data.type == "cItem" && dropitem.data.type == "cItem" && dropmod) {
+                else if (this.item.type == "cItem" && dropitem.type == "cItem" && dropmod) {
                     dropmodcitem = true;
-                    await this.addItemToMod(modId, dropitem.id, dropitem.data.data.ciKey);
+                    await this.addItemToMod(modId, dropitem.id, dropitem.system.ciKey);
                 }
 
 
-                else if (this.item.data.type == "cItem" && (dropitem.data.type == "panel" || dropitem.data.type == "multipanel") && this.item.data.data.hasdialog) {
+                else if (this.item.type == "cItem" && (dropitem.type == "panel" || dropitem.type == "multipanel") && this.item.system.hasdialog) {
 
                 }
 
-                else if (this.item.data.type == "property" && dropitem.data.type == "multipanel" && this.item.data.data.hasdialog) {
+                else if (this.item.type == "property" && dropitem.type == "multipanel" && this.item.system.hasdialog) {
 
                 }
 
@@ -414,30 +462,30 @@ export class sItemSheet extends ItemSheet {
         if (dropmodcitem)
             return;
 
-        let keyCode = this.getitemKey(dropitem.data);
-        let itemKey = dropitem.data.data[keyCode];
+        let keyCode = this.getitemKey(dropitem);
+        let itemKey = dropitem.system[keyCode];
 
-        const itemData = this.item.data.data;
+        const itemData = this.item.system;
         //console.log(itemKey + " " + keyCode);
         let newItem = {}
         setProperty(newItem, itemKey, {});
         newItem[itemKey].id = dropitem.id;
-        newItem[itemKey].name = dropitem.data.name;
+        newItem[itemKey].name = dropitem.name;
         newItem[itemKey].ikey = itemKey;
         //console.log(newItem);
-        if (this.item.data.type == "group" && dropitem.data.type == "property") {
+        if (this.item.type == "group" && dropitem.type == "property") {
             newItem[itemKey].isconstant = true;
         }
 
         //console.log(newItem);
 
-        if (this.item.data.type != "property") {
+        if (this.item.type != "property") {
             //Add element id to panel
             const subitems = await this.getsubItems();
             //console.log(subitems);
 
             for (let i = 0; i < subitems.length; i++) {
-                if (subitems[i].id == dropitem.data.id) {
+                if (subitems[i].id == dropitem.id) {
                     return;
                 }
             }
@@ -447,15 +495,15 @@ export class sItemSheet extends ItemSheet {
 
 
 
-            if (this.item.data.type == "cItem" && dropitem.data.type == "group" && dropitem.data.data.isUnique) {
+            if (this.item.type == "cItem" && dropitem.type == "group" && dropitem.system.isUnique) {
                 itemData.isUnique = true;
-                itemData.uniqueGID = dropitem.data.id;
-                await this.item.update({ "data": itemData });
+                itemData.uniqueGID = dropitem.id;
+                await this.item.update({ "system": itemData });
             }
 
-            else if (this.item.data.data.hasdialog && (dropitem.data.type == "panel" || dropitem.data.type == "multipanel")) {
-                const myitem = this.item.data.data;
-                await this.item.update({ "data.dialogID": dropitem.id, "data.dialogName": dropitem.data.data.panelKey });
+            else if (this.item.system.hasdialog && (dropitem.type == "panel" || dropitem.type == "multipanel")) {
+                const myitem = this.item.system;
+                await this.item.update({ "system.dialogID": dropitem.id, "system.dialogName": dropitem.system.panelKey });
             }
 
             else {
@@ -469,21 +517,21 @@ export class sItemSheet extends ItemSheet {
 
         else {
 
-            if (this.item.data.data.datatype == "table" && dropitem.data.type == "group") {
-                const myitem = this.item.data.data;
+            if (this.item.system.datatype == "table" && dropitem.type == "group") {
+                const myitem = this.item.system;
                 myitem.group.id = dropitem.id;
                 //TODO --- No sería Title?
-                myitem.group.name = dropitem.data.name;
+                myitem.group.name = dropitem.name;
                 myitem.group.ikey = itemKey;
-                this.item.data.data.group = myitem.group;
+                this.item.system.group = myitem.group;
                 //await this.item.update(this.item.data);
 
-                await this.item.update({ "data.group": myitem.group });
+                await this.item.update({ "system.group": myitem.group });
             }
-            else if (this.item.data.data.hasdialog && (dropitem.data.type == "panel" || dropitem.data.type == "multipanel")) {
-                const myitem = this.item.data.data;
+            else if (this.item.system.hasdialog && (dropitem.type == "panel" || dropitem.type == "multipanel")) {
+                const myitem = this.item.system;
 
-                await this.item.update({ "data.dialogID": dropitem.id, "data.dialogName": dropitem.data.data.panelKey });
+                await this.item.update({ "system.dialogID": dropitem.id, "system.dialogName": dropitem.system.panelKey });
             }
 
 
@@ -497,16 +545,16 @@ export class sItemSheet extends ItemSheet {
 
         let subitems;
 
-        if (this.item.data.type == "panel" || this.item.data.type == "group") {
-            subitems = this.item.data.data.properties;
+        if (this.item.type == "panel" || this.item.type == "group") {
+            subitems = this.item.system.properties;
         }
 
-        else if (this.item.data.type == "sheettab" || this.item.data.type == "multipanel") {
-            subitems = this.item.data.data.panels;
+        else if (this.item.type == "sheettab" || this.item.type == "multipanel") {
+            subitems = this.item.system.panels;
         }
 
-        else if (this.item.data.type == "cItem") {
-            subitems = this.item.data.data.groups;
+        else if (this.item.type == "cItem") {
+            subitems = this.item.system.groups;
         }
 
         //console.log(subitems);
@@ -534,19 +582,19 @@ export class sItemSheet extends ItemSheet {
     }
 
     async updateLists(subitems) {
-        if (this.item.data.type == "panel" || this.item.data.type == "group") {
-            await this.item.update({ "data.properties": subitems });
+        if (this.item.type == "panel" || this.item.type == "group") {
+            await this.item.update({ "system.properties": subitems });
             //this.item.data.data.properties = subitems;
         }
 
-        else if (this.item.data.type == "sheettab" || this.item.data.type == "multipanel") {
-            await this.item.update({ "data.panels": subitems });
+        else if (this.item.type == "sheettab" || this.item.type == "multipanel") {
+            await this.item.update({ "system.panels": subitems });
             //this.item.data.data.panels = subitems;
         }
 
-        else if (this.item.data.type == "cItem") {
+        else if (this.item.type == "cItem") {
             //console.log(subitems);
-            await this.item.update({ "data.groups": subitems });
+            await this.item.update({ "system.groups": subitems });
             //this.item.data.data.groups = subitems;
         }
 
@@ -558,7 +606,7 @@ export class sItemSheet extends ItemSheet {
 
     async checkStillUnique() {
         let isUnique = false;
-        const groups = this.item.data.data.groups;
+        const groups = this.item.system.groups;
         for (let j = groups.length - 1; j >= 0; j--) {
             let groupId = groups[j].id;
             //let groupObj = game.items.get(groupId);
@@ -566,7 +614,7 @@ export class sItemSheet extends ItemSheet {
 
             //Checks if group still exist
             if (groupObj != null) {
-                if (groupObj.data.data.isUnique) {
+                if (groupObj.system.isUnique) {
                     isUnique = true;
                 }
             }
@@ -577,13 +625,13 @@ export class sItemSheet extends ItemSheet {
         }
         //console.log(isUnique);
         if (isUnique) {
-            if (!this.item.data.data.isUnique) {
-                this.item.data.data.isUnique = true;
+            if (!this.item.system.isUnique) {
+                this.item.system.isUnique = true;
             }
         }
         else {
-            if (this.item.data.data.isUnique) {
-                this.item.data.data.isUnique = false;
+            if (this.item.system.isUnique) {
+                this.item.system.isUnique = false;
             }
         }
     }
@@ -597,8 +645,8 @@ export class sItemSheet extends ItemSheet {
         let attrArray = [];
         let tosave = false;
 
-        let attributes = this.item.data.data.attributes ?? this.options.data.data.attributes;
-        let groups = this.item.data.data.groups ?? this.options.data.data.groups;
+        let attributes = this.item.system.attributes ?? this.options.system.attributes;
+        let groups = this.item.system.groups ?? this.options.system.groups;
         let newgroups = duplicate(groups);
         let changegroups = false;
         for (let j = groups.length - 1; j >= 0; j--) {
@@ -612,7 +660,7 @@ export class sItemSheet extends ItemSheet {
             }
 
             if (propObj != null) {
-                let propertyIds = propObj.data.data.properties;
+                let propertyIds = propObj.system.properties;
 
                 for (let i = propertyIds.length - 1; i >= 0; i--) {
                     let propertyId = propertyIds[i].id;
@@ -620,8 +668,8 @@ export class sItemSheet extends ItemSheet {
                     let ppObj = await auxMeth.getTElement(propertyId, "property", propertyIds[i].ikey);
 
                     if (ppObj != null) {
-                        if (!ppObj.data.data.ishidden || game.user.isGM) {
-                            let property = ppObj.data.data;
+                        if (!ppObj.system.ishidden || game.user.isGM) {
+                            let property = ppObj.system;
 
                             let new_container = document.createElement("DIV");
                             new_container.className = "new-row";
@@ -827,15 +875,15 @@ export class sItemSheet extends ItemSheet {
 
         }
         //console.log(html);
-        if (this.item.data.permission.default > CONST.ENTITY_PERMISSIONS.OBSERVER || this.item.data.permission[game.user.id] > CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM) {
+        if (this.item.permission.default > CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.item.permission[game.user.id] > CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
             if (tosave) {
-                this.item.update({ "data.attributes": attributes });
+                this.item.update({ "system.attributes": attributes });
                 //this.item.data.data.attributes = attributes;
                 //this.item.update(this.item.data);
             }
 
             if (changegroups) {
-                this.item.update({ "data.groups": newgroups });
+                this.item.update({ "system.groups": newgroups });
             }
         }
 
@@ -845,7 +893,7 @@ export class sItemSheet extends ItemSheet {
 
     async updateAttVisibility(name, value) {
 
-        await this.item.update({ [`data.attributes.${name}.ishidden`]: value });
+        await this.item.update({ [`system.attributes.${name}.ishidden`]: value });
     }
 
     async updateFormInput(name, value, propId, propKey) {
@@ -854,27 +902,27 @@ export class sItemSheet extends ItemSheet {
 
         //let propObj = await game.items.get(propId);
         let propObj = await auxMeth.getTElement(propId, "property", propKey);
-        if (propObj.data.data.datatype == "checkbox") {
+        if (propObj.system.datatype == "checkbox") {
             setvalue = true;
-            let attKey = [propObj.data.data.attKey];
+            let attKey = [propObj.system.attKey];
 
-            let currentvalue = this.item.data.data.attributes[attKey].value;
+            let currentvalue = this.item.system.attributes[attKey].value;
 
             if (currentvalue == true || currentvalue == "true") {
                 setvalue = false;
             }
 
-            this.item.data.data.attributes[propObj.data.data.attKey].value = setvalue;
+            this.item.system.attributes[propObj.system.attKey].value = setvalue;
 
         }
 
         else {
             setvalue = value;
-            this.item.data.data.attributes[propObj.data.data.attKey].value = setvalue;
+            this.item.system.attributes[propObj.system.attKey].value = setvalue;
 
         }
 
-        await this.item.update({ [`data.attributes.${name}.value`]: setvalue });
+        await this.item.update({ [`system.attributes.${name}.value`]: setvalue });
         //await this.item.update({"data.attributes":this.item.data.data.attributes},{diff:false});
 
         //this.item.update(this.item.data);
@@ -882,7 +930,7 @@ export class sItemSheet extends ItemSheet {
 
 
     async adnewCIMod() {
-        const mods = this.item.data.data.mods;
+        const mods = this.item.system.mods;
 
         let newindex = mods.length - 1;
         if (newindex < 0) {
@@ -901,12 +949,12 @@ export class sItemSheet extends ItemSheet {
         newMod.selectnum = "";
         newMod.listmod = "INCLUDE";
         newMod.items = [];
-        newMod.citem = this.item.data.id;
+        newMod.citem = this.item.id;
 
 
         await mods.push(newMod);
 
-        await this.item.update({ "data.mods": mods });
+        await this.item.update({ "system.mods": mods });
 
         //this.item.update(this.item.data);
 
@@ -914,29 +962,29 @@ export class sItemSheet extends ItemSheet {
     }
 
     async editmodInput(index, name, value) {
-        const mods = this.item.data.data.mods;
+        const mods = this.item.system.mods;
         const obj = mods[index];
         obj[name] = value;
         //this.item.data.data.mods = mods;
 
         //this.item.update(this.item.data);
 
-        this.item.update({ "data.mods": mods });
+        this.item.update({ "system.mods": mods });
     }
 
     async deletemodInput(index) {
-        const mods = this.item.data.data.mods;
+        const mods = this.item.system.mods;
         mods.splice(index, 1);
 
 
-        this.item.update({ "data.mods": mods });
+        this.item.update({ "system.mods": mods });
 
         //this.item.update(this.item.data);
     }
 
     async addItemToMod(modId, citemId, ciKey) {
         //console.log(citemId);
-        const mods = this.item.data.data.mods;
+        const mods = this.item.system.mods;
         const mod = mods[modId];
         //let citem = game.items.get(citemId);
         let citem = await auxMeth.getcItem(citemId, ciKey);
@@ -947,7 +995,7 @@ export class sItemSheet extends ItemSheet {
 
         if (!mod.items.includes(citemId))
             mod.items.push(arrayItem);
-        this.item.update({ "data.mods": mods });
+        this.item.update({ "system.mods": mods });
 
         //this.item.update(this.item.data);
     }

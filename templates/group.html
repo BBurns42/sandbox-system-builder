@@ -1,8 +1,12 @@
 <form class="{{cssClass}}" autocomplete="off">
-    <header class="sheet-header">
+    <header class="item-sheet-header">
         <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
         <div class="header-fields">
-            <h1 class="charname"><input name="name" class="itemname" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+            <h1 class="charname"><input name="name" class="itemname" type="text" title="{{item.name}}" value="{{item.name}}" placeholder="Name"/>
+            {{#if showhelpers}}
+              <i id="sb-itemsheet-helper-dropdown-name-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+            {{/if}}
+            </h1>
             <h3 class="typelabel cItem">GROUP</h3>
         </div>
     </header>
@@ -19,17 +23,37 @@
     <section class="sheet-body">
         {{!-- Description Tab --}}
         <div class="tab biography active" data-group="primary" data-tab="description">
-            {{editor content=data.data.description target="data.description" button=true owner=owner editable=editable}}
+            {{editor
+                enrichedBiography
+                target="system.description"
+                button=true
+                editable=editable
+            }}
         </div>
 
         {{!-- Details Tab --}}
         <div class="tab biography active" data-group="primary" data-tab="details">
+          {{!-- Item Sheet Helpers Menu Bar --}}
+    {{#if showhelpers}}
+      <div class="sb-item-helpers-menu-bar-div">
+        <li class=" sb-menu-bar">
+          <a id="sb-item-helpers-menu-bar-item-autogenerateall" title="Autogenerate All" class=" sb-menu-bar-button"><i class="fas fa-wand-magic-sparkles fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-validateall" title="Validate All" class=" sb-menu-bar-button"><i class="fas fa-spell-check fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-clearall" title="Clear All" class=" sb-menu-bar-button"><i class="fas fa-times-circle fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-show-sandbox-settings" style="float: right;" title="Sandbox Settings" class=" sb-menu-bar-button"><i class="fas fa-cog fa-fw"></i></a>
+          
+        </li>
+    </div>
+    {{/if}}
             <div class="flexblock">
                 <div class="col-1-2">
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Group Key</label>
-                            <input type="text" name="data.groupKey" value="{{data.data.groupKey}}" data-dtype="String"/>
+                            <input type="text" name="system.groupKey" title="{{item.system.groupKey}}" value="{{item.system.groupKey}}" data-dtype="String"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-key-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
                 </div>
@@ -38,7 +62,7 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Unique</label>
-                            <input class="check-haslabel" name="data.isUnique" id="check-haslabel" type="checkbox" {{checked item.data.data.isUnique}}/>
+                            <input class="check-haslabel" name="system.isUnique" id="check-haslabel" type="checkbox" {{checked item.system.isUnique}}/>
                         </div>
                     </div>
                 </div>
@@ -52,9 +76,11 @@
             </div>
             <ol class="properties-list">
 
-                {{#each data.data.properties as |property id|}}
+                {{#each item.system.properties as |property id|}}
                 <li class="property group-row-block" data-item-id="{{id}}">
+                  <img class="sb-item-list-icon" src="{{{sb_item_icon property.id}}}"/>
                     <h4 class="group-name">{{property.name}}</h4>
+                    
                     <div class="groupblock">
                         <div class="groupblock">
                             <a class="group-controls item-top " title="Top Item"><i class="fas fa-arrow-alt-circle-up"></i></a>

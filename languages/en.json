@@ -1,0 +1,248 @@
+{
+  "sandbox": {
+    "settings": {
+      "forms": {
+        "SETTINGS_FORMS_TOOLS": {
+          "Name": "Sandbox Tools",
+          "Hint": "Show Sandbox Tools"
+        },
+        "SETTING_FORMS_SETTINGS": {
+          "Name": "Sandbox Settings",
+          "Hint": "Show Sandbox Settings"
+        }
+      },
+      "categories": {
+        "GENERAL_OPTIONS": {
+          "Name": "General Options",
+          "Hint": "General options for Sandbox"
+        },
+        "SHOW_OPTIONS": {
+          "Name": "Show Options",
+          "Hint": "Show options for Sandbox"
+        },
+        "CITEM_OPTIONS": {
+          "Name": "cItem & tables Options",
+          "Hint": "Options for cItems & tables"
+        },
+        "ITEM_DELETE_PROTECTION": {
+          "Name": "Item Delete protection",
+          "Hint": "Item Delete Protection helps to stop uninteded deletion of sub items"
+        },
+        "GENERAL_DISPLAY_OPTIONS": {
+          "Name": "General Display Options",
+          "Hint": "General display options"
+        },
+        "ITEM_SHEET_OPTIONS": {
+          "Name": "Item Sheets Options",
+          "Hint": "Options for displaying item sheets"
+        },
+        "AUTOGENERATION_OPTIONS": {
+          "Name": "Item Autogeneration Options",
+          "Hint": "Options for how autogenerating is applied"
+        },
+        "AUTOGENERATION_PREFIXES_SUFFIXES": {
+          "Name": "Item Autogeneration Prefixes And Suffixes",
+          "Hint": "Prefixes/suffixes used for autogenerating data"
+        },
+        "KEY_VALIDATION_OPTIONS": {
+          "Name": "Key Validation Options",
+          "Hint": "Options for determine valid keys"
+        },
+        "SHEET_CAPTION_OPTIONS": {
+          "Name": "Sheet Caption Options",
+          "Hint": "Options for displaying sheets"
+        },
+        
+        "ACTOR_SHEET_OPTIONS": {
+          "Name": "Actor Sheets Options",
+          "Hint": "Options for displaying actor sheets"
+        }
+        
+      },
+      "settings":{
+        "PREFIX_PROPERTY": {
+          "Name": "Prefix for property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is unchecked"
+        },
+        
+        "PREFIX_PROPERTY_SIMPLETEXT": {
+          "Name": "Prefix for simpletext property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_SIMPLENUMERIC": {
+          "Name": "Prefix for simplenumeric property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_CHECKBOX": {
+          "Name": "Prefix for checkbox property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_RADIO": {
+          "Name": "Prefix for radio property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_TEXTAREA": {
+          "Name": "Prefix for textarea property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_LIST": {
+          "Name": "Prefix for list property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_LABEL": {
+          "Name": "Prefix for label property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_BADGE": {
+          "Name": "Prefix for badge property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_TABLE": {
+          "Name": "Prefix for property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+        "PREFIX_PROPERTY_BUTTON": {
+          "Name": "Prefix for button property key",
+          "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is checked"
+        },
+
+        "PREFIX_PANEL": {
+          "Name": "Prefix for panel key",
+          "Hint": "Used for autogenerating key"
+        },
+        "PREFIX_MULTIPANEL": {
+          "Name": "Prefix for multipanel key",
+          "Hint": "Used for autogenerating key"
+        },
+        "PREFIX_GROUP": {
+          "Name": "Prefix for group key",
+          "Hint": "Used for autogenerating key"
+        },
+        "PREFIX_TAB": {
+          "Name": "Prefix for tab key",
+          "Hint": "Used for autogenerating key"
+        },
+        "SUFFIX_FONTGROUP": {
+          "Name": "Suffix for item fontgroup",
+          "Hint": "Used for autogenerating CSS class"
+        },
+        "SUFFIX_INPUTGROUP": {
+          "Name": "Suffix for item inputgroup",
+          "Hint": "Used for autogenerating CSS class"
+        },
+        "SUFFIX_HEADERGROUP": {
+          "Name": "Suffix for item headergroup",
+          "Hint": "Used for autogenerating CSS class"
+        },  
+        "SUFFIX_ROLLID": {
+          "Name": "Suffix for item roll id",
+          "Hint": "Used for autogenerating roll id"
+        },  
+        "SUFFIX_ROLLNAME": {
+          "Name": "Suffix for item roll name",
+          "Hint": "Used for autogenerating roll name"
+        },
+        "OPTION_KEY_CONVERT_TO_CASE": {
+          "Name": "Convert key to case",
+          "Hint": "Used for autogenerating key"
+        }, 
+        "OPTION_CSS_CONVERT_TO_CASE": {
+          "Name": "Convert CSS to case",
+          "Hint": "Used for autogenerating CSS class"
+        }, 
+        "OPTION_ENFORCED_VALIDATION": {
+          "Name": "Enforced key validation mode",
+          "Hint": "<b>Unchecked:</b> Sandbox standard - Keys are valid unless containing space, special characters or empty.<br>Keys for can be duplicate between datatypes except panels/multipanels<br><b>Checked:</b> Enforced - Keys are valid if containing only A-Z, a-z,0-9,_(underscore) and not empty.<br>Keys can not be duplicate between datatypes"
+        },   
+        
+        "OPTION_CONFIRM_BATCH_OVERWRITE": {
+          "Name": "Confirm batch overwrite",
+          "Hint": "Ask user for confirmation before applying batch overwrite(Autogenerate All,Clear All)"
+        }, 
+        "OPTION_CONFIRM_ATTRIBUTE_OVERWRITE": {
+          "Name": "Confirm attribute overwrite",
+          "Hint": "Ask user for confirmation before applying attribute overwrite(Autogenerate)"
+        }, 
+        "OPTION_AUTOGENERATE_PROPERTY_ICON": {
+          "Name": "Change property icon automatically",
+          "Hint": "When enabled, changes to a property's datatype will automatically change the propertys icon"
+        }, 
+        
+        
+        "OPTION_SHOW_ITEM_HELPERS": {
+          "Name": "Show item helpers",
+          "Hint": "Show item helper menus on item sheets.<br><i>Applies for GMs only.</i>"
+        }, 
+        
+        "OPTION_ACTIVATE_ITEM_DELETE_PROTECTION": {
+          "Name": "Activate item deletion protection",
+          "Hint": "When activated, delete icons will be hidden as default, a checkbox for toggling the visibility of the delete icon is added to sheets window title."
+        }, 
+        
+        "OPTION_USE_DATATYPE_PREFIX": {
+          "Name": "Use property data type for prefix",
+          "Hint": "When autogenerating a property key, use the propertys data type for prefix"
+        },
+        
+        
+        "OPTION_USE_PREFIX_SUFFIX": {
+          "Name": "Use prefix/suffix for autogenerating",
+          "Hint": "When autogenerating a field, add prefix and suffix"
+        },
+        
+        
+        
+        "OPTION_TRANSLITERATE_NON_LATIN": {
+          "Name": "Transliterate non-latin characters",
+          "Hint": "When autogenerating key, any non-latin characters are transliterated into latin equivalents.<br>When <b>Enforced key validation mode</b> is checked, transliteration will be executed regardless of this setting.<br><b>Please note that using non-latin characters as key might not work in roll expressions</b>"
+        },
+        
+        
+        "OPTION_SET_DEFAULT_ITEM_TAB": {
+          "Name": "Override item default tab",
+          "Hint": "When checked, the default(starting) tab when an item is displayed is Details or Attributes(for cItems).<br><i>Applies for GMs only.</i>"
+        },
+        
+        
+        "OPTION_ADAPT_ITEM_SHEET_POSITION": {
+          "Name": "Adapt item sheet size/position",
+          "Hint": "When checked, the starting size and position are adapted to item content.<br><i>Applies for GMs only.</i>"
+        },
+                
+        "OPTION_DISPLAY_ID_IN_SHEET_CAPTION": {
+          "Name": "Display ID in sheet caption",
+          "Hint": "When checked, the item/actors ID will be displayed as a tooltip icon in the sheets window title.<br> Clicking this icon will output the item/actor data in the console. Useful for debugging problems.<br><i>Applies for GMs only.</i>"
+        },
+                
+        "OPTION_DISPLAY_SHOW_TO_OTHERS_IN_SHEET_CAPTION": {
+          "Name": "Display Show To Others in sheet caption",
+          "Hint": "When checked, the a clickable icon will be shown in the sheets window title."
+        },
+        
+        "OPTION_USE_CITEM_INFO_FORM_FOR_GMS": {
+          "Name": "Show GMs cItem description only",
+          "Hint": "When checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for GMs only.</i>"
+        },
+        
+        "OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS": {
+          "Name": "Show players cItem description only",
+          "Hint": "When checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for players only.</i>"
+        },
+                
+       
+        
+        
+        "SETTING_CITEM_ICON_SIZE": {
+          "Name": "cItem icon size",
+          "Hint": "The size(in px) to display cItem icons in tables.<br>Default is 26. Set 0 to display the icon original size from image file."
+        },
+        
+        "OPTION_DISPLAY_SUBITEMS_ICONS": {
+          "Name": "Enable show subitem icons",
+          "Hint": "When checked, the icon for subitems will be displayed in subitem tables(properties in panel, panels in tabs, citems in cItem tab etc)"
+        }
+      }
+      
+    }
+  }   
+}

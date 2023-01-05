@@ -6,25 +6,25 @@
             <h1 class="charname"><input name="name" class="entityname" type="text" value="{{actor.name}}" placeholder="Name"/></h1>
             <div class="flexblock-left charsetup">
                 <div class="col-1-2">
-                    {{#if actor.data.istemplate}}
+                    {{#if actor.system.istemplate}}
                     {{else}}
                     <div class="flexblock-left">
 
                         {{#advShow}}
-                        <a class="roll-mode boldtext" title="Roll mode"><i>{{data.data.rollmode}}</i></a>
+                        <a class="roll-mode boldtext" title="Roll mode"><i>{{actor.system.rollmode}}</i></a>
                         {{/advShow}}
 
                         {{#showRoller}}
                         <a class="roll-free" title="Roll mode"><i class="fas fa-dice-d20"></i></a>
                         {{/showRoller}}
 
-                        {{#if actor.data.selector}}
+                        {{#if actor.system.selector}}
                         <a class="mod-selector" title="Select Options"><i class="fas fa-exclamation-circle fa-2x"></i></a>
                         {{/if}}
 
                         {{#rollMod}}
                         <label class="label-mod">MOD</label>
-                        <input class="input-mod" type="text" name="data.mod" value="{{data.data.mod}}"/>
+                        <input class="input-mod" type="text" name="system.mod" value="{{actor.system.mod}}"/>
                         {{/rollMod}}
 
                     </div>
@@ -32,11 +32,11 @@
                 </div>
 
                 <div class="rightblock gmsetup">
-                    {{#if actor.data.istemplate}}
+                    {{#if actor.system.istemplate}}
                     {{else}}
                     {{#isGM}}
                     <a class="sheet-reload" title="Reload Template"><i class="fas fa-arrow-alt-circle-down fa-2x"></i></a>
-                    <select  class="selectsheet"  name="data.gtemplate"  data-type="String">
+                    <select  class="selectsheet"  name="system.gtemplate"  data-type="String">
                     </select>
                     {{/isGM}}
                     {{/if}}
@@ -44,12 +44,12 @@
 
 
                     <h3 class="rightblock-element">Template</h3>
-                    <input class="check-istemplate" name="data.istemplate" id="check-istemplate" type="checkbox" {{checked actor.data.istemplate}}/>
+                    <input class="check-istemplate" name="system.istemplate" id="check-istemplate" type="checkbox" {{checked actor.system.istemplate}}/>
 
 
                     {{/isGM}}
 
-                    {{#if actor.data.istemplate}}
+                    {{#if actor.system.istemplate}}
                     <h3 class="rightblock-element-tag">Rebuild Sheet</h3>
                     <a class="rightblock-element item-refresh" title="Rebuild Sheet"><i class="fas fa-sync"></i></a>
                     {{/if}}
@@ -66,7 +66,7 @@
             <a class="item tab-button player-tab desc-tab" data-tab="description" id="tab-0">Bio</a>          
             <a style="display: none" id="tab-last"></a>
             {{#isGM}}
-            {{#if actor.data.istemplate}}
+            {{#if actor.system.istemplate}}
             <a class="item tab-button" data-tab="token" id="tab-token">Config</a>
             <a class="item tab-button" data-tab="config" id="tab-tabs">Tabs</a>
             {{/if}}
@@ -81,16 +81,23 @@
     <section class="sheet-body" id="sheet-body">
 
         {{!-- Biography Tab --}}
-        <div class="tab biography active scrollable" data-group="primary" data-tab="description">
-            {{editor content=data.data.biography target="data.biography" button=true owner=owner editable=editable}}
+        <div class="tab biography active scrollable" data-group="primary" data-tab="description">                        
+            {{editor
+                enrichedBiography
+                target="system.biography"
+                button=true
+                editable=editable
+            }}
+            
         </div>
 
-        {{#if actor.data.istemplate}}
+        {{#if actor.system.istemplate}}
         {{!-- SheetTabs Tab --}}
         <div class="tab properties" data-group="primary" data-tab="config">
             <ol class="properties-list">
-                {{#each data.data.tabs as |tab id|}}
+                {{#each actor.system.tabs as |tab id|}}
                 <li class="property flexrow" data-item-id="{{id}}">
+                    <img class="sb-citem-table-icon" src="{{{sb_item_icon tab.id}}}"/>
                     <h4 class="property-name">{{tab.name}}</h4>
                     <div class="property-row">
                         <a class="property-controls item-top" title="Top Item"><i class="fas fa-arrow-alt-circle-up"></i></a>
@@ -114,20 +121,20 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Bar 1</label>
-                            <input class ="token-bar1" type="text" name="data.tokenbar1" value="{{data.data.tokenbar1}}"/>
+                            <input class ="token-bar1" type="text" name="system.tokenbar1" value="{{actor.system.tokenbar1}}"/>
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Shield Stat</label>
-                            <input class ="token-shieldstat" type="text" name="data.shieldstat" value="{{data.data.shieldstat}}"/>
+                            <input class ="token-shieldstat" type="text" name="system.shieldstat" value="{{actor.system.shieldstat}}"/>
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Display Name</label>
-                            <select  class ="token-displayName" name="data.displayName"  data-type="String">
-                                {{#select data.data.displayName}}
+                            <select  class ="token-displayName" name="system.displayName"  data-type="String">
+                                {{#select actor.system.displayName}}
                                 <option  value="NONE">NONE</option>
                                 <option  value="CONTROL">CONTROL</option>
                                 <option  value="OWNER_HOVER">OWNER HOVER</option>
@@ -146,13 +153,13 @@
 
                         <div class="flexblock-left">
                             <label class="label-medlarge">BIO Tab Visible</label>
-                            <input class="check-biovisible" name="data.biovisible" id="check-biovisible" type="checkbox" biovisible="false" {{checked actor.data.biovisible}}/>
+                            <input class="check-biovisible" name="system.biovisible" id="check-biovisible" type="checkbox" biovisible="false" {{checked actor.system.biovisible}}/>
                         </div>
 
                         <div class="flexblock-left">
                             <label class="label-medlarge">Max visible Tabs</label>
-                            <select  class ="token-visitabs" name="data.visitabs"  data-type="String">
-                                {{#select data.data.visitabs}}
+                            <select  class ="token-visitabs" name="system.visitabs"  data-type="String">
+                                {{#select actor.system.visitabs}}
                                 <option  value="2">2</option>
                                 <option  value="3">3</option>
                                 <option  value="4">4</option>
@@ -172,19 +179,19 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Background</label>
-                            <input class ="gsheet-backg" type="text" name="data.backg" value="{{data.data.backg}}"/>
+                            <input class ="gsheet-backg" type="text" name="system.backg" value="{{actor.system.backg}}"/>
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Height</label>
-                            <input class ="gsheet-setheight" type="text" name="data.setheight" value="{{data.data.setheight}}"/>
+                            <input class ="gsheet-setheight" type="text" name="system.setheight" value="{{actor.system.setheight}}"/>
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Resizable</label>
-                            <input class="check-resizable" name="data.resizable" id="check-resizable" type="checkbox" resizable="false" {{checked actor.data.resizable}}/>
+                            <input class="check-resizable" name="system.resizable" id="check-resizable" type="checkbox" resizable="false" {{checked actor.system.resizable}}/>
                         </div>
                     </div>
 
@@ -198,7 +205,7 @@
                     </div>
                 </div>
                 <div class="new-row">
-                    <textarea class="texteditor-large input-disabled" name="data.buildlog">{{data.data.buildlog}}
+                    <textarea class="texteditor-large input-disabled" name="system.buildlog">{{actor.system.buildlog}}
                     </textarea>
                 </div>
             </div>
@@ -208,9 +215,10 @@
         {{!-- cItems Tab --}}
         <div class="tab citems scrollable" data-group="primary" data-tab="citems">
             <ol class="properties-list" id="citems-tab">
-                {{#each data.data.citems as |citem cid|}}
+                {{#each actor.system.citems as |citem cid|}}
                 <li class="property flexrow" data-item-id="{{cid}}">
-                    <h4 class="property-name">{{citem.name}}</h4>
+                  <img class="sb-citem-table-icon" src="{{{sb_item_icon citem.id}}}"/>
+                    <h4 class="property-name sb-null">{{citem.name}}</h4>
                     <div class="property-row">
                         <a class="property-control citem-edit" title="Edit cItem"><i class="fas fa-edit"></i></a>
                         <a class="property-control citem-delete" citemid ="{{citem.id}}" ciKey ="{{citem.ciKey}}" title="Delete cItem"><i class="fas fa-trash"></i></a>

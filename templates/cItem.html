@@ -2,7 +2,11 @@
     <header class="item-sheet-header">
         <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
         <div class="header-fields">
-            <h1 class="charname"><input name="name" class="itemname" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+            <h1 class="charname"><input name="name" class="itemname" type="text" title="{{item.name}}" value="{{item.name}}" placeholder="Name"/>
+            {{#if showhelpers}}
+              <i id="sb-itemsheet-helper-dropdown-name-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+            {{/if}}
+            </h1>
             <h3 class="typelabel cItem">cITEM</h3>
         </div>
 
@@ -23,7 +27,13 @@
     <section class="sheet-body">
         {{!-- Description Tab --}}
         <div class="tab biography citem-bio active scrollable" data-group="primary" data-tab="description">
-            {{editor content=data.data.description target="data.description" button=true owner=owner editable=editable}}
+            
+            {{editor
+                enrichedBiography
+                target="system.description"
+                button=true
+                editable=editable
+            }}
         </div>
 
         {{!-- Attributes Tab --}}
@@ -39,8 +49,9 @@
         {{!-- Groups Tab --}}
         <div class="tab groups" data-group="primary" data-tab="groups">
             <ol class="properties-list">
-                {{#each data.data.groups as |group id|}}
+                {{#each item.system.groups as |group id|}}
                 <li class="property flexrow" data-item-id="{{id}}">
+                    <img class="sb-item-list-icon" src="{{{sb_item_icon group.id}}}"/>
                     <h4 class="property-name">{{group.name}}</h4>
                     <div class="property-row">
                         <a class="property-controls item-top" title="Top Item"><i class="fas fa-arrow-alt-circle-up"></i></a>
@@ -52,77 +63,97 @@
                 {{/each}}
             </ol>
         </div>
-
+{{!-- Item Sheet Helpers Menu Bar --}}
+    {{#if showhelpers}}
+      <div class="sb-item-helpers-menu-bar-div">
+        <li class=" sb-menu-bar">
+          <a id="sb-item-helpers-menu-bar-item-autogenerateall" title="Autogenerate All" class=" sb-menu-bar-button"><i class="fas fa-wand-magic-sparkles fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-validateall" title="Validate All" class=" sb-menu-bar-button"><i class="fas fa-spell-check fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-clearall" title="Clear All" class=" sb-menu-bar-button"><i class="fas fa-times-circle fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-show-sandbox-settings" style="float: right;" title="Sandbox Settings" class=" sb-menu-bar-button"><i class="fas fa-cog fa-fw"></i></a>
+          
+        </li>
+    </div>
+    {{/if}}
         {{!-- Mods Tab --}}
         <div class="tab mods  scrollable" data-group="primary" data-tab="mods">
             <div class="flexblock">
                 <div class="col-1-1">
                     <div class="flexblock-center-nopad">
-                        <select  name="data.usetype"  data-type="String">
-                            {{#select item.data.data.usetype}}
+                        <select  name="system.usetype"  data-type="String">
+                            {{#select item.system.usetype}}
                             <option  value="PAS">PASSIVE</option>
                             <option  value="ACT">ACTIVATION</option>
                             <option  value="CON">CONSUMABLE</option>
                             {{/select}}
                         </select>
-                        {{#ifCond data.data.usetype "PAS"}}
+                        {{#ifCond item.system.usetype "PAS"}}
                         <label class="label-free" title ="If checked, all MODS that are not from the SET type will be permanently executed and the cItem will self destroy" id="check-selfdestruct">Self-destruct</label>
-                        <input class="check-selfdestruct" name="data.selfdestruct"  type="checkbox" {{checked item.data.data.selfdestruct}}/>
+                        <input class="check-selfdestruct" name="system.selfdestruct"  type="checkbox" {{checked item.system.selfdestruct}}/>
                         {{/ifCond}}
                     </div>
 
                     <div class="flexblock-center-nopad">
                         <label class="label-free">Has Icon</label>
-                        <input class="check-istokenicon" name="data.istokenicon" id="check-istokenicon" type="checkbox" {{checked item.data.data.istokenicon}}/>
+                        <input class="check-istokenicon" name="system.istokenicon" id="check-istokenicon" type="checkbox" {{checked item.system.istokenicon}}/>
                         <label class="label-free">Always on</label>
-                        <input class="check-tokenvisible" name="data.tokenvisible" id="check-tokenvisible" type="checkbox" {{checked item.data.data.tokenvisible}}/>
+                        <input class="check-tokenvisible" name="system.tokenvisible" id="check-tokenvisible" type="checkbox" {{checked item.system.tokenvisible}}/>
                         <label class="label-free">Icon Path</label>
-                        <input class="input-medlarge" type="text" name="data.tokeniconpath" value="{{data.data.tokeniconpath}}"/>
+                        <input class="input-medlarge" type="text" name="system.tokeniconpath" title="{{item.system.tokeniconpath}}" value="{{item.system.tokeniconpath}}"/>
                         <a class="tokeniconpath" title="Browse Image"><i class="fas fa-file-upload fa-2x"></i></a>
                     </div>
 
-                    {{#ifNot data.data.usetype "PAS"}}
+                    {{#ifNot item.system.usetype "PAS"}}
                     <div class="flexblock-center-nopad">
-                        {{#ifCond data.data.usetype "CON"}}
+                        {{#ifCond item.system.usetype "CON"}}
                         <label class="label-free">Permanent</label>
-                        <input class="check-ispermanent" name="data.ispermanent" id="check-ispermanent" type="checkbox" {{checked item.data.data.ispermanent}}/>
+                        <input class="check-ispermanent" name="system.ispermanent" id="check-ispermanent" type="checkbox" {{checked item.system.ispermanent}}/>
 
                         <label class="label-small">Icon</label>
-                        <select  name="data.icon"  data-type="String">
-                            {{#select item.data.data.icon}}
+                        <select  name="system.icon"  data-type="String">
+                            {{#select item.system.icon}}
                             <option  value="BOOK">BOOK</option>
                             <option  value="VIAL">VIAL</option>
                             <option  value="STAR">STAR</option>
                             {{/select}}
                         </select>
                         <label class="label-med righttext">Rechargable</label>
-                        <input class="check-rechargable" name="data.rechargable" id="check-rechargable" type="checkbox" {{checked item.data.data.rechargable}}/>
+                        <input class="check-rechargable" name="system.rechargable" id="check-rechargable" type="checkbox" {{checked item.system.rechargable}}/>
                         {{/ifCond}}
                     </div>
                     <div class="flexblock-center-nopad">
-                        {{#ifCond data.data.usetype "CON"}}
+                        {{#ifCond item.system.usetype "CON"}}
                         <label class="label-small">Uses</label>
-                        <input class="input-medlarge" type="text" name="data.maxuses" value="{{data.data.maxuses}}"/>
+                        <input class="input-medlarge" type="text" name="system.maxuses" value="{{item.system.maxuses}}"/>
                         {{/ifCond}}
                     </div>
                     <div class="new-row">
                         <div class="flexblock-simple">
                             <label class="label-large">Roll Name</label>
-                            <input class="input-medlarge" type="text" name="data.rollname" value="{{data.data.rollname}}"/>
+                            <input class="input-medlarge" type="text" name="system.rollname" title="{{item.system.rollname}}" value="{{item.system.rollname}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-rollname-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                             <label class="label-large righttext">Roll ID</label>
-                            <input class="input-free" type="text" name="data.rollid" value="{{data.data.rollid}}"/>
+                            <input class="input-free" type="text" name="system.rollid" title="{{item.system.rollid}}" value="{{item.system.rollid}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-rollid-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                         <div class="new-row">
                             <div class="flexblock-left">
                                 <label class="label-medlarge">Has Dialog</label>
-                                <input class="check-hasdialog" name="data.hasdialog" id="check-hasdialog" type="checkbox" {{checked item.data.data.hasdialog}}/>
+                                <input class="check-hasdialog" name="system.hasdialog" id="check-hasdialog" type="checkbox" {{checked item.system.hasdialog}}/>
                                 <label class="label-medlarge">Dialog Panel (Drag Here)</label>
-                                <input type="text" name="data.dialogName" value="{{data.data.dialogName}}" readonly>
+                                <input type="text" name="system.dialogName" value="{{item.system.dialogName}}" readonly>
                             </div>
                         </div>
                         <div class="flexblock-simple">
                             <label class="label-small">ROLL</label>
-                            <input class="input-free" type="text" name="data.roll" value="{{data.data.roll}}"/>
+                            <input class="input-free" type="text" name="system.roll" title="{{item.system.roll}}" value="{{item.system.roll}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-rollexp-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
                     {{/ifNot}}
@@ -135,7 +166,7 @@
                     <div class="new-row">
                         <div class="flexblock-center">
                             <ol class="mods-list">
-                                {{#each item.data.data.mods as |mod id|}}
+                                {{#each item.system.mods as |mod id|}}
                                 <li class="mod-block" data-item-id="{{id}}">
                                     <div class="mod-row">
 

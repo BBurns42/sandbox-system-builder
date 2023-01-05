@@ -84,7 +84,16 @@
             "totalize":false,
             "arrows":false,
             "tag":"",
-            "macroid":""
+            "macroid":"",
+            "tableoptions":{
+              "showicons":false,
+              "columnheaderlabels":{
+                "active":"Active",
+                "uses":"Uses",
+                "num":"Num"
+              },
+              "filter":""
+            }
         },
         "panel":{
             "panelKey": "",

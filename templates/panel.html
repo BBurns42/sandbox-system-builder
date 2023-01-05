@@ -2,7 +2,11 @@
     <header class="item-sheet-header">
         <img class="profile-img" src="{{item.img}}" data-edit="img" title="{{item.name}}"/>
         <div class="header-fields">
-            <h1 class="charname"><input name="name" class="itemname" type="text" value="{{item.name}}" placeholder="Name"/></h1>
+            <h1 class="charname"><input name="name" class="itemname" type="text" title="{{item.name}}" value="{{item.name}}" placeholder="Name"/>
+            {{#if showhelpers}}
+              <i id="sb-itemsheet-helper-dropdown-name-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+            {{/if}}
+            </h1>
             <h3 class="typelabel cItem">PANEL</h3>
         </div>
     </header>
@@ -19,31 +23,54 @@
     <section class="sheet-body">
         {{!-- Description Tab --}}
         <div class="tab biography active" data-group="primary" data-tab="description">
-            {{editor content=data.data.description target="data.description" button=true owner=owner editable=editable}}
+            {{editor
+                enrichedBiography
+                target="system.description"
+                button=true
+                editable=editable
+            }}
         </div>
 
         {{!-- Details Tab --}}
         <div class="tab biography active" data-group="primary" data-tab="details">
+          {{!-- Item Sheet Helpers Menu Bar --}}
+    {{#if showhelpers}}
+      <div class="sb-item-helpers-menu-bar-div">
+        <li class=" sb-menu-bar">
+          <a id="sb-item-helpers-menu-bar-item-autogenerateall" title="Autogenerate All" class=" sb-menu-bar-button"><i class="fas fa-wand-magic-sparkles fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-validateall" title="Validate All" class=" sb-menu-bar-button"><i class="fas fa-spell-check fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-clearall" title="Clear All" class=" sb-menu-bar-button"><i class="fas fa-times-circle fa-fw"></i></a>
+          <a id="sb-item-helpers-menu-bar-item-show-sandbox-settings" style="float: right;" title="Sandbox Settings" class=" sb-menu-bar-button"><i class="fas fa-cog fa-fw"></i></a>
+          
+        </li>
+    </div>
+    {{/if}}
             <div class="flexblock">
                 <div class="col-1-2">
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Panel Key</label>
-                            <input type="text" name="data.panelKey" value="{{data.data.panelKey}}" data-dtype="String"/>
+                            <input type="text" name="system.panelKey" title="{{item.system.panelKey}}" value="{{item.system.panelKey}}" data-dtype="String"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-key-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge">Title</label>
-                            <input type="text" name="data.title" value="{{data.data.title}}" data-dtype="String"/>
+                            <input type="text" name="system.title" title="{{item.system.title}}" value="{{item.system.title}}" data-dtype="String"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-tag-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Content Alignment</label>
-                            <select name="data.contentalign"  data-type="String">
-                                {{#select item.data.data.contentalign}}
-                                {{#each item.data.data.atypes as |atype key|}}
+                            <select name="system.contentalign"  data-type="String">
+                                {{#select item.system.contentalign}}
+                                {{#each item.system.atypes as |atype key|}}
                                 <option  value="{{key}}">{{key}}</option> {{/each}} {{/select}}
                             </select>
                         </div>
@@ -51,9 +78,9 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Label Alignment</label>
-                            <select name="data.alignment"  data-type="String">
-                                {{#select item.data.data.alignment}}
-                                {{#each item.data.data.atypes as |atype key|}}
+                            <select name="system.alignment"  data-type="String">
+                                {{#select item.system.alignment}}
+                                {{#each item.system.atypes as |atype key|}}
                                 <option  value="{{key}}">{{key}}</option> {{/each}} {{/select}}
                             </select>
                         </div>
@@ -61,20 +88,26 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Is Image</label>
-                            <input class="check-isimg" name="data.isimg" id="check-isimg" type="checkbox" {{checked item.data.data.isimg}}/>
+                            <input class="check-isimg" name="system.isimg" id="check-isimg" type="checkbox" {{checked item.system.isimg}}/>
 
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge" title="Adds this class to the label's HTML style for ease of edition" >Font Group</label>
-                            <input type="text" name="data.fontgroup" value="{{data.data.fontgroup}}"/>
+                            <input type="text" name="system.fontgroup" title="{{item.system.fontgroup}}" value="{{item.system.fontgroup}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-fontgroup-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge" title="Adds this class to the panel header's HTML style for ease of edition" >Header Group</label>
-                            <input type="text" name="data.headergroup" value="{{data.data.headergroup}}"/>
+                            <input type="text" name="system.headergroup" title="{{item.system.headergroup}}" value="{{item.system.headergroup}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-headergroup-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
 
@@ -84,9 +117,9 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Width</label>
-                            <select name="data.width"  data-type="String">
-                                {{#select item.data.data.width}}
-                                {{#each item.data.data.wtypes as |wtype key|}}
+                            <select name="system.width"  data-type="String">
+                                {{#select item.system.width}}
+                                {{#each item.system.wtypes as |wtype key|}}
                                 <option  value="{{wtype.value}}">{{wtype.value}}</option> {{/each}} {{/select}}
                             </select>
                         </div>
@@ -94,9 +127,9 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Columns</label>
-                            <select name="data.columns"  data-type="String">
-                                {{#select item.data.data.columns}}
-                                {{#each item.data.data.ctypes as |ctype key|}}
+                            <select name="system.columns"  data-type="String">
+                                {{#select item.system.columns}}
+                                {{#each item.system.ctypes as |ctype key|}}
                                 <option  value="{{ctype.value}}">{{ctype.value}}</option> {{/each}} {{/select}}
                             </select>
                         </div>
@@ -104,8 +137,8 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Title Background</label>
-                            <select  name="data.backg"  data-type="String">
-                                {{#select item.data.data.backg}}
+                            <select  name="system.backg"  data-type="String">
+                                {{#select item.system.backg}}
                                 <option  value="D">DEFAULT</option>
                                 <option  value="T">TRANSP</option>
                                 <option  value="G">GREY</option>
@@ -121,13 +154,17 @@
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-med">Image Path</label>
-                            <input type="text" name="data.imgsrc" value="{{data.data.imgsrc}}" data-dtype="String"/>
+                            <input type="text" name="system.imgsrc" title="{{item.system.imgsrc}}" value="{{item.system.imgsrc}}" data-dtype="String"/>
+                            <a class="imgsrc-filepicker" title="Browse Image"><i class="fas fa-file-upload fa-2x"></i></a>
                         </div>
                     </div>
                     <div class="new-row">
                         <div class="flexblock-left">
                             <label class="label-medlarge" title="Adds this class to the input's HTML style for ease of edition" >Input Group</label>
-                            <input type="text" name="data.inputgroup" value="{{data.data.inputgroup}}"/>
+                            <input type="text" name="system.inputgroup" title="{{item.system.inputgroup}}" value="{{item.system.inputgroup}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-inputgroup-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
                     </div>
 
@@ -135,16 +172,22 @@
             </div>
             <div class="flexblock">
                 <div class="col-1-1">
+                  
                     <div class="flexblock-left">
-                        <div class="col-1-6 ">
+                        <div class="col-1-6 sb-item-sheet-condition-div">
                             VISIBLE IF
                         </div>
-                        <div class="col-1-3">
-                            <input type="text" name="data.condat" value="{{data.data.condat}}" placeholder="COND ATTRIBUTE"/>
+                        <div class="col-1-3 sb-item-sheet-condition-div">
+                            {{!-- condat --}}
+                            <input class="sb-item-sheet-input-condition" type="text" name="system.condat" title="{{item.system.condat}}" value="{{item.system.condat}}" placeholder="COND ATTRIBUTE"/>
+                            {{#if showhelpers}}
+                            <i id="sb-itemsheet-helper-dropdown-visibleif-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
                         </div>
-                        <div class="col-1-6">
-                            <select  name="data.condop"  data-type="String">
-                                {{#select item.data.data.condop}}
+                        <div class="col-1-6 sb-item-sheet-condition-div">
+                            {{!-- condop --}}
+                            <select  name="system.condop"  data-type="String">
+                                {{#select item.system.condop}}
                                 <option  value="NON">NONE</option>
                                 <option  value="EQU">=</option>
                                 <option  value="HIH">&gt;</option>
@@ -154,8 +197,13 @@
                             </select>
 
                         </div>
-                        <div class="col-1-3">
-                            <input type="text" name="data.condvalue" value="{{data.data.condvalue}}" placeholder="VALUE"/>
+                        <div class="col-1-3 sb-item-sheet-condition-div">
+                             {{!-- condvalue --}}
+                             <input class="sb-item-sheet-input-condition" type="text" name="system.condvalue" title="{{item.system.condvalue}}" value="{{item.system.condvalue}}" placeholder="VALUE"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-visiblevalue-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
+                            
                         </div>
                     </div>
                 </div>
@@ -165,8 +213,9 @@
         {{!-- Properties Tab --}}
         <div class="tab properties scrollable" data-group="primary" data-tab="properties">
             <ol class="properties-list">
-                {{#each data.data.properties as |property id|}}
+                {{#each item.system.properties as |property id|}}
                 <li class="property flexrow" data-item-id="{{id}}">
+                    <img class="sb-item-list-icon" src="{{{sb_item_icon property.id}}}"/>
                     <h4 class="property-name">{{property.name}}</h4>
                     <div class="property-row">
                         <a class="property-controls item-top" title="Top Item"><i class="fas fa-arrow-alt-circle-up"></i></a>
