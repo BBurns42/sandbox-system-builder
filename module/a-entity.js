@@ -57,7 +57,9 @@ async _preCreate(data, options, user) { // v10
 async _preUpdate(updateData, options, userId) { //v10
   //        let upclon = duplicate(updateData);
   //console.log(updateData);
-  if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+  
+  if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+   
       let myuser = userId;
   }
   else {
@@ -868,9 +870,11 @@ async update(data, options = {}) {
                     toaddMod.ciKey = citemIDs[n].ciKey;
 
                     let actorCiMod = citemIDs[n].mods.find(y => y.index == toaddMod.index);
-                    toaddMod.once = actorCiMod.once;
-                    toaddMod.exec = actorCiMod.exec;
-                    await mods.push(toaddMod);
+                    if(actorCiMod!=null){
+                      toaddMod.once = actorCiMod.once;
+                      toaddMod.exec = actorCiMod.exec;
+                      await mods.push(toaddMod);
+                    }
                 }
             }
 
@@ -1216,7 +1220,7 @@ async update(data, options = {}) {
 
                         if (hasProperty(mycitem.attributes, att)) {
                             if (groupProps[j].isconstant && tempAtt.value != mycitem.attributes[att].value) {
-                                if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM)
+                                if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM)
                                     mycitem.attributes[att].value = tempAtt.value;
 
                             }
@@ -1251,7 +1255,7 @@ async update(data, options = {}) {
                     }
 
                     if (!hasProperty(mycitem.attributes, att)) {
-                        if (this.permission.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER|| this.permission[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+                        if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER|| this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
                             setProperty(mycitem.attributes, att, {});
                             setProperty(mycitem.attributes[att], "value", newvalue);
                         }

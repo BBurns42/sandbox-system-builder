@@ -4850,8 +4850,10 @@ ${dialogPanel.system.title}
         if (!this.actor.isToken) {
             this.actor.update({ "system.citems": cItemsID });
         }
-        else {
-            let tokenId = this.id.split("-")[2];
+        else {            
+            // v10 has longer ids, 
+            // gActorSheet-Scene-ry4G1mjyCSGzxpHC-Token-8jswJPrzu0DQtoDv
+            let tokenId = this.id.split("-")[4];
             let mytoken = canvas.tokens.get(tokenId);
             await mytoken.document.update({ "actorData.system.citems": cItemsID });
         }
@@ -4911,6 +4913,7 @@ ${dialogPanel.system.title}
         item.sheet.render(true);
     }
     async useCIIcon(itemId, ciKey, value, iscon = false, isactivation = false) {
+      
         //const citemObj = game.items.get(itemId).data.data;
         let citemObjfinder = await auxMeth.getcItem(itemId, ciKey);
         const citemObj = citemObjfinder.system;

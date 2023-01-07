@@ -411,18 +411,33 @@ Hooks.once("init", async function () {
     };
 
     game.socket.on("system.sandbox", (data) => {
-        if (data.op === 'target_edit') {
-            let actorOwner = game.actors.get(data.actorId);
-            actorOwner.handleTargetRequest(data);
-        }
+      let actorOwner=null;
+      console.log('Sandbox | Socket arrival :' + data);
+      switch(data.op){
+        case 'target_edit':
+          actorOwner = game.actors.get(data.actorId);
+          if(actorOwner!=null){
+            actorOwner.handleTargetRequest(data);            
+          } else {
+            console.warn('Sandbox | Socket arrival | Actor not found for data | ' + data);
+          }
+          break;
+        case 'transfer_edit':
+          actorOwner = game.actors.get(data.ownerID);
+          if(actorOwner!=null){
+            actorOwner.handleTransferEdit(data);
+          } else {
+            console.warn('Sandbox | Socket arrival | Actor not found for data | ' + data);
+          }
+          break;
+        default:
+          console.warn('Sandbox | Socket Arrival | Unhandled arrival | ' + data);
+          break;
+      }
+
     });
 
-    game.socket.on("system.sandbox", (data) => {
-        if (data.op === 'transfer_edit') {
-            let actorOwner = game.actors.get(data.ownerID);
-            actorOwner.handleTransferEdit(data);
-        }
-    });
+    
 
     let oAPI = new SandboxAPI();
     oAPI.initialize();
