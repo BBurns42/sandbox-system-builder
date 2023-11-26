@@ -1,0 +1,105 @@
+# Sandbox Change Log
+## Version 0.14.1(2023-11-26)
+- Added Table Filters
+- FIX: Using ~self~ in a conditional
+- FIX: CSS for MAX of simplenumber to enable GM to edit 
+- FIX: Conditional ~blind~
+
+## Version 0.14.0(2023-11-17)
+- Foundry changes
+  - Foundry 11 supported(RC8) 
+  - Data Model from Foundry v10(RC1)
+    - Important Note: When migrating a v9 Sandbox world, all actors/actor templates will be in an faulty state. 
+      Use "Build Actor Templates" from the Sandbox System Builder Section in the Settings Sidebar to update actor templates to v10 data model
+      and Reload all actors
+  - Drag n drop(RC1)
+  - CSS adaptations(RC1)  
+- Refactored System Settings(RC1)
+- Improved chat messages(RC1)
+- Refactored JSON Export(RC1)
+- Added API to Sandbox
+  - BuildActorsTemplate(RC1)
+  - CheckcItemConsistency(RC7)
+  - Actor_GetFromName(RC5),
+  - Actor_GetFromSheet(RC5),
+  - Actor_GetFromSelectedToken(RC7),
+  - ActorProperty_HasProperty(RC7),
+  - ActorProperty_GetProperty(RC7),
+  - ActorProperty_GetValue(RC7),
+  - ActorProperty_SetValue(RC7),
+  - ActorProperty_ToggleValue(RC7),
+  - ActorcItem_GetFromName(RC7),
+  - ActorcItem_IsActive(RC7),
+  - ActorcItem_Activate(RC7),
+  - ActorcItem_Deactivate(RC7),
+  - ActorcItem_ToggleActivation(RC7),
+  - ActorcItem_ChangeActivation(RC7),
+  - ActorcItem_Consume(RC7),
+  - ActorcItem_Recharge(RC7),
+  - ActorcItem_ChangeUses(RC7),
+  - ActorcItem_IncreaseUses(RC7),
+  - ActorcItem_DecreaseUses(RC7),
+  - ActorcItem_Add(RC7),
+  - ActorcItem_Delete(RC7),
+  - ActorcItem_IncreaseNumber(RC7),
+  - ActorcItem_DecreaseNumber(RC7),
+  - cItem_GetFromName(RC7),
+  - ActorSheet_GetFromActor(RC5),
+  - ActorSheet_Render(RC5),
+  - SystemSetting_GetValue(RC7),
+  - SystemSetting_SetValue(RC7),
+  - SheetInfo_GetFromSheetId(RC5),
+  - fontAwesomeIconPicker(RC6)
+  - Documentation
+- Added Sandbox System Builder Section to Settings Sidebar(RC1)
+  - Moved JSON Export and Import to Sandbox System Builder Section(RC1)
+  - Added BuildActorTemplates to Sandbox System Builder Section(RC1)
+  - Added Bug Report Form to Sandbox System Builder Section(RC1)
+  - Added Check cItem Consistensy(RC7)
+- Added Confirm Delete for subitem lists(tables etc)(RC1)
+- Added Item Helpers for items(RC1)
+  - Autogeneration(RC1)
+  - Expression Editor(RC1)
+  - Validation(RC1)
+  - Copy/Cut/Paste(RC1)
+- Added feature Show Icons? for tables(RC1)
+- Added icons for property datatypes(RC1)
+- Reworked item icons to SVGs(RC1,RC7)
+- Added Show icons on all subitems list on sheet,tab,panel,multipanel,group(RC1)
+- Added automatic truncation on calculated values with many decimals(RC4)
+- Added showing tooltips for inputs(RC6)
+- Added icon picker(RC6) 
+  - Consumable citems activation icon(RC6)
+  - Property labels(RC6)
+  - Radio property used icon(RC6)  
+- Added roll expression flag roll mode Self Roll (~self~)(RC6)
+- Added support for module DF Chat Enchancements roll mode buttons(RC6)
+- Reworked calculation of Autos for better nesting(RC7)
+- Added Options Show Players/GMs cItem description only(RC8)
+- Updated roll expression rollP. Imploding(negative) dice will now explode if the expression has both implode and explode(ex rollp(first;1d100im4x>95) ?[first.total]).(RC8)
+- Added Option Enable resizable panels(when checked, panels are not fixed in width but instead relative to available size)(RC8)
+- Added Option Display Show To Others for items/actors(including from compendiums)(RC8)
+- Added Option Item Delete Protection, hides Delete icons for lists, cItems etc. Also no hides Add icon for Free tables(RC8)
+- Refactoring for CSS and reworking of CSS, using CSS variables for easy modifications(RC8)
+- Added pre v10 data migration functionality(RC8)
+- Added roll expression flag for hiding conditional text for non-Gms (~secretconditional~)(RC8)
+  Example: `0 &&total;0:Everything are secret&& ~secretconditional~`
+- Added roll expression feature for hiding parts of conditional texts(RC8)
+  Example: `0 &&total;0:Some things are <div class="secret"> secret</div> some are <div class="secret"> not</div> && `
+- Updated tooltips to use Foundry custom tooltips(CSS-modifiable)(RC8)
+- Reworked item helpers dropdown menus in item sheets to use Foundry(RC8)
+- Adjusted JSON import/export(RC8)
+- Added property getters for roll expressions(RC8)
+  - #{maxuses}
+  - #{actorname} 
+  - @{actorname}
+  - #{targetname}
+- FIX: Rolls now respect the UI selected Roll Mode(unless roll is configured to overide)(RC6)
+- FIX: DiceSoNice now displays for players/GMs according to used Roll Mode(RC6)
+- FIX: Actor sheet resize(RC6)
+- FIX: Removal of cItems added by Activation ITEM mod(RC6,RC7)
+- FIX: Performace optimizations(RC7)
+- FIX: Calculation of uses when changing uses manually for consumable cItems(RC8)
+- FIX: Calculation of uses transfering consumable cItems(RC8)
+- PATCHES: Mod created properties with compendiums (RC7) by Alondaar  
+- Various fixes and tweaks

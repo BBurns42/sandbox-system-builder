@@ -4,6 +4,10 @@
  * Software License: GNU GPLv3
  */
 
+// export const needed by SystemSettingsForm
+export const _system_ignore_settings=[];       // array of strings containing settings that should not be displayed, can be empty []
+
+
 // Import Modules
 import { gActorSheet } from "./gactorsheet.js";
 import { sItemSheet } from "./sitemsheet.js";
@@ -12,6 +16,36 @@ import { gItem } from "./i-entity.js";
 import { SBOX } from "./config.js";
 import { auxMeth } from "./auxmeth.js";
 import { sToken } from "./sandboxtoken.js";
+import { SandboxToolsForm } from "./sb-tools-form.js";
+import { SandboxAPI } from "./sb-api.js";
+import { DropDownMenu } from "./dropdownmenu.js";
+import { SystemSettingsForm } from "./system-settings-form.js";
+import { SBBugReport } from "./sb-bug-report.js";
+
+import  { 
+          sb_settings_menus,
+          sb_settings_registration 
+        } from "./sb-settings-registration.js";
+import  { 
+          SETTINGATTRIBUTE,
+          sb_item_sheet_get_game_setting
+        } from "./sb-setting-constants.js";
+import  { ITEMATTRIBUTE } from "./sb-itemsheet-constants.js"
+import  { 
+          sb_sheet_appwindow_id,
+          sb_sheet_display_id_in_window_caption,
+          sb_sheet_display_show_to_others_in_sheet_caption,
+          sb_sheet_display_show_infoform_source_in_sheet_caption,
+          sb_sheet_item_delete_protection_add_caption_icon,
+          sb_sheet_toggle_delete_item_visible,
+          adaptItemSheetGeoMetrics
+        }  from "./sb-sheet-functions.js";
+import { SOCKETCONSTANTS } from "./sb-socket-constants.js";
+import  { socketHandler } from "./sb-socket-functions.js";
+import  { versionManagement } from "./sb-version-management.js";
+import  { getSandboxItemIconFile } from "./sb-itemsheet-helpers.js";
+
+
 
 // ALONDAAR this function creates a macro when data is dragged to the macro hotbar
 async function createSandboxMacro(data, slot) {
@@ -26,7 +60,7 @@ async function createSandboxMacro(data, slot) {
     rollData.tableKey = await placeholderParser(rollData.tableKey);
 
     // Do not put whitespace above the start of the macro,
-    // or else (command === m.data.command) is always false
+    // or else (command === m.command) is always false
     const command =
         `let rollData = {
     attrID: ${rollData.attrID},
@@ -43,23 +77,27 @@ async function createSandboxMacro(data, slot) {
 // For checking Free Table ID's
 let originalActorId = "${data.actorId}";
 
-const speaker = ChatMessage.getSpeaker();
-let actor;
-if (speaker.token) actor = game.actors.tokens[speaker.token];
-if (!actor) actor = game.actors.get(speaker.actor);
-if (actor) {
+const sourcespeaker = ChatMessage.getSpeaker(); // speaker is alwasy defined in v10 macros
+let sourceactor;                // actor is always defined in v10 macros
+if (sourcespeaker.token){
+  sourceactor = game.actors.tokens[sourcespeaker.token];
+}
+if (!sourceactor) {
+  sourceactor = game.actors.get(sourcespeaker.actor);
+}
+if (sourceactor) {
     let letsContinue = true;
     // Check if actor possess the citem
     if(rollData.citemKey != null)
-        if(!actor.data.data.citems.find(ci => ci.ciKey === rollData.citemKey))
+        if(!sourceactor.system.citems.find(ci => ci.ciKey === rollData.citemKey))
             return ui.notifications.warn("Current actor does not possess the required citem.");
 
     // Check if the free table item still exists
     if(rollData.isFree)
-        if(!actor.data.data.attributes[rollData.tableKey].tableitems.find(ti => ti.id === rollData.citemID))
+        if(!sourceactor.system.attributes[rollData.tableKey].tableitems.find(ti => ti.id === rollData.citemID))
             return ui.notifications.warn("Current actor does not possess the referenced Free Table id.");
         // Check if the selected actor is the original
-        else if (actor.data._id != originalActorId)
+        else if (sourceactor.id != originalActorId)
             await Dialog.confirm({
                 title: "ARE YOU SURE ABOUT THAT?",
                 content: "You are about to roll a Free Table id that isn't from the same actor you created the macro from.<br><br>This may have unintended results due to targetting a different id owned by that actor.",
@@ -69,7 +107,7 @@ if (actor) {
             });
 
         if(letsContinue)
-            actor.sheet._onRollCheck(${rollData.attrID}, ${rollData.attKey}, ${rollData.citemID}, ${rollData.citemKey}, ${rollData.ciRoll}, ${rollData.isFree}, ${rollData.tableKey}, ${rollData.useData});
+            sourceactor.sheet._onRollCheck(${rollData.attrID}, ${rollData.attKey}, ${rollData.citemID}, ${rollData.citemKey}, ${rollData.ciRoll}, ${rollData.isFree}, ${rollData.tableKey}, ${rollData.useData});
     } else
     ui.notifications.warn("Couldn't find actor. Select a token.");`;
 
@@ -78,7 +116,7 @@ if (actor) {
         actorName = "GM";
     let macroName = "[" + actorName + "] " + rollData.tag;
 
-    let macro = game.macros.contents.find(m => (m.name === macroName) && (m.data.command === command));
+    let macro = game.macros.contents.find(m => (m.name === macroName) && (m.command === command));
     if (!macro) {
         macro = await Macro.create({
             name: macroName,
@@ -86,9 +124,9 @@ if (actor) {
             img: rollData.img,
             command: command,
             flags: {},
-            permission: game.actors.get(data.actorId).data.permission
+            permission: game.actors.get(data.actorId).permission
         });
-        ui.notifications.warn('Macro created.');
+        ui.notifications.info('Macro created.');
     }
 
     await game.user.assignHotbarMacro(macro, slot);
@@ -103,19 +141,53 @@ async function placeholderParser(str) {
     return str;
 }
 
+
+async function setupCustomCSS(){  
+  if (game.modules.get("custom-css")!=null){
+    try{
+      console.log('Sandbox | Attempting linking with module CustomCSS');
+      const customcsssrc='/modules/custom-css/SettingsForm.js';
+      const mymodule = await import(customcsssrc);
+      const foo = mymodule.default; // Default export
+      const SettingsForm = mymodule.SettingsForm; // Named export
+      game.system.customcssform=SettingsForm;
+      console.log('Sandbox | Successful link with module CustomCSS');
+    } 
+    catch(err){
+      console.warn(`Sandbox | 
+Could not add link to module CustomCSS.
+Shortcut in the Settings Sidebar to CustomCSS form will not be added.
+Apart from that, everything else will work`);
+      game.system.customcssform=null;
+    }
+  } else {
+    game.system.customcssform=null;
+  }          
+}
+
 /* -------------------------------------------- */
 /*  Hooks                 */
 /* -------------------------------------------- */
 
 Hooks.once("init", async function () {
-    console.log(`Initializing Sandbox System`);
+    console.log("Sandbox | Ready");
+    
+    
+    //console.log(game.system);
+    
+    setupCustomCSS();
+    
+    // DropDown menu listeners
+    DropDownMenu.eventListeners();
+    
+    console.log(`Sandbox | Initializing System`);
 
     /**
      * Set an initiative formula for the system
      * @type {String}
      */
 
-    CONFIG.debug.hooks = true;
+    CONFIG.debug.hooks = false;
     CONFIG.Actor.documentClass = gActor;
     CONFIG.Item.documentClass = gItem;
     CONFIG.Token.documentClass = sToken;
@@ -129,126 +201,135 @@ Hooks.once("init", async function () {
     auxMeth.registerShowMod();
     auxMeth.registerShowSimpleRoll();
     auxMeth.registerShowRollMod();
-
     // Register sheet application classes
     Actors.unregisterSheet("core", ActorSheet);
     Actors.registerSheet("dnd5e", gActorSheet, { makeDefault: true });
     Items.unregisterSheet("core", ItemSheet);
     Items.registerSheet("dnd5e", sItemSheet, { makeDefault: true });
 
-    game.settings.register("sandbox", "showADV", {
-        name: "Show Roll with Advantage option",
-        hint: "If checked, 1d20,ADV,DIS options will be displayed under the Actor's name",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
-    });
 
-    game.settings.register("sandbox", "showSimpleRoller", {
-        name: "Show d20 Roll icon option",
-        hint: "If checked a d20 icon will be displayed under the Actor's name",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
+    sb_settings_menus();
+    sb_settings_registration();
+    console.log('Sandbox | Register Handlebar Helper');
+    Handlebars.registerHelper('eachProperty', function(context, options) {      
+        var ret = "";
+        for(var prop in context)
+        {
+          if(context.hasOwnProperty(prop)){
+            ret = ret + options.fn({property:prop.toString(),value:context[prop]});
+          }
+        }
+        return ret;
     });
-
-    game.settings.register("sandbox", "consistencycheck", {
-        name: "Check cItem Consistency",
-        hint: "If checked, when rebuilding template, every cItem will be evaluated for consistency. WARNING: May take several minutes in big systems",
-        scope: "world",
-        config: false,
-        default: false,
-        type: Boolean,
+    Handlebars.registerHelper('sb_concat', function() {
+      var outStr = '';
+      for (var arg in arguments) {
+        if (typeof arguments[arg] != 'object') {
+          outStr += arguments[arg];
+        }
+      }
+      return outStr;
     });
-
-    game.settings.register("sandbox", "showDC", {
-        name: "Show DC window",
-        hint: "If checked a DC box will appear at the bottom of the screen",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
+    
+    Handlebars.registerHelper('sb_item_icon', function(itemid) {
+      
+      let outStr='';
+      let item=game.items.get(itemid);
+      if (item!=null){
+        outStr=item.img;
+      }
+      return outStr;
     });
-
-    game.settings.register("sandbox", "showLastRoll", {
-        name: "Show Last Roll window",
-        hint: "If checked a box displaying the results of the last Roll will appear at the bottom of the screen",
-        scope: "world",
-        config: true,
-        default: true,
-        type: Boolean,
+    
+    Handlebars.registerHelper('nullToEmptyString', function(v1) {      
+      if(v1==null){
+        return "";
+      } else {
+        return v1;
+      }      
     });
-
-    game.settings.register("sandbox", "diff", {
-        name: "GM difficulty",
-        hint: "This is linked to the DC Box at the bottom of the screen",
-        scope: "world",
-        config: false,
-        default: 0,
-        type: Number,
+    
+    Handlebars.registerHelper('ifNotEmpty', function(v1,options) {      
+      if(v1==null || v1==''){
+        return options.inverse(this);
+      } else {
+        return options.fn(this);
+      }      
     });
-
-    game.settings.register("sandbox", "rollmod", {
-        name: "Show Roll Modifier",
-        hint: "This number will be added to the total of all rolls",
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
+    
+    
+    Handlebars.registerHelper('cItemAddedBy', function(addedBy) {      
+      if(addedBy==null||addedBy==''){
+        return "";
+      } else {
+        // check with id
+        let citem = game.items.get(addedBy);
+        if (citem==null){
+          // check with cikey
+          citem=game.system.customitemmaps.citemsbycikey.get(addedBy);
+        }
+        if(citem!=null){
+          return 'cItem ' + citem.name;
+        } else{
+          return addedBy;
+        }
+      }      
     });
-
-    game.settings.register("sandbox", "tokenOptions", {
-        name: "Token Options",
-        hint: "You can specify bar1 under token on the template Token tab",
-        scope: "world",
-        config: true,
-        default: 0,
-        type: Boolean,
-    });
-
-    game.settings.register("sandbox", "customStyle", {
-        name: "CSS Style file",
-        hint: "You can specify a custom styling file. If default wanted, leave blank",
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    game.settings.register("sandbox", "initKey", {
-        name: "Initiative Attribute Key",
-        hint: "After editing, please refresh instance",
-        scope: "world",
-        config: true,
-        default: "",
-        type: String,
-    });
-
-    game.settings.register("sandbox", "auxsettext1", {
-        name: "Auxiliary settings text 1",
-        hint: "After editing, please refresh instance",
-        scope: "world",
-        config: false,
-        default: null,
-        type: String,
-    });
-
-    game.settings.register("sandbox", "idDict", {
-        name: "Dictionary IDs for importing cItems",
-        hint: "As cItems dont have word keys, this ensures faster lokup",
-        scope: "world",
-        config: false,
-        default: null,
-        type: String,
-    });
+    
+   
+  console.log('Sandbox | Extending available text files extensions for Filepicker'); 
+   /**
+   * Get the valid file extensions for a given named file picker type
+   * @param {string} type
+   * @returns {string[]}
+   * @private
+   */  
+  FilePicker.prototype._getExtensions=function(type) {        
+    const TEXT_EXTENDED_FILE_EXTENSIONS = {
+      css: "text/css",
+      csv: "text/csv",
+      json: "application/json",
+      md: "text/markdown",
+      pdf: "application/pdf",
+      tsv: "text/tab-separated-values",
+      txt: "text/plain",
+      xml: "application/xml",
+      yml: "application/yaml",
+      yaml: "application/yaml"
+    };
+    
+    // Identify allowed extensions
+    let types = [
+      CONST.IMAGE_FILE_EXTENSIONS,
+      CONST.AUDIO_FILE_EXTENSIONS,
+      CONST.VIDEO_FILE_EXTENSIONS,
+      CONST.TEXT_FILE_EXTENSIONS,
+      CONST.FONT_FILE_EXTENSIONS,
+      CONST.GRAPHICS_FILE_EXTENSIONS
+    ].flatMap(extensions => Object.keys(extensions));
+    if ( type === "folder" ) types = [];
+    else if ( type === "font" ) types = Object.keys(CONST.FONT_FILE_EXTENSIONS);
+    else if ( type === "text" ) types = Object.keys(CONST.TEXT_FILE_EXTENSIONS);
+    else if ( type === "textextended" ) types = Object.keys(TEXT_EXTENDED_FILE_EXTENSIONS);
+    else if ( type === "graphics" ) types = Object.keys(CONST.GRAPHICS_FILE_EXTENSIONS);
+    else if ( type === "image" ) types = Object.keys(CONST.IMAGE_FILE_EXTENSIONS);
+    else if ( type === "audio" ) types = Object.keys(CONST.AUDIO_FILE_EXTENSIONS);
+    else if ( type === "video" ) types = Object.keys(CONST.VIDEO_FILE_EXTENSIONS);
+    else if ( type === "imagevideo") {
+      types = Object.keys(CONST.IMAGE_FILE_EXTENSIONS).concat(Object.keys(CONST.VIDEO_FILE_EXTENSIONS));
+    }
+    return types.map(t => `.${t.toLowerCase()}`);
+  }
+    //
 
     Combat.prototype.rollInitiative = async function (ids, { formula = null, updateTurn = true, messageOptions = {} } = {}) {
 
         // Structure input data
         ids = typeof ids === "string" ? [ids] : ids;
-        const currentId = this.combatant.id;
+        let currentId;
+        if(this.hasOwnProperty('combatant')){
+          currentId = this.combatant.id;
+        }
         const rollMode = messageOptions.rollMode || game.settings.get("core", "rollMode");
 
         // Iterate over Combatants, performing an initiative roll for each
@@ -262,17 +343,19 @@ Hooks.once("init", async function () {
 
             // Produce an initiative roll for the Combatant
             const roll = await combatant.getInitiativeRoll(formula);
-            console.log(roll);
+            //console.log(roll);
             updates.push({ _id: id, initiative: roll.total });
 
             // Construct chat message data
+            
             let messageData = foundry.utils.mergeObject({
                 speaker: {
                     scene: this.scene.id,
                     actor: combatant.actor?.id,
                     token: combatant.token?.id,
-                    alias: combatant.name
+                    alias: combatant.name                    
                 },
+                
                 flavor: game.i18n.format("COMBAT.RollsInitiative", { name: combatant.name }),
                 flags: { "core.initiativeRoll": true }
             }, messageOptions);
@@ -309,7 +392,6 @@ Hooks.once("init", async function () {
         return roll.evaluate({ async: false });
     };
 
-
     Combatant.prototype._getInitiativeFormula = async function () {
 
         let initF = await game.settings.get("sandbox", "initKey");
@@ -318,14 +400,14 @@ Hooks.once("init", async function () {
             formula = "@{" + initF + "}"
         }
 
-        formula = await auxMeth.autoParser(formula, this.actor.data.data.attributes, null, true, false);
-        formula = await auxMeth.autoParser(formula, this.actor.data.data.attributes, null, true, false);
+        formula = await auxMeth.autoParser(formula, this.actor.system.attributes, null, true, false);
+        formula = await auxMeth.autoParser(formula, this.actor.system.attributes, null, true, false);
 
-        console.log("aqui1");
+        
 
         CONFIG.Combat.initiative.formula = formula;
 
-        console.log(formula);
+        //console.log(formula);
 
         return CONFIG.Combat.initiative.formula || game.system.data.initiative;
 
@@ -369,7 +451,7 @@ Hooks.once("init", async function () {
             const docs = await this.documentClass.createDocuments(chunk, options);
             let dictext = game.settings.get("sandbox", "idDict");
             let arrdisct = {};
-            if (dictext != "")
+            if (dictext != null)
                 arrdisct = JSON.parse(dictext);
             else {
                 arrdisct.ids = {};
@@ -377,10 +459,10 @@ Hooks.once("init", async function () {
             let register = false;
             for (let i = 0; i < docs.length; i++) {
                 let mydoc = docs[i];
-                if (hasProperty(mydoc, "data"))
-                    if (hasProperty(mydoc.data, "data"))
-                        if (hasProperty(mydoc.data.data, "ciKey")) {
-                            arrdisct.ids[mydoc.data.data.ciKey] = mydoc.id;
+                if (hasProperty(mydoc, "system"))
+                    
+                        if (hasProperty(mydoc.system, "ciKey")) {
+                            arrdisct.ids[mydoc.system.ciKey] = mydoc.id;
                             register = true;
                         }
 
@@ -406,7 +488,7 @@ Hooks.once("init", async function () {
     WorldCollection.prototype.importFromCompendium = async function (pack, id, updateData = {}, options = {}) {
         //console.log("importing");
         const cls = this.documentClass;
-        if (pack.metadata.entity !== cls.documentName) {
+        if (pack.metadata.type !== cls.documentName) {
             throw new Error(`The ${pack.documentName} Document type provided by Compendium ${pack.collection} is incorrect for this Collection`);
         }
 
@@ -419,11 +501,11 @@ Hooks.once("init", async function () {
         console.log(`${vtt} | Importing ${cls.documentName} ${document.name} from ${pack.collection}`);
         this.directory.activate();
         let newObj = await this.documentClass.create(createData, options);
-        await auxMeth.registerDicID(id, newObj.id, newObj.data.data.ciKey);
+        await auxMeth.registerDicID(id, newObj.id, newObj.system.ciKey);
         return newObj;
     };
 
-         JournalEntry.prototype.show = async function (mode = "text", force = false) {
+    JournalEntry.prototype.show = async function (mode = "text", force = false) {
         if (!this.isOwner) throw new Error("You may only request to show Journal Entries which you own.");
         return new Promise((resolve) => {
             game.socket.emit("showEntry", this.uuid, mode, force, entry => {
@@ -437,31 +519,32 @@ Hooks.once("init", async function () {
             });
         });
     }; 
+    
+
+    
 
     CONFIG.Combat.initiative = {
         formula: "1d20",
         decimals: 2
     };
 
+    // register socket handler
     game.socket.on("system.sandbox", (data) => {
-        if (data.op === 'target_edit') {
-            let actorOwner = game.actors.get(data.actorId);
-            actorOwner.handleTargetRequest(data);
-        }
+      socketHandler(data);           
     });
 
-    game.socket.on("system.sandbox", (data) => {
-        if (data.op === 'transfer_edit') {
-            let actorOwner = game.actors.get(data.ownerID);
-            actorOwner.handleTransferEdit(data);
-        }
-    });
+    
 
-
+    let oAPI = new SandboxAPI();
+    oAPI.initialize();
+    
 });
 
 Hooks.once('ready', async () => {
-    //console.log("ready!");
+    console.log("Sandbox | Ready | Start");
+    game.user.setFlag('world','updateItemMapsDisabled',false);
+    game.user.setFlag('world','reloadAfterTemplateRebuildDisabled',false);
+    
     Hooks.on("hotbarDrop", (bar, data, slot) => createSandboxMacro(data, slot)); // ALONDAAR
 
     //Custom styling
@@ -473,8 +556,15 @@ Hooks.once('ready', async () => {
         link.href = game.settings.get("sandbox", "customStyle");
         await document.getElementsByTagName('head')[0].appendChild(link);
     }
-
-
+    const OPTION_SHEET_RESIZABLE_CONTENT = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_SHEET_RESIZABLE_CONTENT.ID);
+    if(OPTION_SHEET_RESIZABLE_CONTENT){
+      // add resize css
+      const link = document.createElement('link');
+        link.type = 'text/css';
+        link.rel = 'stylesheet';
+        link.href = 'systems/sandbox/styles/sb-resizable-content.css';
+        await document.getElementsByTagName('head')[0].appendChild(link);
+    }
     //Gets current sheets
     await auxMeth.getSheets();
 
@@ -483,9 +573,10 @@ Hooks.once('ready', async () => {
     if (game.user.isGM) {
 
         game.data.rolldc = 3;
-
-        let basedoc = document.getElementsByClassName("vtt game system-sandbox");
-
+        // in v10 body class is changed
+        //let basedoc = document.getElementsByClassName("vtt game system-sandbox");
+        let basedoc = document.getElementsByClassName("vtt system-sandbox");
+        
         let hotbar = document.createElement("DIV");
         hotbar.className = "dcroll-bar";
         hotbar.setAttribute("id", "dcroll-bar");
@@ -581,7 +672,16 @@ Hooks.once('ready', async () => {
 
     }
 
+    // update custom item maps
+    await auxMeth.updateItemMaps();
+    if(game.user.isGM){
+      await versionManagement()
+    }
+    console.log("Sandbox | Ready | Completed");
 });
+
+
+
 
 Hooks.on("renderSidebarTab", createExportButtons);
 
@@ -594,46 +694,152 @@ function createExportButtons(sidebar, jq) {
         return;
     //NEW SETTINGS OPTIONS
     let settingstab = jq.get(0).querySelector('#settings-game');
+    // with drop down 
+    // check if module Custom CSS is installed and activated
+    let isCustomCSSActive=false;
+    if (game.modules.get("custom-css")!=null && game.system.customcssform!=null){
+      isCustomCSSActive=game.modules.get("custom-css").active;
+    }
+    let menuItems=[
+      {
+        name: "Build Actor Templates",
+        icon: "<i class='fas fa-rotate fa-fw'></i>",
+        tooltip:"Build(or re-builds) actor templates",
+        condition:true,
+        callback: async() => {
+          let api=game.system.api;
+          await api.BuildActorTemplates(); 
+        }
+      },  
+      
+      {
+        name: "Check Consistency",
+        icon: "<i class='fas fa-box-check fa-fw'></i>",
+        tooltip:"Checks and repairs items/actors for missing/invalid data",
+        condition:true,
+        callback: async() => {
+          await auxMeth.checkConsistency();
+        }
+      },            
+      {
+        name: "Custom CSS",
+        tooltip:"Display module Custom CSS",
+        icon: "<i class='fas fa-file-code fa-fw'></i>",
+        condition:isCustomCSSActive,
+        callback: html => {
+          let f = new game.system.customcssform();
+          f.render(true,{focus:true});
+        }
+      },
+      {
+        name: "JSON Export",
+        icon: "<i class='fas fa-file-export fa-fw'></i>",
+        tooltip:"Run JSON Export tool",
+        condition:true,
+        callback: html => {auxMeth.exportBrowser();}
+      },
+      {
+        name: "JSON Import",
+        tooltip:"Run JSON Import tool",
+        icon: "<i class='fas fa-file-import fa-fw'></i>",
+        condition:true,
+        callback: html => {auxMeth.getImportFile();}
+      },
+      {
+        name: "Sandbox Settings",
+        tooltip:"Display Sandbox System Settings",
+        icon: "<i class='fas fa-cog fa-fw'></i>",
+        condition:true,
+        callback: html => {console.log(html)
+          let f = new SystemSettingsForm();
+          f.render(true,{focus:true});
+        }
+      },  
+      {
+        name: "Sandbox Tools",
+        tooltip:"Display Sandbox Tools",
+        icon: "<i class='fas fa-toolbox fa-fw'></i>",
+        condition:true,
+        callback: html => {
+          let f = new SandboxToolsForm();
+          f.render(true,{focus:true});
+        }
+      },
+      {
+        name: "Bug Report",
+        tooltip:"Display Bug Report Form",
+        icon: "<i class='fas fa-bug fa-fw'></i>",
+        condition:true,
+        callback: html => {
+          SBBugReport();
+        }
+      }      
+    ];     
 
-    let exportButton = document.createElement("BUTTON");
-    exportButton.textContent = "EXPORT SANDBOX JSON";
-
-    exportButton.addEventListener("click", (event) => {
-        auxMeth.exportBrowser();
-
-    });
-
-    let importButton = document.createElement("BUTTON");
-    importButton.textContent = "IMPORT SANDBOX JSON";
-
-    importButton.addEventListener("click", (event) => {
-        auxMeth.getImportFile();
-
-    });
-
-    settingstab.appendChild(exportButton);
-    settingstab.appendChild(importButton);
+    // new h2 after
+    let sandboxheader=document.createElement("H2");
+    sandboxheader.innerHTML = `${game.system.title}`;        
+    let sandboxheader_parent = jq.get(0).querySelector('#settings > h2:nth-child(5)');
+    let game_details=jq.get(0).querySelector('#game-details');    
+    settingstab.parentNode.insertBefore(sandboxheader,game_details.nextSibling);    
+    let sandboxquickmenu=document.createElement("UL");    
+    let htmlmenubar=document.createElement("LI");
+    htmlmenubar.className += " sb-menu-bar";
+    for(let menuitem of menuItems ){
+      if(menuitem.condition){
+        let menubutton=document.createElement("A");
+        menubutton.innerHTML=menuitem.icon ;
+        //menubutton.setAttribute("title",menuitem.name);
+        menubutton.dataset.tooltip = menuitem.name;
+        menubutton.className += " sb-menu-bar-button";
+        menubutton.addEventListener("click",menuitem.callback);
+        htmlmenubar.appendChild(menubutton);
+      }
+    }    
+    sandboxquickmenu.innerHTML=`<li><i id="sb-game-system-sandbox-quickmenu-icon" class="fas fa-bars" title="Show Sandbox Quick Menu"></i> Sandbox Tools</li>`;
+    sandboxquickmenu.setAttribute("id", "sb-game-system-sandbox-quickmenu");        
+    settingstab.parentNode.insertBefore(htmlmenubar,sandboxheader.nextSibling);    
 }
+
+
+Hooks.on("sandbox.updateSystemSetting", async(systemid,options) => {
+  console.log('Sandbox | updateSystemSetting:' + systemid);
+  if(systemid=="sandbox"){
+    
+    // broadcast changes
+    game.socket.emit("system.sandbox", {
+        op: SOCKETCONSTANTS.MSG.OPERATIONS.CLIENT_REFRESH,
+        data:{
+          askForReload:options.askForReload,
+          requiresHardRender:options.requiresHardRender,
+          requiresRender:options.requiresRender        
+        }
+    });
+    auxMeth.clientRefresh(options);
+  }
+});
+
+
 
 //COPIED FROM A MODULE. TO SHOW A SHIELD ON A TOKEN AND LINK THE ATTRIBUTE
 Hooks.on("hoverToken", (token, hovered) => {
-
+  //console.log('hoverToken');
     if (!game.settings.get("sandbox", "tokenOptions"))
         return;
 
     if (token.actor == null)
         return;
 
-    if (token.actor.data.data.tokenshield == null)
+    if (token.actor.system.tokenshield == null)
         return;
 
-    let shieldprop = token.actor.data.data.tokenshield;
+    let shieldprop = token.actor.system.tokenshield;
     //console.log(shieldprop);
 
-    if (token.actor.data.data.attributes[shieldprop] == null)
+    if (token.actor.system.attributes[shieldprop] == null)
         return;
 
-    let ca = token.actor.data.data.attributes[shieldprop].value;
+    let ca = token.actor.system.attributes[shieldprop].value;
 
     let template = $(`
 <div class="section">
@@ -657,68 +863,228 @@ Hooks.on("hoverToken", (token, hovered) => {
 
 Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
     //console.log(actor);
+    //console.log('preUpdateActor')
     //console.log(updateData);
     //console.log(data.data.istemplate);
     //console.log("preup");
-
-    //await actor.sheet.setTokenOptions(actor.data);
-    //    let newname = actor.data.name;
-    //
+    
+    // make sure that actor has originalId(used for id/integrity checks)    
+    if (actor.getFlag('sandbox','originalId') == null ) {
+      console.log('Sandbox | preUpdateActor | ' + 'Updating originalId for actor ['+ actor.name +']')
+      if (!hasProperty(updateData, "flags")){                     
+        // update carries no flags
+        setProperty(updateData, "flags", {'sandbox':{'originalId':actor.id}});
+      } else {
+        // update has flags        
+        if (!hasProperty(updateData.flags, "sandbox")){
+          // update carries no sandbox flags
+          setProperty(updateData.flags,'sandbox',{'originalId':actor.id});
+          
+        } else {
+          // update carries sandbox flags
+          updateData.flags.sandbox.originalId=actor.id;
+        }
+      }
+    }
+        
     if (updateData.name) {
-
-        if (!actor.data.data.istemplate) {
+        if (!actor.system.istemplate) {
             if (!updateData.token)
                 setProperty(updateData, "token", {});
             updateData.token.name = updateData.name;
         }
-
         else {
             delete updateData.name;
         }
-
-
     }
-
-
-    if (updateData["data.rollmode"]) {
-        if (!hasProperty(updateData, "data"))
-            setProperty(updateData, "data", {});
-        updateData.data.rollmode = updateData["data.rollmode"];
+    if (updateData["system.rollmode"]) {
+        if (!hasProperty(updateData, "system"))
+            setProperty(updateData, "system", {});
+        updateData.data.rollmode = updateData["system.rollmode"];
     }
+});
 
+
+Hooks.on("createActor", async (actor,options,userId) => {
+  //console.log('createActor')
+  //console.log(actor)
+  //console.log(options)
+  
+  if (actor.getFlag('sandbox','originalId') == null){
+    // newly created or imported by json export from older sandbox
+    // set new originalId
+    console.log('createActor | New actor created')
+    actor.setFlag('sandbox','originalId', actor.id ); 
+  } else {
+    // imported or duplicated
+    let importflags=actor.getFlag("sandbox", "import")
+    if(importflags!=null && importflags.importedTime==0){
+      console.log('createActor | Actor [' + actor.name + '] created from import')
+      importflags.importedTime=Date.now()
+      // update marker
+      actor.setFlag('sandbox','import',importflags);
+    } else {
+      console.log('createActor | Actor [' + actor.name + '] created from duplicated')
+      // update originalId
+      actor.setFlag('sandbox','originalId', actor.id );
+    }
+    
+  }
+     
+});
+
+
+Hooks.on("preUpdateItem", async (item, updateData, options, userId) => {
+    //console.log("Sandbox | preUpdateItem Hook | ciKey:" + item.system.ciKey );    
     //console.log(updateData);
+    
+    // make sure that item has originalId(used for id/integrity checks)    
+    if (item.getFlag('sandbox','originalId') == null ) {
+      console.log('Sandbox | preUpdateItem | ' + 'Updating originalId for item ['+ item.name +']')
+      if (!hasProperty(updateData, "flags")){                     
+        // update carries no flags
+        setProperty(updateData, "flags", {'sandbox':{'originalId':item.id}});
+      } else {
+        // update has flags        
+        if (!hasProperty(updateData.flags, "sandbox")){
+          // update carries no sandbox flags
+          setProperty(updateData.flags,'sandbox',{'originalId':item.id});
+          
+        } else {
+          // update carries sandbox flags
+          updateData.flags.sandbox.originalId=item.id;
+        }
+      }
+    }
+    
+    if (item.type == "cItem" && game.user.isGM) {
+        if (item.system.ciKey == "") {
+            if (!hasProperty(updateData, "system"))
+                setProperty(updateData, "system", {});
+            updateData.system.ciKey = item.id;
+        }
+    }
+    const OPTION_AUTOGENERATE_PROPERTY_ICON = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_AUTOGENERATE_PROPERTY_ICON.ID);
+    if(item.type=="property" && OPTION_AUTOGENERATE_PROPERTY_ICON){
+      if(updateData.hasOwnProperty('system')){
+        let iconbasefilename="systems/sandbox/styles/icons/propertytypes/sb_property_";
+        let iconfile;
+        if(updateData.system.hasOwnProperty('datatype')){
+          // property and datatype change                              
+          if((updateData.system.datatype=="badge" || updateData.system.datatype=="label" || updateData.system.datatype=="checkbox" || updateData.system.datatype=="list" || updateData.system.datatype=="radio" || updateData.system.datatype=="simplenumeric" || updateData.system.datatype=="simpletext" || updateData.system.datatype=="textarea") && item.system.hasroll){
+            //iconfile=iconbasefilename + 'die.svg'; 
+            iconfile=iconbasefilename + updateData.system.datatype + '_rollable.svg'; 
+          } else {
+            iconfile=iconbasefilename + updateData.system.datatype + '.svg'; 
+          }                               
+          updateData.img=iconfile;
+        } else if(updateData.system.hasOwnProperty('hasroll')){
+          if((item.system.datatype=="badge" || item.system.datatype=="label" || item.system.datatype=="checkbox" || item.system.datatype=="list" || item.system.datatype=="radio" || item.system.datatype=="simplenumeric" || item.system.datatype=="simpletext" || item.system.datatype=="textarea") && updateData.system.hasroll){
+            //iconfile=iconbasefilename + 'die.svg'; 
+            iconfile=iconbasefilename + item.system.datatype + '_rollable.svg';
+          } else {
+            iconfile=iconbasefilename + item.system.datatype + '.svg'; 
+          }                               
+          updateData.img=iconfile;
+        }
+      }
+    }
+});
 
+Hooks.on("createItem", async (item,options,userId) => {
+    //console.log(item);
+    if (item.getFlag('sandbox','originalId') == null){
+    // newly created or imported by json export from older sandbox
+    // set new originalId
+    console.log('createItem | New item created')
+    item.setFlag('sandbox','originalId', item.id ); 
+  } else {
+    // imported or duplicated
+    let importflags=item.getFlag("sandbox", "import")
+    if(importflags!=null && importflags.importedTime==0){
+      console.log('createItem | Item [' + item.name + '] created from import')
+      importflags.importedTime=Date.now()
+      // update marker
+      item.setFlag('sandbox','import',importflags);
+    } else {
+      console.log('createItem | Item [' + item.name + '] created from duplicated')
+      // update originalId
+      item.setFlag('sandbox','originalId', item.id );
+    }
+    
+  }
+    
+    let do_update = false;
+    let image = "";
+    if (item.type == "cItem" && game.user.isGM) {
+        //console.log(entity);
+
+        if (item.system.ciKey == "") {
+            item.system.ciKey = item.id;
+            //do_update = true;
+        }
+        
+
+        for (let i = 0; i < item.system.mods.length; i++) {
+            const mymod = item.system.mods[i];
+            if (mymod.citem != item.id) {
+                mymod.citem = item.id;
+                do_update = true;
+            }
+
+        }
+        //BEWARE OF THIS, THIS WAS NEEDED WHEN DUPLICATING CITEMS IN THE PAST!!
+        if (do_update){
+          // Ramses00: commented te following
+          //  await entity.update(entity, { diff: false });
+        }
+    }
 
 });
 
-Hooks.on("preUpdateItem", async (item, updateData, options, userId) => {
-    //console.log(actor);
-    //console.log(updateData);
-    //console.log(data.data.istemplate);
-    //console.log("preup");
-
-    //await actor.sheet.setTokenOptions(actor.data);
-    //    let newname = actor.data.name;
-    //
-    if (item.data.type == "cItem" && game.user.isGM) {
-
-        if (item.data.data.ciKey == "") {
-            if (!hasProperty(updateData, "data"))
-                setProperty(updateData, "data", {});
-            updateData.data.ciKey = item.id;
-        }
-
-
+Hooks.on("updateItem", async (item, updateData, options, userId) => {
+  // console.log('updateitem');
+  //console.log(item);
+  // update custom item maps
+  await auxMeth.updateItemMaps();
+  // check if update was for table property filter
+  try{
+    // check if property
+    if(item.type=='property'){
+      // check if table
+      if(item.system.datatype=='table'){
+        if(updateData.hasOwnProperty('system')){
+          // check if it was for tablefilter        
+          if(updateData.system.hasOwnProperty('tableoptions')){
+            if(updateData.system.tableoptions.hasOwnProperty('filter')){            
+              // force rerender on all open actor sheets
+              // check all open windows
+              for (let app in ui.windows){
+                // if actor or item sheet
+                if(ui.windows[app].options.baseApplication=='ActorSheet'){
+                  // render the sheet
+                  ui.windows[app].render(true);
+                }
+              }
+            }
+          }
+        }  
+      }
     }
-
-
+  } catch (err) {
+    console.error('SBE   | updateItem Err:' + err.message);
+  }  
+    
+    
+    
+    
 });
 
 Hooks.on("createToken", async (token, options, userId) => {
 
     if (game.settings.get("sandbox", "tokenOptions")) {
-        let tokenData = token.data;
-        let sameTokens = canvas.tokens.placeables.filter((tok) => tok.data.actorId === tokenData.actorId);
+        let tokenData = token;
+        let sameTokens = canvas.tokens.placeables.filter((tok) => tok.document.actorId === tokenData.actorId);
 
         if (token.actor.isToken) {
             let tokennumber = 0;
@@ -731,6 +1097,7 @@ Hooks.on("createToken", async (token, options, userId) => {
                 newname = token.name;
 
             token.update({ name: newname });
+            token.actor.update({name:newname});
         }
 
 
@@ -746,162 +1113,208 @@ Hooks.on('createCombatant', (combat, combatantId, options) => {
     combatantId.initiative = 1;
 });
 
-Hooks.on("preCreateActor", (createData) => {
-    if (createData.token != null)
-        createData.token.name = createData.name;
-
-    //    if(createData.data.data.istemplate)
-    //        createData.data.data.istemplate = false;
-    //
-    //    console.log(createData.data.data.istemplate);
-
+//Hooks.on("preCreateActor", (actor,data,options,userId) => {
+Hooks.on("preCreateActor", (actor,data,options,userId) => {  
+  //console.log('preCreateActor')
+  //console.log(options)
+  if (actor.token != null)
+    actor.token.name = actor.name;
+  
 });
+
+
+
+
 
 Hooks.on("deleteActor", (actor) => {
     //console.log(actor);
-
 });
 
-//Hooks.on("updateActor", async (actor, updateData,options,userId) => {
-//
-//    if(actor.data.permission.default >= CONST.ENTITY_PERMISSIONS.OBSERVER ||  actor.data.permission[game.user.id] >= CONST.ENTITY_PERMISSIONS.OBSERVER || game.user.isGM){
-//        let myuser = userId;
-//    }
-//    else{
-//        return;
-//    }
-//
-//    if(updateData.data!=null){
-//        if(!options.stopit && (updateData.data.attributes || updateData.data.citems)){
-//
-//            //let adata = await actor.actorUpdater(actor.data);
-//            //THIS UPDATE BELOW IS THE CULPRIT
-//            //await actor.update(actor.data,{stopit:true});
-//        }
-//    }
-//
-//});
 
-Hooks.on("closegActorSheet", (entity, eventData) => {
+
+Hooks.on("closegActorSheet", async (entity, eventData) => {
     //console.log(entity);
     //console.log(eventData);
     //console.log("closing sheet");
-
-    let character = entity.object.data;
+    let character = entity.object;
     if (character.flags.ischeckingauto)
         character.flags.ischeckingauto = false;
-
     //entity.object.update({"token":entity.object.data.token},{diff:false});
-
-
 });
 
-Hooks.on("preCreateItem", (entity, options, userId) => {
-    //    let image="";
-    //    console.log(entity.img);
-    //    if(entity.img == "icons/svg/item-bag.svg"){
-    //        console.log("aqui");
-
-    //
-    //        if(entity.type=="sheettab"){
-    //            image="systems/sandbox/docs/icons/sh_tab_icon.png";
-    //        }
-    //
-    //        if(entity.type=="group"){
-    //            image="systems/sandbox/docs/icons/sh_group_icon.png";
-    //        }
-    //
-    //        if(entity.type=="panel"){
-    //            image="systems/sandbox/docs/icons/sh_panel_icon.png";
-    //        }
-    //
-    //        if(entity.type=="multipanel"){
-    //            image="systems/sandbox/docs/icons/sh_panel_icon.png";
-    //        }
-    //
-    //        if(entity.type=="property"){
-    //            image="systems/sandbox/docs/icons/sh_prop_icon.png";
-    //        }
-    //
-    //        if(image!="")
-    //            entity.img = image;
-    //    }
-    //
-    //    console.log(image);
 
 
 
+
+
+
+
+
+
+Hooks.on("renderGameFolderPicker",async (app, html,data) => { 
+  titleToTooltip(app,html)
 });
 
-Hooks.on("createItem", async (entity) => {
-    //console.log(entity);
-    let do_update = false;
-    let image = "";
-    if (entity.type == "cItem" && game.user.isGM) {
-        //console.log(entity);
 
-        if (entity.data.data.ciKey == "") {
-            entity.data.data.ciKey = entity.id;
-            //do_update = true;
-        }
-        // else {
-        //     let is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == entity.data.data.ciKey && y.id != entity.id);
-        //     if (is_here){
-        //         entity.data.data.ciKey = entity.id;
-        //         do_update = true;
-        //     }
-
-        // }
-
-        for (let i = 0; i < entity.data.data.mods.length; i++) {
-            const mymod = entity.data.data.mods[i];
-            if (mymod.citem != entity.data.id) {
-                mymod.citem = entity.data.id;
-                do_update = true;
-            }
-
-        }
-        //BEWARE OF THIS, THIS WAS NEEDED WHEN DUPLICATING CITEMS IN THE PAST!!
-        if (do_update)
-            await entity.update(entity.data, { diff: false });
-    }
-
+Hooks.on("renderSandboxInfoForm",async (app, html,data) => {  
+  //console.log('Sandbox | renderSandboxInfoForm');
+  //console.log(html)
+  let appwindowinfo = sb_sheet_appwindow_id(app.id); 
+  sb_sheet_display_show_to_others_in_sheet_caption(html,appwindowinfo.type, appwindowinfo);
+  sb_sheet_display_show_infoform_source_in_sheet_caption(html,appwindowinfo);
+  await app.scrollBarTest(html);
+  
+  html.find('.window-resizable-handle').mouseup(ev => {
+        ev.preventDefault();
+        app.scrollBarTest(html);
+    });
+  titleToTooltip(app,html)
 });
+
 
 Hooks.on("rendersItemSheet", async (app, html, data) => {
+   
+    //console.log("Sandbox | rendersItemSheet | " + app.document.type + ':' + app.document.name);
     //console.log(app);
-
-    app.customCallOverride(html,app.object.data);
-
-    if (app.object.data.type == "cItem") {
-        app.refreshCIAttributes(html);
+    
+    let appwindowinfo = sb_sheet_appwindow_id(app.id);  
+    sb_sheet_display_id_in_window_caption(html,'Item', appwindowinfo);
+    sb_sheet_display_show_to_others_in_sheet_caption(html,'Item', appwindowinfo,true,'sb-info-form-show-all');
+    sb_sheet_item_delete_protection_add_caption_icon(html);
+    
+    app.customCallOverride(html,app.object);
+    sb_sheet_toggle_delete_item_visible(html); 
+    if (app.object.type == "cItem") {
+        await app.refreshCIAttributes(html);
     }
-
-    if (app.object.data.type == "property") {
+    if (app.object.type == "property") {
         app.listMacros(html);
     }
-
+    adaptItemSheetGeoMetrics(app,html);
     await app.scrollBarTest(html);
     app._setScrollStates();
-
-
+    
+    
+    
     html.find('.window-resizable-handle').mouseup(ev => {
         ev.preventDefault();
         app.scrollBarTest(html);
     });
-
+    titleToTooltip(app,html)
 });
 
+function titleToTooltip(_app, [...html],useFoundryStandard=false) {
+  if (true){
+  (Array.isArray(html) ? html : [html])
+  .forEach(root => {
+    if (root instanceof HTMLElement) {
+      root.querySelectorAll("[title]")
+      .forEach(element => {        
+        replaceTitleWithToolTip(element,useFoundryStandard)
+      });
+      }
+    });
+  }
+}
+
+function replaceTitleWithToolTip(element,useFoundryStandard=false){
+  const title = element.title;  
+  if(title!=null && title!=''){
+    if(useFoundryStandard){
+      element.dataset.tooltip = title;
+    } else {
+      element.addEventListener("mouseover", async event => showsbToolTip(element, title, event));
+      element.addEventListener("mouseout", event => game.tooltip.deactivate());        
+    }
+    element.removeAttribute("title");
+  }
+}
+
+function showsbToolTip(element,title,event){
+  //const tooltipData = prepareTooltipData(combatant);  // A function I presume you have
+  //const content = await renderTemplate("your/tooltip/template.hbs", tooltipData);   
+  game.tooltip.activate(element, {text: title ,cssClass: "sb-tooltip"});
+  //game.tooltip.activate(element, { text: element.title, direction: TooltipManager.TOOLTIP_DIRECTIONS.LEFT, cssClass: 'sb-tooltip' });
+}
+
+
+async function hideChatMsgSecrets(chatmsgid,hide){  
+  let chatmsg=await game.messages.get(chatmsgid)
+  if(chatmsg!=null){
+    //console.log(chatmsg)
+    // get the content and find the secrets
+    let parser = new DOMParser();
+    let html = await parser.parseFromString(chatmsg.content, 'text/html');
+    let msgupdated=false;
+    if(html!=null){
+      //console.log(html)
+      let secrets=html.querySelectorAll('.secret')
+      if(secrets!=null){
+        if(secrets.length>0){
+          //console.log(secrets)
+          for (let i = 0; i < secrets.length; i++) {
+            if(hide){
+              // remove revealed
+              if(secrets[i].classList.contains("revealed")){
+                secrets[i].classList.remove('revealed')
+                msgupdated=true;
+              }
+            } else {
+              // add revealed  
+              if(!secrets[i].classList.contains("revealed")){
+                secrets[i].classList.add('revealed')
+                msgupdated=true;
+              }              
+            }
+          }           
+        }
+      }      
+    }
+    if(msgupdated){
+      await chatmsg.update({        
+        content: html.documentElement.innerHTML    
+      });
+    }
+  }
+}
+
+Hooks.on("renderSystemSettingsForm", async (app, html, data) => {
+  titleToTooltip(app,html)
+});
+
+
+
+Hooks.on("renderSandboxExpressionEditorForm", async (app, html, data) => {
+  titleToTooltip(app,html,true)
+});
+
+Hooks.on("renderSandboxTableFilterEditorForm", async (app, html, data) => {
+  titleToTooltip(app,html,true)
+});
+
+Hooks.on("renderSandboxJSONImportForm", async (app, html, data) => {
+  titleToTooltip(app,html,true)
+});
+
+Hooks.on("renderSandboxToolsForm", async (app, html, data) => {
+  titleToTooltip(app,html,true)
+});
+
+
 Hooks.on("rendergActorSheet", async (app, html, data) => {
-    //console.log("rendering Hook");
+    //console.log("Sandbox | rendergActorSheet");
     //console.log(app);
     //console.log(data);
+    let appwindowinfo = sb_sheet_appwindow_id(app.id);  
+    sb_sheet_display_id_in_window_caption(html,'Actor', appwindowinfo);
+    sb_sheet_display_show_to_others_in_sheet_caption(html,'Actor', appwindowinfo,true,'sb-info-form-show-all');
+    sb_sheet_item_delete_protection_add_caption_icon(html);
     const actor = app.actor;
 
     if (actor.token == null)
         actor.listSheets();
     //if(!actor.data.data.istemplate && !actor.data.flags.ischeckingauto){
-    if (!actor.data.data.istemplate) {
+    if (!actor.system.istemplate) {
         await app.refreshCItems(html);
         app.handleGMinputs(html);
         app.refreshBadge(html);
@@ -911,6 +1324,7 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
         app.setCheckboxImages(html);
         app.addHeaderButtons(html);
         app.customCallOverride(html);
+        sb_sheet_toggle_delete_item_visible(html);
         await app.setSheetStyle(actor);
         //app.scrollBarLoad(html);
 
@@ -927,13 +1341,48 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
 
     app.displaceTabs2(null, html);
     await app._setScrollStates();
-
+    
+    // add a ResizeObserver to trigger the resize of conntent
+    const myObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+//            console.log('width', entry.contentRect.width);
+//            console.log('height', entry.contentRect.height);
+      });
+    });
+    let sheetbody;
+    // for some updates the return html is a form
+    //debugger;
+    if (html[0].nodeName == 'FORM') {
+      //sheetelementid = html[0].parentElement.parentElement.id;
+      sheetbody=html.find('.sheet-body');
+    } else {
+      //sheetelementid = html[0].id;
+      sheetbody=html.find('.sheet-body');
+    }
+    
+    if(sheetbody!=null){
+      if(sheetbody.length>0){
+        myObserver.observe(sheetbody[0]);
+      }
+    }
+    titleToTooltip(app,html)
 });
 
 Hooks.on("renderChatMessage", async (app, html, data) => {
     //    console.log(app);
     //    console.log(data);
     //    console.log(html);
+    let speakerimg="icons/svg/mystery-man.svg"
+    let speakeractor=null;;
+    if(typeof data.message.speaker.actor==='string' ){        
+      speakeractor=game.actors.get(data.message.speaker.actor);
+      if(speakeractor!=null){
+        speakerimg=speakeractor.img;
+      }
+    } else {
+      // use user image
+      speakerimg = game.users.get(data.message.user).avatar
+    }
     let hide = false;
     let messageId = app.id;
     let msg = game.messages.get(messageId);
@@ -948,47 +1397,46 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     //        hide=true;
 
     //console.log(hide);
-    if (_html.includes("dice-roll") && !_html.includes("table-draw")) {
+    if (_html.includes("dice-roll") && !_html.includes("table-draw")) {  
+        let flavor = app.flavor;
+        if (flavor.length==0){
+          flavor="Free Roll"
+        }
         let rollData = {
             token: {
-                img: "icons/svg/d20-black.svg",
+                img: speakerimg,
                 name: "Free Roll"
             },
             actor: alias,
-            flavor: "Roll",
-            formula: app._roll.formula,
+            flavor: flavor,
+            formula: app.rolls[0].formula,
             mod: 0,
-            result: app._roll.total,
-            dice: app._roll.dice,
-            user: realuser.data.name,
+            result: app.rolls[0].total,
+            dice: app.rolls[0].dice,
+            user: realuser.name,
             showresult: true
         };
-
-
         await renderTemplate("systems/sandbox/templates/dice.html", rollData).then(async newhtml => {
-
             let container = html[0];
-
             let content = html.find('.dice-roll');
             content.replaceWith(newhtml);
-
             _html = await html[0].outerHTML;
-
-
         });
-
+        // scroll to the bottom
+        const chatlog=document.querySelector("#chat-log");
+        if(chatlog!=null){
+          chatlog.scrollTop = chatlog.scrollHeight;
+        }
     }
-
     //console.log(html);
-
     if (!_html.includes("roll-template")) {
         //console.log(_html);
         if (_html.includes("table-draw")) {
             let mytableID = data.message.flags.core.RollTable;
             let mytable = game.tables.get(mytableID);
-            let tableresult = mytable.getResultsForRoll(app._roll.total)[0].data.text;
+            let tableresult = mytable.getResultsForRoll(app.rolls[0].total)[0].text;
             html.find('.dice-roll');
-            if (mytable.data.permission.default == 0)
+            if (mytable.permission.default == 0)
                 hide = true;
         }
 
@@ -996,20 +1444,23 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             message: data.message.content,
             user: alias,
             isWhisper: data.isWhisper,
-            whisperTo: data.whisperTo
+            whisperTo: data.whisperTo,
+            token: {
+                img: speakerimg,
+                name: "Free Roll"
+            },
         };
-
         await renderTemplate("systems/sandbox/templates/sbmessage.html", msgData).then(async newhtml => {
-
             while (html.firstChild) {
                 html.removeChild(html.lastChild);
             }
-
             html[0].innerHTML = newhtml;
-
-
         });
-
+        // scroll to the bottom
+        const chatlog=document.querySelector("#chat-log");
+        if(chatlog!=null){
+          chatlog.scrollTop = chatlog.scrollHeight;
+        }
     }
 
     let deletebutton = $(html).find(".roll-message-delete")[0];
@@ -1019,20 +1470,16 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             $(html).find(".roll-message-delete").click(async ev => {
                 msg.delete(html);
             });
-            auxMeth.rollToMenu();
+            
+              auxMeth.rollToMenu();
+            
         }
 
         else {
             deletebutton.style.display = "none";
         }
     }
-
-
-
     //console.log(html);
-
-    //
-    //
     let iamWhispered = data.message.whisper.find(y => y == game.user.id);
     if (iamWhispered == null && data.message.whisper.length>0) {
         hide = true;
@@ -1053,7 +1500,62 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
     let clickdetail = $(html).find(".roll-detail-button")[0];
     let clickmain = $(html).find(".roll-main-button")[0];
     let citemlink = $(html).find(".roll-citemlink")[0];
-
+    
+    //  Hide/show secrets,        
+    //console.log('chat message | check for secrets')
+    let secrets=$(html).find(".secret");
+    if(secrets!=null){            
+      if(secrets.length>0){
+        //console.log('chat message | found secrets')         
+        let rollheader= $(html).find(".roll-header")[0];
+        let deletebutton = $(html).find(".roll-delete-button")[0];
+        // only check the first secrete, all secrets in a msg is hidden/revealed att the same time  
+        if(secrets[0].classList.contains('revealed')){
+          // revealed
+          if(game.user.isGM){ 
+            // add hide button  
+            let iconspan =document.createElement("span");
+            iconspan.className="roll-secrets-visibility";
+                    
+            let iconbutton = document.createElement("i");
+            iconbutton.className='secrethandlebtn fas fa-eye-slash';
+            iconbutton.setAttribute("title",game.i18n.localize("SANDBOX.ChatMessageSecretHide"))
+            iconspan.appendChild(iconbutton);
+            // add eventlister
+            iconbutton.addEventListener("click", async event => hideChatMsgSecrets(app.id,true));
+            
+            rollheader.insertBefore(iconspan,deletebutton);
+          } else{
+            // non-gm
+            // do nothing
+          }
+        } else {
+          // secret
+          if(game.user.isGM){             
+            // add reveal icon button
+            let iconspan =document.createElement("span");
+            iconspan.className="roll-secrets-visibility";
+            let iconbutton = document.createElement("i");
+            iconbutton.className='secrethandlebtn fas fa-eye';
+            iconbutton.setAttribute("title",game.i18n.localize("SANDBOX.ChatMessageSecretReveal"))  
+            iconspan.appendChild(iconbutton);
+            // add eventlister
+            iconbutton.addEventListener("click", async event => hideChatMsgSecrets(app.id,false)); 
+            rollheader.insertBefore(iconspan,deletebutton);
+          } else
+          {
+            // non-gm
+            // remove the elements
+            for (let i = 0; i < secrets.length; i++) {
+              secrets[i].remove();
+            }
+          }                        
+        }
+        
+      }
+    }            
+    
+ 
     if (detail == null) {
 
         return;
@@ -1110,22 +1612,48 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
         $(html).find(".roll-citemlink").click(ev => {
             let mylinkId = ev.target.getAttribute("id");
 
-            if (mylinkId) {
+            if (mylinkId) {                                
+                let showCitemInfoOnly=false;
+                if (game.user.isGM){
+                  const OPTION_USE_CITEM_INFO_FORM_FOR_GMS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_GMS.ID);
+                  if (OPTION_USE_CITEM_INFO_FORM_FOR_GMS){
+                    showCitemInfoOnly=true;
+                  }
+                } else {
+                  const OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID);
+                  if(OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS){
+                    showCitemInfoOnly=true;
+                  }
+                }
                 const item = game.items.get(mylinkId);
-                item.sheet.render(true);
+                if(showCitemInfoOnly){
+                  auxMeth.showCIitemInfo(item);
+                } else {
+                  item.sheet.render(true);
+                }
             }
 
         });
     }
-
-
+   titleToTooltip(app,html)
 });
 
 Hooks.on("renderDialog", async (app, html, data) => {
     const htmlDom = html[0];
 
     if (app.data.citemdialog) {
-
+        const OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID);
+        const OPTION_USE_CITEM_INFO_FORM_FOR_GMS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_GMS.ID);
+        let showCitemInfoOnly=false;
+        if (game.user.isGM){
+          if (OPTION_USE_CITEM_INFO_FORM_FOR_GMS){
+            showCitemInfoOnly=true;
+          }
+        } else {
+          if(OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS){
+            showCitemInfoOnly=true;
+          }
+        }
         let checkbtns = htmlDom.getElementsByClassName("dialog-check");
         let dialogDiv = htmlDom.getElementsByClassName("item-dialog");
         let button = htmlDom.getElementsByClassName("dialog-button")[0];
@@ -1134,31 +1662,26 @@ Hooks.on("renderDialog", async (app, html, data) => {
         let actorId = dialogDiv[0].getAttribute("actorId");
         let selectnum = dialogDiv[0].getAttribute("selectnum");
         const actor = game.actors.get(actorId);
-        setProperty(actor.data.flags, "selection", []);
+        setProperty(actor.flags, "selection", []);
         button.disabled = true;
 
         for (let i = 0; i < checkbtns.length; i++) {
             let check = checkbtns[i];
             check.addEventListener("change", (event) => {
-
                 let itemId = event.target.getAttribute("itemId");
                 if (event.target.checked) {
-                    actor.data.flags.selection.push(itemId);
+                    actor.flags.selection.push(itemId);
                 }
-
                 else {
-                    actor.data.flags.selection.splice(actor.data.flags.selection.indexOf(itemId), 1);
+                    actor.flags.selection.splice(actor.flags.selection.indexOf(itemId), 1);
                 }
-
-                let selected = actor.data.flags.selection.length;
-
+                let selected = actor.flags.selection.length;
                 if (selected != selectnum) {
                     button.disabled = true;
                 }
                 else {
                     button.disabled = false;
                 }
-
             });
         }
         for (let j = 0; j < links.length; j++) {
@@ -1166,7 +1689,11 @@ Hooks.on("renderDialog", async (app, html, data) => {
                 let itemId = event.target.getAttribute("itemId");
                 let ciKey = event.target.getAttribute("ciKey");
                 let citem = await auxMeth.getcItem(itemId, ciKey);
-                citem.sheet.render(true);
+                if(!showCitemInfoOnly){
+                  citem.sheet.render(true);
+                } else {
+                  auxMeth.showCIitemInfo(citem);
+                }
             });
         }
 
@@ -1334,8 +1861,8 @@ Hooks.on("renderDialog", async (app, html, data) => {
 
                 if (allfields[k].classList.contains("defvalue")) {
                     let deffield = allfields[k];
-                    let propDef = game.items.find(y => y.data.data.attKey == myKey);
-                    let defexpr = propDef.data.data.defvalue;
+                    let propDef = game.items.find(y => y.system.attKey == myKey);
+                    let defexpr = propDef.system.defvalue;
                     let finalvalue = defexpr;
 
                     if (isNaN(defexpr)) {
@@ -1343,7 +1870,7 @@ Hooks.on("renderDialog", async (app, html, data) => {
                         finalvalue = await auxMeth.autoParser(defexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number);
                     }
 
-                    if (propDef.data.data.datatype == "checkbox") {
+                    if (propDef.system.datatype == "checkbox") {
                         let checkfinal = false;
                         if (finalvalue === "true" || finalvalue)
                             checkfinal = true;
@@ -1374,20 +1901,20 @@ Hooks.on("renderDialog", async (app, html, data) => {
                     let changedvalue = event.target.value;
                     let changekey = event.target.getAttribute("attKey");
 
-                    let changeProp = game.items.find(y => y.data.data.attKey == changekey);
+                    let changeProp = game.items.find(y => y.system.attKey == changekey);
                     if (changeProp == null)
                         return;
 
-                    if (changeProp.data.data.datatype == "checkbox")
+                    if (changeProp.system.datatype == "checkbox")
                         changedvalue = event.target.checked;
 
                     dialogProps[changekey].value = changedvalue;
 
                     let autofield = autofields[k];
                     let propKey = autofield.getAttribute("attKey");
-                    let propObj = await game.items.find(y => y.data.data.attKey == propKey);
+                    let propObj = await game.items.find(y => y.system.attKey == propKey);
 
-                    let autoexpr = propObj.data.data.auto;
+                    let autoexpr = propObj.system.auto;
                     autoexpr = await auxMeth.parseDialogProps(autoexpr, dialogProps);
                     //console.log(autoexpr);
                     let finalvalue = await auxMeth.autoParser(autoexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number);
@@ -1403,6 +1930,7 @@ Hooks.on("renderDialog", async (app, html, data) => {
         }
     }
 
+    titleToTooltip(app,html);
 
 });
 
