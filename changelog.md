@@ -1,9 +1,9 @@
 # Sandbox Change Log
 ## Version 0.14.1(2023-11-26)
 - Added Table Filters
-- FIX: Using ~self~ in a conditional
+- FIX: Using `~self~` in a conditional
 - FIX: CSS for MAX of simplenumber to enable GM to edit 
-- FIX: Conditional ~blind~
+- FIX: Conditional `~blind~` 
 
 ## Version 0.14.0(2023-11-17)
 - Foundry changes

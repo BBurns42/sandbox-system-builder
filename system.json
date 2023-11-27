@@ -5,8 +5,7 @@
   "version": "0.14.1",
   "compatibility": {
     "minimum": "10",
-    "verified": "11",
-    "maximum": "11"
+    "verified": "11"
   },
   "templateVersion": 1,
   "authors": [{
@@ -49,8 +48,8 @@
   "gridUnits": "ft",
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "power",
-  "url": "https://gitlab.com/rolnl/sandbox-system-builder/",
-  "manifest": "https://gitlab.com/rolnl/sandbox-system-builder/raw/dev_0.14.0/system.json",
-  "download": "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/dev_0.14.0/sandbox-master.zip",
-  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/raw/dev_0.14.0/changelog.md"
+  "url":       "https://gitlab.com/rolnl/sandbox-system-builder/",
+  "manifest":  "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/master/system.json",
+  "download":  "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/v0.14.1/sandbox-system-builder-v0.14.1.zip",
+  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/v0.14.1/changelog.md"
 }
