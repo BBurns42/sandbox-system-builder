@@ -1,22 +1,56 @@
 {
-    "name": "sandbox",
-    "title": "Sandbox System Builder",
-    "description": "Custom system builder to build character sheets and rulesets for any game.",
-    "version": "0.13.4",
-    "minimumCoreVersion": "9",
-    "compatibleCoreVersion": "9",
-    "templateVersion": 1,
-    "author": "Seregras",
-    "esmodules": ["module/sandbox.js"],
-    "styles": ["styles/sandbox.css"],
-    "packs": [],
-    "socket":true,
-    "languages": [],
-    "gridDistance": 5,
-    "gridUnits": "ft",
-    "primaryTokenAttribute": "health",
-    "secondaryTokenAttribute": "power",
-    "url": "https://gitlab.com/rolnl/sandbox-system-builder/",
-    "manifest": "https://gitlab.com/rolnl/sandbox-system-builder/raw/dev_0.13.4/system.json",
-    "download": "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/dev_0.13.4/sandbox-master.zip"
+  "id": "sandbox",
+  "title": "Sandbox System Builder",
+  "description": "Custom system builder to build character sheets and rulesets for any game.",
+  "version": "0.14.1",
+  "compatibility": {
+    "minimum": "10",
+    "verified": "11",
+    "maximum": "11"
+  },
+  "templateVersion": 1,
+  "authors": [{
+      "name": "Seregras"
+    }, {
+      "name": "Alondaar"
+    }, {
+      "name": "Ramses800"
+    }],
+  "esmodules": [
+    "module/sandbox.js"
+  ],
+  "styles": [
+    "styles/sandbox.css",
+    "styles/dropdownmenu.css",
+    "styles/sb-codemirror.css",
+    "styles/system-settings.css",
+    "styles/sandbox-icons-font.css"
+  ],
+  "relationships": {    
+    "requires": [{
+      "id": "_CodeMirror",
+      "type": "module",
+      "manifest": "https://raw.githubusercontent.com/League-of-Foundry-Developers/codemirror-lib/master/module.json",
+      "compatibility": {
+        "verified": "5.58.3-fvtt5"
+      }
+    }]
+  },
+  "packs": [],
+  "socket": true,  
+  "languages": [
+    {
+      "lang": "en",
+      "name": "English",
+      "path": "languages/en.json"
+    }
+  ],
+  "gridDistance": 5,
+  "gridUnits": "ft",
+  "primaryTokenAttribute": "health",
+  "secondaryTokenAttribute": "power",
+  "url": "https://gitlab.com/rolnl/sandbox-system-builder/",
+  "manifest": "https://gitlab.com/rolnl/sandbox-system-builder/raw/dev_0.14.0/system.json",
+  "download": "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/dev_0.14.0/sandbox-master.zip",
+  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/raw/dev_0.14.0/changelog.md"
 }

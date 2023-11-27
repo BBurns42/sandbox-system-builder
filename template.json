@@ -1,7 +1,7 @@
 {
     "Actor": {
         "types": ["character"],
-        "character":{
+        "character":{            
             "tabs":[],
             "istemplate":false,
             "gtemplate":"Default",
@@ -17,6 +17,7 @@
             "backg":"",
             "resizable":true,
             "setheight":600,
+            "setwidth":650,
             "buildlog":"",
             "selector":false,
             "attributes":{},
@@ -84,11 +85,22 @@
             "totalize":false,
             "arrows":false,
             "tag":"",
-            "macroid":""
+            "macroid":"",
+            "icon":"",
+            "tableoptions":{
+              "showicons":false,
+              "columnheaderlabels":{
+                "active":"Active",
+                "uses":"Uses",
+                "num":"Num"
+              },
+              "filter":""
+            }
         },
         "panel":{
             "panelKey": "",
             "title":"",
+            "icon":"",
             "isLocked":false,
             "width":"",
             "wtypes":{
@@ -182,6 +194,7 @@
         "multipanel":{
             "panelKey": "",
             "title":"",
+            "icon":"",
             "width":"",
             "wtypes":{
                 "full":{
@@ -236,6 +249,7 @@
         "sheettab":{
             "tabKey":"",
             "title":"",
+            "icon":"",
             "controlby":"",
             "bytypes":{
                 "public":"",

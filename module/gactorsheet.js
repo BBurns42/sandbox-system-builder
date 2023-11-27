@@ -1,5 +1,11 @@
 import { SBOX } from "./config.js";
 import { auxMeth } from "./auxmeth.js";
+import { SETTINGATTRIBUTE }           from "./sb-setting-constants.js";
+import { sb_custom_dialog_confirm,
+         confirmRemoveSubItem } from "./sb-custom-dialogs.js";
+import { sb_item_sheet_get_game_setting } from "./sb-setting-constants.js";
+import { sb_table_filter_passed } from "./sb-table-filters.js";
+import { sb_property_has_valid_table_filter } from "./sb-table-filters.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
@@ -9,6 +15,7 @@ export class gActorSheet extends ActorSheet {
 
     /** @override */
     static get defaultOptions() {
+      
         return mergeObject(super.defaultOptions, {
             classes: ["sandbox", "sheet", "actor"],
             scrollY: [".sheet-body", ".scrollable", ".tab"],
@@ -24,7 +31,11 @@ export class gActorSheet extends ActorSheet {
     async getData() {
         const actor = this.actor;
         const data = super.getData();
-        const flags = actor.data.flags;
+        let secrets = this.actor.isOwner;
+        
+        if (game.user.isGM) secrets = true;
+        data.enrichedBiography = await TextEditor.enrichHTML(this.actor.system.biography, {secrets:secrets, entities:true,async: true});
+        const flags = actor.flags;
 
         //console.log(data);
 
@@ -39,19 +50,19 @@ export class gActorSheet extends ActorSheet {
     //    }
 
     async maximize() {
-        let _mytemplate = await game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == this.actor.data.data.gtemplate);
+        let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
         if (_mytemplate != null)
-            this.position.height = _mytemplate.data.data.setheight;
+            this.position.height = _mytemplate.system.setheight;
         super.maximize();
     }
 
     async _renderInner(data, options) {
-        let templateHTML = await auxMeth.getTempHTML(this.actor.data.data.gtemplate, this.actor.data.data.istemplate);
+        let templateHTML = await auxMeth.getTempHTML(this.actor.system.gtemplate, this.actor.system.istemplate);
 
         //IMPORTANT!! ANY CHECKBOX IN TEMPLATE NEEDS THIS!!!
-        templateHTML = templateHTML.replace('{{checked="" actor.data.biovisible}}=""', '{{checked actor.data.biovisible}}');
-        templateHTML = templateHTML.replace('{{checked="" actor.data.resizable}}=""', '{{checked actor.data.resizable}}');
-        templateHTML = templateHTML.replace('{{checked="" actor.data.istemplate}}=""', '{{checked actor.data.istemplate}}');
+        templateHTML = templateHTML.replace('{{checked="" actor.system.biovisible}}=""', '{{checked actor.system.biovisible}}');
+        templateHTML = templateHTML.replace('{{checked="" actor.system.resizable}}=""', '{{checked actor.system.resizable}}');
+        templateHTML = templateHTML.replace('{{checked="" actor.system.istemplate}}=""', '{{checked actor.system.istemplate}}');
 
         const template = await Handlebars.compile(templateHTML);
 
@@ -63,9 +74,9 @@ export class gActorSheet extends ActorSheet {
     }
 
     async getTemplateHTML(_html) {
-        if (this.actor.data.data.istemplate && this.actor.data.data.gtemplate != "Default") {
-            let _template = game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == this.actor.data.data.gtemplate);
-            let html = _template.data.data._html;
+        if (this.actor.system.istemplate && this.actor.system.gtemplate != "Default") {
+            let _template = game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
+            let html = _template.system._html;
             return html;
         }
 
@@ -106,7 +117,19 @@ export class gActorSheet extends ActorSheet {
 
             }
         });
+        
+        
+        html.find('.gsheet-backg-filepicker').click(ev => {
 
+            new FilePicker({
+                type: "image",
+                displayMode: "tiles",
+                current: this.actor.system.backg,
+                callback: imagePath => this.actor.update({ "system.backg": imagePath }),
+            }).browse(this.actor.system.backg);
+        });
+
+        
         html.find('.tab-button').click(ev => {
             ev.preventDefault();
 
@@ -140,7 +163,7 @@ export class gActorSheet extends ActorSheet {
 
         html.find('.badge-click').click(async (ev) => {
             ev.preventDefault();
-            const attributes = this.actor.data.data.attributes;
+            const attributes = this.actor.system.attributes;
 
             let attKey = $(ev.currentTarget).attr("attKey");
             let attId = $(ev.currentTarget).attr("attId");
@@ -164,10 +187,10 @@ export class gActorSheet extends ActorSheet {
             let stringvalue = "";
             stringvalue = newvalue.toString();
 
-            await this.actor.update({ [`data.attributes.${attKey}.value`]: stringvalue });
+            await this.actor.update({ [`system.attributes.${attKey}.value`]: stringvalue });
 
-            this.actor.sendMsgChat("USES 1 ", property.data.data.tag, "TOTAL: " + newvalue);
-            if (property.data.data.rollexp != "")
+            this.actor.sendMsgChat("USES 1 ", property.system.tag, "TOTAL: " + newvalue);
+            if (property.system.rollexp != "")
                 this._onRollCheck(attId, attKey, null, null, false);
             //this.actor.sendMsgChat("Utiliza 1",property.data.data.tag, "Le quedan " + newvalue); to  this.actor.sendMsgChat("Uses 1",property.data.data.tag, "Remains " + newvalue);
 
@@ -175,7 +198,7 @@ export class gActorSheet extends ActorSheet {
 
         html.find('.badge-clickgm').click(async (ev) => {
             ev.preventDefault();
-            const attributes = this.actor.data.data.attributes;
+            const attributes = this.actor.system.attributes;
 
             let attKey = $(ev.currentTarget).attr("attKey");
 
@@ -188,13 +211,13 @@ export class gActorSheet extends ActorSheet {
             let stringvalue = "";
             stringvalue = newvalue.toString();
 
-            await this.actor.update({ [`data.attributes.${attKey}.value`]: stringvalue });
+            await this.actor.update({ [`system.attributes.${attKey}.value`]: stringvalue });
 
         });
 
         html.find('.arrup').click(async (ev) => {
             ev.preventDefault();
-            const attributes = this.actor.data.data.attributes;
+            const attributes = this.actor.system.attributes;
 
             let attKey = ev.target.parentElement.getAttribute("attKey");
 
@@ -208,13 +231,13 @@ export class gActorSheet extends ActorSheet {
             let stringvalue = "";
             stringvalue = newvalue.toString();
 
-            await this.actor.update({ [`data.attributes.${attKey}.value`]: stringvalue });
+            await this.actor.update({ [`system.attributes.${attKey}.value`]: stringvalue });
 
         });
 
         html.find('.arrdown').click(async (ev) => {
             ev.preventDefault();
-            const attributes = this.actor.data.data.attributes;
+            const attributes = this.actor.system.attributes;
 
             let attKey = ev.target.parentElement.getAttribute("attKey");
 
@@ -228,10 +251,11 @@ export class gActorSheet extends ActorSheet {
             let stringvalue = "";
             stringvalue = newvalue.toString();
 
-            await this.actor.update({ [`data.attributes.${attKey}.value`]: stringvalue });
+            await this.actor.update({ [`system.attributes.${attKey}.value`]: stringvalue });
 
         });
 
+        // table header sorting
         html.find('.propheader').click(ev => {
             event.preventDefault();
 
@@ -255,6 +279,8 @@ export class gActorSheet extends ActorSheet {
             this.render(true);
 
         });
+        
+        
 
         html.find('.rollable').click(ev => {
             ev.preventDefault();
@@ -283,16 +309,16 @@ export class gActorSheet extends ActorSheet {
             //console.log("Aqui");
             let attKey = $(ev.currentTarget).attr("attKey");
 
-            if (this.actor.data.data.attributes[attKey] == null) {
+            if (this.actor.system.attributes[attKey] == null) {
                 return;
             }
 
-            let currentvalue = this.actor.data.data.attributes[attKey].value;
+            let currentvalue = this.actor.system.attributes[attKey].value;
             let finalvalue = true;
             if (currentvalue)
                 finalvalue = false;
 
-            this.actor.update({ [`data.attributes.${attKey}.value`]: finalvalue, [`data.attributes.${attKey}.modified`]: true });
+            this.actor.update({ [`system.attributes.${attKey}.value`]: finalvalue, [`system.attributes.${attKey}.modified`]: true });
 
         });
 
@@ -300,7 +326,7 @@ export class gActorSheet extends ActorSheet {
             event.preventDefault();
             const elemCode = $(ev.currentTarget)[0].children[0];
 
-            const actorData = this.actor.data.data;
+            const actorData = this.actor.system;
 
             if (elemCode.textContent == "1d20") {
                 actorData.rollmode = "ADV";
@@ -313,7 +339,7 @@ export class gActorSheet extends ActorSheet {
                 actorData.rollmode = "1d20";
             }
 
-            this.actor.update({ "data.rollmode": actorData.rollmode }, { diff: false });
+            this.actor.update({ "system.rollmode": actorData.rollmode }, { diff: false });
 
         });
 
@@ -341,7 +367,7 @@ export class gActorSheet extends ActorSheet {
                         callback: async (html) => {
                             let diceexpr = html[0].getElementsByClassName("dialog-dice");
                             //console.log(diceexpr[0]);
-                            let finalroll = this.actor.rollSheetDice(diceexpr[0].value, "Free Roll", "", this.actor.data.data.attributes, null);
+                            let finalroll = this.actor.rollSheetDice(diceexpr[0].value, "Free Roll", "", this.actor.system.attributes, null);
 
                         }
                     },
@@ -362,7 +388,7 @@ export class gActorSheet extends ActorSheet {
             event.preventDefault();
 
             //Get items
-            const citems = this.actor.data.data.citems;
+            const citems = this.actor.system.citems;
             let allselitems = citems.filter(y => y.selection != null);
             let selectcitems = allselitems.find(y => y.selection.find(x => !x.selected));
             if (selectcitems == null)
@@ -373,7 +399,7 @@ export class gActorSheet extends ActorSheet {
             let acitem = selectcitems.selection.find(y => !y.selected);
 
             let modindex = acitem.index;
-            let mod = citemplate.data.data.mods.find(y => y.index == modindex);
+            let mod = citemplate.system.mods.find(y => y.index == modindex);
 
             //Right Content
             let newList = document.createElement("DIV");
@@ -382,7 +408,7 @@ export class gActorSheet extends ActorSheet {
 
             //Fill options
             if (mod.type == "ITEM") {
-                let finalnum = await auxMeth.autoParser(mod.selectnum, this.actor.data.data.attributes, acitem.attributes, false);
+                let finalnum = await auxMeth.autoParser(mod.selectnum, this.actor.system.attributes, acitem.attributes, false);
                 newList.setAttribute("selectnum", finalnum);
                 let text = document.createElement("DIV");
 
@@ -428,7 +454,7 @@ export class gActorSheet extends ActorSheet {
                         icon: '<i class="fas fa-check"></i>',
                         label: "OK",
                         callback: async (html) => {
-                            const flags = this.actor.data.flags;
+                            const flags = this.actor.flags;
                             let subitems;
                             var checkedBoxes = html.find('.dialog-check');
 
@@ -465,9 +491,9 @@ export class gActorSheet extends ActorSheet {
         //Drop Event TEST
         this.form.ondrop = ev => this._onDrop(ev);
 
-        let stabs = duplicate(actor.data.data.tabs);
-        let citems = actor.data.data.citems;
-        let istemplate = actor.data.data.istemplate;
+        let stabs = duplicate(actor.system.tabs);
+        let citems = actor.system.citems;
+        let istemplate = actor.system.istemplate;
 
         // Edit Tab item
         html.find('.item-edit').click(async (ev) => {
@@ -479,13 +505,16 @@ export class gActorSheet extends ActorSheet {
         });
 
         // Delete tab Item
-        html.find('.item-delete').click(ev => {
+        html.find('.item-delete').click(async(ev) => {
             const li = $(ev.currentTarget).parents(".property");
             let todelete = li.data("itemId");
-            const prop = stabs.splice(todelete, 1);
-
-            this.actor.update({ "data.tabs": stabs });
-            li.slideUp(200, () => this.render(false));
+            // ask user for confirmation            
+            const bOkToProceed=await confirmRemoveSubItem(this.actor.name,game.i18n.localize("DOCUMENT.Actor").toLowerCase(),stabs[todelete].name,game.i18n.localize("SANDBOX.ItemTypeSheetTab"));
+            if(bOkToProceed){                        
+              const prop = stabs.splice(todelete, 1);
+              this.actor.update({ "system.tabs": stabs });
+              li.slideUp(200, () => this.render(false));
+            }
         });
 
         // Edit citem
@@ -497,12 +526,21 @@ export class gActorSheet extends ActorSheet {
             item.sheet.render(true);
         });
 
-        // Delete cItem
-        html.find('.citem-delete').click(ev => {
+        // Delete cItem from list on citem tab
+        html.find('.citem-delete').click(async(ev) => {
             const li = $(ev.currentTarget).parents(".property");
             let itemid = ev.target.parentElement.getAttribute("citemid");
-            this.deleteCItem(itemid);
-            li.slideUp(200, () => this.render(false));
+            const item=game.items.get(itemid);
+            if(item!=null){
+              // ask user for confirmation              
+              const bOkToProceed=await confirmRemoveSubItem(this.actor.name,game.i18n.localize("DOCUMENT.Actor").toLowerCase(),item.name,item.type);
+              if(bOkToProceed){            
+                this.deleteCItem(itemid);
+                li.slideUp(200, () => this.render(false));
+              }
+            } else {
+              ui.notifications.warn('Sandbox | Unable to find item ' + itemid +  ']');            
+            }
         });
 
         // Top Item
@@ -533,7 +571,7 @@ export class gActorSheet extends ActorSheet {
             event.preventDefault();
             const li = $(ev.currentTarget);
 
-            let actorData = duplicate(this.actor.data);
+            let actorData = duplicate(this.actor.system);
             this.setTemplate(li[0].value, actorData);
 
             //this.refreshSheet(li[0].value);
@@ -543,14 +581,14 @@ export class gActorSheet extends ActorSheet {
 
         html.find('.sheet-reload').click(ev => {
             event.preventDefault();
-            this.setTemplate(this.actor.data.data.gtemplate, null);
+            this.setTemplate(this.actor.system.gtemplate, null);
 
         });
 
     }
 
     /* ALONDAAR
-    * Sets up the data transfer within a drag event. This function is triggered
+    * Sets up the data transfer within a ondrop event. This function is triggered
     * when the user starts dragging any rollable element, and dataTransfer is set to the 
     * relevant data needed by the _onDrop function.
     */
@@ -563,10 +601,10 @@ export class gActorSheet extends ActorSheet {
             attKey = event.currentTarget.getAttribute("id");
 
         let propertyItem = game.items.get(attrID);
-        let tag = propertyItem.data.data.tag;
+        let tag = propertyItem.system.tag;
         // If tag is blank, use the property key instead? could also use the item's name.
         if (tag == "")
-            tag = propertyItem.data.data.attKey
+            tag = propertyItem.system.attKey
         let img = propertyItem.img;
 
         // Use cItem image and name + property tag
@@ -578,15 +616,15 @@ export class gActorSheet extends ActorSheet {
 
         // Use Group or Table img & name?
         if (isFree) {
-            let tableItem = game.items.contents.find(i => i.data.data.attKey === tableKey);
-            let groupItem = game.items.get(tableItem.data.data.group.id);
+            let tableItem = game.items.contents.find(i => i.system.attKey === tableKey);
+            let groupItem = game.items.get(tableItem.system.group.id);
             tag = groupItem.name + " " + tag + " (" + citemID + ")";
             img = groupItem.img;
         }
 
         event.dataTransfer.setData("text/plain", JSON.stringify({
             type: "rollable",
-            actorId: this.actor.data._id,
+            actorId: this.actor.id,
             data: {
                 attrID: attrID,
                 attKey: attKey,
@@ -602,80 +640,80 @@ export class gActorSheet extends ActorSheet {
         }));
     }
 
-    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, rollcitemID, targets, useData) {
+    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData) {
 
         //let dialogPanel = await game.items.get(dialogID);
         let dialogPanel = await auxMeth.getTElement(dialogID, "panel", dialogName);
 
         if (dialogPanel == null || dialogPanel == undefined) {
-            console.log(dialogName + " not found by ID");
-            ui.notifications.warn("Please readd dialog panel to roll " + rollname);
+            console.warn("Sandbox | generateRollDialog | " + dialogName + " not found by ID");
+            ui.notifications.warn("Please re-add dialog panel to roll " + rollname);
         }
 
         let finalContent = "";
 
-        if (dialogPanel.data.type == "multipanel") {
+        if (dialogPanel.type == "multipanel") {
 
             let multiClass;
 
             let multiClassName = 'col-1-2';
 
-            if (dialogPanel.data.data.width === "1") {
+            if (dialogPanel.system.width === "1") {
                 multiClassName = 'multi-col-1-1';
             }
 
-            else if (dialogPanel.data.data.width === "1/3") {
+            else if (dialogPanel.system.width === "1/3") {
                 multiClassName = 'multi-col-1-3';
 
             }
 
-            else if (dialogPanel.data.data.width === "2/3") {
+            else if (dialogPanel.system.width === "2/3") {
                 multiClassName = 'multi-col-2-3';
 
 
             }
 
-            else if (dialogPanel.data.data.width === "3/4") {
+            else if (dialogPanel.system.width === "3/4") {
                 multiClassName = 'multi-col-3-4';
 
             }
 
-            else if (dialogPanel.data.data.width === "5/6") {
+            else if (dialogPanel.system.width === "5/6") {
                 multiClassName = 'multi-col-5-6';
 
             }
 
-            else if (dialogPanel.data.data.width === "1/2") {
+            else if (dialogPanel.system.width === "1/2") {
                 multiClassName = 'multi-col-1-2';
 
             }
 
-            else if (dialogPanel.data.data.width === "1/4") {
+            else if (dialogPanel.system.width === "1/4") {
                 multiClassName = 'multi-col-1-4';
 
             }
 
-            else if (dialogPanel.data.data.width === "1/6") {
+            else if (dialogPanel.system.width === "1/6") {
                 multiClassName = 'multi-col-1-6';
             }
 
-            else if (dialogPanel.data.data.width === "1/8") {
+            else if (dialogPanel.system.width === "1/8") {
                 multiClassName = 'multi-col-1-8';
 
             }
-            else if (dialogPanel.data.data.width === "3/10") {
+            else if (dialogPanel.system.width === "3/10") {
                 multiClassName = 'multi-col-3-10';
 
             }
-            else if (dialogPanel.data.data.width === "1/16") {
+            else if (dialogPanel.system.width === "1/16") {
                 multiClassName = 'multi-col-1-16';
 
             }
-            else if (dialogPanel.data.data.width === "5/8") {
+            else if (dialogPanel.system.width === "5/8") {
                 multiClassName = 'multi-col-5-8';
 
             }
-            else if (dialogPanel.data.data.width === "3/8") {
+            else if (dialogPanel.system.width === "3/8") {
                 multiClassName = 'multi-col-3-8';
 
             }
@@ -694,8 +732,8 @@ export class gActorSheet extends ActorSheet {
             finalContent += multiWrapper;
 
 
-            for (let i = 0; i < dialogPanel.data.data.panels.length; i++) {
-                let myp = dialogPanel.data.data.panels[i];
+            for (let i = 0; i < dialogPanel.system.panels.length; i++) {
+                let myp = dialogPanel.system.panels[i];
                 //let getPanel = game.items.get(myp.id);
                 let getPanel = await auxMeth.getTElement(myp.id, "panel", myp.ikey);
 
@@ -711,7 +749,7 @@ export class gActorSheet extends ActorSheet {
         }
 
         let d = new Dialog({
-            title: dialogPanel.data.data.title,
+            title: dialogPanel.system.title,
             content: finalContent,
             buttons: {
                 one: {
@@ -734,7 +772,7 @@ export class gActorSheet extends ActorSheet {
 
                         }
                         //console.log(dialogProps);
-                        this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, rollcitemID, targets, dialogProps, useData);
+                        this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, dialogProps, useData);
                     }
                 },
                 two: {
@@ -758,62 +796,62 @@ export class gActorSheet extends ActorSheet {
     async generateDialogPanelHTML(dialogPanel) {
         let divclassName = 'col-1-2';
 
-        if (dialogPanel.data.data.width === "1") {
+        if (dialogPanel.system.width === "1") {
             divclassName = 'col-1-1';
         }
 
-        else if (dialogPanel.data.data.width === "1/3") {
+        else if (dialogPanel.system.width === "1/3") {
             divclassName = 'col-1-3';
 
         }
 
-        else if (dialogPanel.data.data.width === "2/3") {
+        else if (dialogPanel.system.width === "2/3") {
             divclassName = 'col-2-3';
 
 
         }
 
-        else if (dialogPanel.data.data.width === "3/4") {
+        else if (dialogPanel.system.width === "3/4") {
             divclassName = 'col-3-4';
 
         }
 
-        else if (dialogPanel.data.data.width === "5/6") {
+        else if (dialogPanel.system.width === "5/6") {
             divclassName = 'col-5-6';
 
         }
 
-        else if (dialogPanel.data.data.width === "1/2") {
+        else if (dialogPanel.system.width === "1/2") {
             divclassName = 'col-1-2';
 
         }
 
-        else if (dialogPanel.data.data.width === "1/4") {
+        else if (dialogPanel.system.width === "1/4") {
             divclassName = 'col-1-4';
 
         }
 
-        else if (dialogPanel.data.data.width === "1/6") {
+        else if (dialogPanel.system.width === "1/6") {
             divclassName = 'col-1-6';
         }
 
-        else if (dialogPanel.data.data.width === "1/8") {
+        else if (dialogPanel.system.width === "1/8") {
             divclassName = 'col-1-8';
 
         }
-        else if (dialogPanel.data.data.width === "3/10") {
+        else if (dialogPanel.system.width === "3/10") {
             divclassName = 'col-3-10';
 
         }
-        else if (dialogPanel.data.data.width === "1/16") {
+        else if (dialogPanel.system.width === "1/16") {
             divclassName = 'col-1-16';
 
         }
-        else if (dialogPanel.data.data.width === "5/8") {
+        else if (dialogPanel.system.width === "5/8") {
             divclassName = 'col-5-8';
 
         }
-        else if (dialogPanel.data.data.width === "3/8") {
+        else if (dialogPanel.system.width === "3/8") {
             divclassName = 'col-3-8';
 
         }
@@ -823,20 +861,20 @@ export class gActorSheet extends ActorSheet {
 
         }
         let alignment = "";
-        if (dialogPanel.data.data.contentalign == "center") {
+        if (dialogPanel.system.contentalign == "center") {
             alignment = "centercontent";
         }
 
-        else if (dialogPanel.data.data.contentalign == "right") {
+        else if (dialogPanel.system.contentalign == "right") {
             alignment = "righcontent";
         }
 
         let textalignment = "";
-        if (dialogPanel.data.data.alignment == "center") {
+        if (dialogPanel.system.alignment == "center") {
             textalignment = "centertext";
         }
 
-        else if (dialogPanel.data.data.alignment == "right") {
+        else if (dialogPanel.system.alignment == "right") {
             textalignment = "rightext";
         }
 
@@ -845,25 +883,25 @@ export class gActorSheet extends ActorSheet {
         }
 
         let finalContent = `
-<div class="${divclassName} ${dialogPanel.data.data.panelKey}">
+<div class="${divclassName} ${dialogPanel.system.panelKey}">
 `;
         let endDiv = `
 </div>
 
 `;
 
-        if (dialogPanel.data.data.title != "") {
+        if (dialogPanel.system.title != "") {
             finalContent += `
-            <div class="panelheader ${dialogPanel.data.data.headergroup}">
-${dialogPanel.data.data.title}
+            <div class="panelheader ${dialogPanel.system.headergroup}">
+${dialogPanel.system.title}
             </div>
             `;
         }
 
-        let maxcolumns = dialogPanel.data.data.columns;
+        let maxcolumns = dialogPanel.system.columns;
         let currentCol = 0;
-        for (let i = 0; i < parseInt(dialogPanel.data.data.properties.length); i++) {
-            let panelPropertyRef = dialogPanel.data.data.properties[i];
+        for (let i = 0; i < parseInt(dialogPanel.system.properties.length); i++) {
+            let panelPropertyRef = dialogPanel.system.properties[i];
             //let panelProperty = game.items.get(panelPropertyRef.id);
             let panelProperty = await auxMeth.getTElement(panelPropertyRef.id, "property", panelPropertyRef.ikey);
 
@@ -876,66 +914,66 @@ ${dialogPanel.data.data.title}
             let labelwidth = "";
             let inputwidth = "";
 
-            if (panelProperty.data.data.labelsize == "F") {
+            if (panelProperty.system.labelsize == "F") {
                 labelwidth = " label-free";
             }
 
-            else if (panelProperty.data.data.labelsize == "S") {
+            else if (panelProperty.system.labelsize == "S") {
                 labelwidth = " label-small";
             }
 
-            else if (panelProperty.data.data.labelsize == "T") {
+            else if (panelProperty.system.labelsize == "T") {
                 labelwidth = " label-tiny";
             }
 
-            else if (panelProperty.data.data.labelsize == "M") {
+            else if (panelProperty.system.labelsize == "M") {
                 labelwidth = " label-med";
             }
 
-            else if (panelProperty.data.data.labelsize == "L") {
+            else if (panelProperty.system.labelsize == "L") {
                 labelwidth = " label-medlarge";
             }
 
-            if (panelProperty.data.data.inputsize == "F") {
+            if (panelProperty.system.inputsize == "F") {
                 inputwidth = "input-free";
             }
 
-            else if (panelProperty.data.data.inputsize == "S") {
+            else if (panelProperty.system.inputsize == "S") {
                 inputwidth = "input-small";
             }
 
-            else if (panelProperty.data.data.inputsize == "M") {
+            else if (panelProperty.system.inputsize == "M") {
                 inputwidth = "input-med";
             }
 
-            else if (panelProperty.data.data.inputsize == "L") {
+            else if (panelProperty.system.inputsize == "L") {
                 inputwidth = "input-large";
             }
-            else if (panelProperty.data.data.inputsize == "T") {
+            else if (panelProperty.system.inputsize == "T") {
                 inputwidth = "input-tiny";
             }
 
             let defvalue = "";
-            if (panelProperty.data.data.defvalue != "")
+            if (panelProperty.system.defvalue != "")
                 defvalue = "defvalue";
 
-            if (panelProperty.data.data.datatype != "table" && panelProperty.data.data.datatype != "textarea" && panelProperty.data.data.datatype != "badge" && !panelProperty.data.data.ishidden) {
-                if (panelProperty.data.data.haslabel) {
+            if (panelProperty.system.datatype != "button" && panelProperty.system.datatype != "table" && panelProperty.system.datatype != "textarea" && panelProperty.system.datatype != "badge" && !panelProperty.system.ishidden) {
+                if (panelProperty.system.haslabel) {
                     finalContent += `
-<label class="${labelwidth} ${textalignment} ${panelProperty.data.data.fontgroup} " title="${panelProperty.data.data.tooltip}">${panelProperty.data.data.tag}</label>
+<label class="${labelwidth} ${textalignment} ${panelProperty.system.fontgroup} " title="${panelProperty.system.tooltip}">${panelProperty.system.tag}</label>
 `;
                 }
-                if (panelProperty.data.data.datatype == "checkbox") {
+                if (panelProperty.system.datatype == "checkbox") {
 
                     finalContent += `
-<input class="rdialogInput checkbox check-${panelProperty.data.data.attKey} ${panelProperty.data.data.inputgroup} ${defvalue}" title="${panelProperty.data.data.tooltip}" checkGroup ="${panelProperty.data.data.checkgroup}" attKey ="${panelProperty.data.data.attKey}" type="checkbox">	
+<input class="rdialogInput checkbox check-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" checkGroup ="${panelProperty.system.checkgroup}" attKey ="${panelProperty.system.attKey}" type="checkbox">	
 `;
                 }
-                else if (panelProperty.data.data.datatype == "list") {
+                else if (panelProperty.system.datatype == "list") {
                     finalContent += `
-<select  class="rdialogInput select-${panelProperty.data.data.attKey} ${panelProperty.data.data.inputgroup} ${defvalue}" title="${panelProperty.data.data.tooltip}" attKey ="${panelProperty.data.data.attKey}"  data-type="String">
+<select  class="rdialogInput select-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" attKey ="${panelProperty.system.attKey}"  data-type="String">
 `;
-                    let options = panelProperty.data.data.listoptions.split(",");
+                    let options = panelProperty.system.listoptions.split(",");
                     for (let j = 0; j < options.length; j++) {
                         finalContent += `
 <option  value="${options[j]}">${options[j]}</option>
@@ -946,26 +984,26 @@ ${dialogPanel.data.data.title}
 `
                 }
 
-                else if (panelProperty.data.data.datatype == "label") {
+                else if (panelProperty.system.datatype == "label") {
 
                 }
                 else {
                     let isauto = "";
                     let arrows = "";
-                    if (panelProperty.data.data.auto != "")
+                    if (panelProperty.system.auto != "")
                         isauto = "isauto";
-                    if (panelProperty.data.data.arrows) {
+                    if (panelProperty.system.arrows) {
                         arrows = "hasarrows"
                     }
                     finalContent += `
-<input class="rdialogInput ${inputwidth} ${panelProperty.data.data.inputgroup} ${isauto} ${defvalue} ${arrows}" attKey ="${panelProperty.data.data.attKey}" type="text" value="${panelProperty.data.data.defvalue}">	
+<input class="rdialogInput ${inputwidth} ${panelProperty.system.inputgroup} ${isauto} ${defvalue} ${arrows}" attKey ="${panelProperty.system.attKey}" type="text" value="${panelProperty.system.defvalue}">	
 `;
                 }
 
                 currentCol += 1;
             }
 
-            if (currentCol == maxcolumns || i == parseInt(dialogPanel.data.data.properties.length - 1)) {
+            if (currentCol == maxcolumns || i == parseInt(dialogPanel.system.properties.length - 1)) {
                 finalContent += endDiv;
                 currentCol = 0;
             }
@@ -980,7 +1018,7 @@ ${dialogPanel.data.data.title}
     async _onRollCheck(attrID, attKey, citemID, citemKey = null, ciRoll = false, isFree = false, tableKey = null, useData = null) {
         //console.log("rolling att " + attrID + " item " + citemID);
 
-        let actorattributes = this.actor.data.data.attributes;
+        let actorattributes = this.actor.system.attributes;
 
         let citemattributes;
         let rollexp;
@@ -997,6 +1035,7 @@ ${dialogPanel.data.data.title}
         let number;
         let isactive;
         let ciuses;
+        let cimaxuses=1;
         let rollcitemID;
 
         if (citemID != null) {
@@ -1004,7 +1043,7 @@ ${dialogPanel.data.data.title}
 
                 //citem = await game.items.get(citemID);
                 citem = await await auxMeth.getcItem(citemID, citemKey);
-                findcitem = this.actor.data.data.citems.find(y => y.id == citemID);
+                findcitem = this.actor.system.citems.find(y => y.id == citemID);
                 if (findcitem != null) {
                     citemattributes = findcitem.attributes;
 
@@ -1031,20 +1070,20 @@ ${dialogPanel.data.data.title}
 
         if (!ciRoll) {
             property = await auxMeth.getTElement(attrID, "property", attKey);
-            rollexp = property.data.data.rollexp;
-            rollname = property.data.data.rollname;
-            hasDialog = property.data.data.hasdialog;
-            dialogID = property.data.data.dialogID;
-            dialogName = property.data.data.dialogName;
-            rollid.push(property.data.data.rollid);
+            rollexp = property.system.rollexp;
+            rollname = property.system.rollname;
+            hasDialog = property.system.hasdialog;
+            dialogID = property.system.dialogID;
+            dialogName = property.system.dialogName;
+            rollid.push(property.system.rollid);
         }
         else {
-            rollexp = citem.data.data.roll;
-            rollname = citem.data.data.rollname;
-            hasDialog = citem.data.data.hasdialog;
-            dialogID = citem.data.data.dialogID;
-            dialogName = citem.data.data.dialogName;
-            rollid.push(citem.data.data.rollid);
+            rollexp = citem.system.roll;
+            rollname = citem.system.rollname;
+            hasDialog = citem.system.hasdialog;
+            dialogID = citem.system.dialogID;
+            dialogName = citem.system.dialogName;
+            rollid.push(citem.system.rollid);
         }
 
         let targets = game.user.targets.ids;
@@ -1053,14 +1092,15 @@ ${dialogPanel.data.data.title}
             number = findcitem.number;
             isactive = findcitem.isactive;
             ciuses = findcitem.uses;
+            cimaxuses=findcitem.maxuses;
         }
 
 
         if (hasDialog) {
-            this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, rollcitemID, targets, useData);
+            this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData);
         }
         else {
-            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, rollcitemID, targets, null, useData)
+            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, null, useData)
         }
 
 
@@ -1068,7 +1108,7 @@ ${dialogPanel.data.data.title}
 
     }
 
-    async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, rollcitemID, targets, dialogProps = null, useData = null) {
+    async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses=1, rollcitemID, targets, dialogProps = null, useData = null) {
 
         rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
 
@@ -1082,13 +1122,38 @@ ${dialogPanel.data.data.title}
 
         //PARSE actor name
         rollexp = await rollexp.replace(/\#{actor}/g, this.actor.name);
+        rollexp = await rollexp.replace(/\@{actor}/g, this.actor.name);
+        rollexp = await rollexp.replace(/\#{actorname}/g, this.actor.name);
+        rollexp = await rollexp.replace(/\@{actorname}/g, this.actor.name);
+        // parse target(s) name
+        if(rollexp.includes("#{targetname}")){
+          if(targets.length>0){
+            let targetnames='';
+            
+            for (let i = 0; i < targets.length; i++) {
+              tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
+              if(tokenid!=null){
+                if(targetnames.length==0){
+                  targetnames=tokenid.name;
+                } else{
+                  targetnames=targetnames + '&#44 ' + tokenid.name;
+                }
+              }
+              
+            }
+            console.warn(targetnames)
+            rollexp = await rollexp.replace(/\#{targetname}/g, targetnames);
+          } else {  
+            rollexp = await rollexp.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+          }
+        }
 
         if (targets.length > 0 && ((rollexp.includes("#{target|") || rollexp.includes("add(")) || rollexp.includes("set("))) {
             for (let i = 0; i < targets.length; i++) {
                 tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
                 //TEST SERE FOR BETTER ROLL RESULTS
-                //finalroll = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, tokenid, rollcitemID);
-                let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, tokenid, rollcitemID);
+                
+                let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, tokenid, rollcitemID);
                 finalroll = finalrollprev.result;
             }
         }
@@ -1097,8 +1162,8 @@ ${dialogPanel.data.data.title}
             if (this.actor.isToken && this.token != null)
                 tokenid = this.token.id;
             //TEST SERE FOR BETTER ROLL RESULTS
-            //finalroll = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, null, rollcitemID, tokenid);
-            let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses, null, rollcitemID, tokenid);
+            
+            let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, null, rollcitemID, tokenid);
             finalroll = finalrollprev.result;
         }
 
@@ -1112,9 +1177,9 @@ ${dialogPanel.data.data.title}
         //Gets all game properties
 
         //console.log(gtemplate);
-
+        console.log("Sandbox | refreshSheet | Setting sheet for " + this.actor.name);
         //Finds master property
-        await this.actor.update({ "data.gtemplate": gtemplate });
+        await this.actor.update({ "system.gtemplate": gtemplate });
 
 
         //await this.actor.update(this.actor.data);
@@ -1123,18 +1188,18 @@ ${dialogPanel.data.data.title}
     }
 
     async setTemplate(gtemplate, actorData) {
-        console.log("setting sheet");
+        console.log("Sandbox | setTemplate | Setting template for " + this.actor.name);
         //console.log(actorData);
 
-        const propitems = game.items.filter(y => y.data.type == "property");
+        const propitems = game.items.filter(y => y.type == "property");
 
         if (actorData == null)
-            actorData = duplicate(this.actor.data);
+            actorData = duplicate(this.actor.system);
 
-        const attData = actorData.data.attributes;
+        const attData = actorData.attributes;
         if (gtemplate == "" || gtemplate == null)
             gtemplate = "Default";
-        actorData.data.gtemplate = gtemplate;
+        actorData.gtemplate = gtemplate;
 
         //Looks for template and finds inputs
 
@@ -1142,7 +1207,7 @@ ${dialogPanel.data.data.title}
         //var htmlcode = await fetch(this.getHTMLPath()).then(resp => resp.text());
 
         let htmlcode = await auxMeth.getTempHTML(gtemplate);
-        actorData.data._html = htmlcode;
+        actorData._html = htmlcode;
         //console.log(htmlcode);
         var form = await parser.parseFromString(htmlcode, 'text/html').querySelector('form');
         //console.log(form);
@@ -1158,7 +1223,7 @@ ${dialogPanel.data.data.title}
             let attId = newAtt.getAttribute("attId");
             //console.log(newAtt);
             let attKey = newAtt.getAttribute("name");
-            attKey = attKey.replace("data.attributes.", '');
+            attKey = attKey.replace("system.attributes.", '');
             attKey = attKey.replace(".value", '');
             if (attId != null)
                 await this.setAttributeValues(attId, attData, attKey);
@@ -1171,7 +1236,7 @@ ${dialogPanel.data.data.title}
             let newAtt = radioinputs[i];
             let attId = newAtt.getAttribute("attId");
             let attKey = newAtt.getAttribute("name");
-            attKey = attKey.replace("data.attributes.", '');
+            attKey = attKey.replace("system.attributes.", '');
             attKey = attKey.replace(".value", '');
             await this.setAttributeValues(attId, attData, attKey);
         }
@@ -1191,7 +1256,7 @@ ${dialogPanel.data.data.title}
             let newAtt = tableinputs[i];
             let attId = newAtt.getAttribute("attId");
             let attKey = newAtt.getAttribute("name");
-            attKey = attKey.replace("data.attributes.", '');
+            attKey = attKey.replace("system.attributes.", '');
             attKey = attKey.replace(".value", '');
             await this.setAttributeValues(attId, attData, attKey);
         }
@@ -1204,7 +1269,7 @@ ${dialogPanel.data.data.title}
             let attKey = newAtt.getAttribute("name");
             if (attKey != null) {
 
-                attKey = attKey.replace("data.attributes.", '');
+                attKey = attKey.replace("system.attributes.", '');
                 attKey = attKey.replace(".value", '');
             }
             else {
@@ -1234,9 +1299,9 @@ ${dialogPanel.data.data.title}
         let visifield = form.getElementsByClassName("token-visitabs");
         let visitabs = visifield[0].getAttribute("visitabs");
 
-        actorData.data.displayName = CONST.TOKEN_DISPLAY_MODES[displayName];
-        actorData.data.tokenbar1 = "attributes." + bar1Att;
-        actorData.data.tokenshield = shield;
+        actorData.displayName = CONST.TOKEN_DISPLAY_MODES[displayName];
+        actorData.tokenbar1 = "attributes." + bar1Att;
+        actorData.tokenshield = shield;
         if (biovisible === "false")
             biovisible = false;
         if (biovisible === "true")
@@ -1245,14 +1310,14 @@ ${dialogPanel.data.data.title}
             resizable = false;
         if (resizable === "true")
             resizable = true;
-        actorData.data.biovisible = biovisible;
-        actorData.data.resizable = resizable;
-        actorData.data.visitabs = parseInt(visitabs);
+        actorData.biovisible = biovisible;
+        actorData.resizable = resizable;
+        actorData.visitabs = parseInt(visitabs);
         //console.log(actorData);
         let mytoken = await this.setTokenOptions(actorData);
 
-        await this.actor.update({ "data": actorData.data, "token": mytoken }, { diff: false });
-        await this.actor.update({ "data": actorData.data, "token": mytoken });
+        await this.actor.update({ "system": actorData, "prototypeToken": mytoken }, { diff: false });
+        await this.actor.update({ "system": actorData, "prototypeToken": mytoken });
     }
 
     async setAttributeValues(attID, attData, propName) {
@@ -1262,8 +1327,17 @@ ${dialogPanel.data.data.title}
         //const attData = this.actor.data.data.attributes;
         //const property = await game.items.get(attID);
         const property = await auxMeth.getTElement(attID, "property", propName);
-
-        const attribute = property.data.data.attKey;
+        let attribute;
+        try{
+          attribute = property.system.attKey;
+        }
+        catch(err){
+          console.error("Sandbox | Unable to find key for property "+ propName + " : " + err.message)
+          //debugger;
+          // exit
+          return;
+        }
+        
         //console.log(attribute);
         let idkey = attData[attribute];
         let populate = false;
@@ -1281,7 +1355,7 @@ ${dialogPanel.data.data.title}
             //                    populate = true;
             //            }
 
-            if (property.data.data.datatype == "radio" && (idkey.max == null || idkey.max == "" || idkey.value == "" || idkey.value == null)) {
+            if (property.system.datatype == "radio" && (idkey.max == null || idkey.max == "" || idkey.value == "" || idkey.value == null)) {
                 populate = true;
             }
 
@@ -1295,17 +1369,17 @@ ${dialogPanel.data.data.title}
 
         }
 
-        if (property.data.data.datatype == "table") {
+        if (property.system.datatype == "table") {
             // if (!hasProperty(attData[attribute], "tableitems")) {
             populate = true;
             // }
 
         }
 
-        if (property.data.data.datatype == "checkbox") {
+        if (property.system.datatype == "checkbox") {
 
             if (attData[attribute] != null)
-                setProperty(attData[attribute], "checkgroup", property.data.data.checkgroup);
+                setProperty(attData[attribute], "checkgroup", property.system.checkgroup);
 
         }
 
@@ -1317,7 +1391,7 @@ ${dialogPanel.data.data.title}
             attData[attribute].id = attID;
 
             //Sets id and auto
-            if (property.data.data.datatype != "table") {
+            if (property.system.datatype != "table") {
 
                 if (!hasProperty(attData[attribute], "value"))
                     setProperty(attData[attribute], "value", "");
@@ -1325,34 +1399,34 @@ ${dialogPanel.data.data.title}
                 await setProperty(attData[attribute], "isset", false);
 
                 //Sets auto, auto max, and max
-                if (property.data.data.automax != "" || property.data.data.datatype == "radio") {
+                if (property.system.automax != "" || property.system.datatype == "radio") {
 
                     setProperty(attData[attribute], "max", "");
 
                 }
 
-                if (property.data.data.datatype == "checkbox") {
-                    setProperty(attData[attribute], "checkgroup", property.data.data.checkgroup);
+                if (property.system.datatype == "checkbox") {
+                    setProperty(attData[attribute], "checkgroup", property.system.checkgroup);
 
                 }
 
             }
             else {
                 //console.log("setting table " + attribute);
-                let tablegroup = property.data.data.group;
+                let tablegroup = property.system.group;
                 //let groupObj = await game.items.get(tablegroup.id);
                 //console.log(tablegroup);
                 let groupObj = await auxMeth.getTElement(tablegroup.id, "group", tablegroup.ikey);
                 if (groupObj == null) {
                     ui.notifications.warn("Please reassign group to table " + attribute);
-                    console.log("Error:Please reassign group to table " + attribute);
+                    console.warn("Sandbox | setAttributeValues | Error: Please reassign group to table " + attribute);
                 }
 
-                let groupprops = groupObj.data.data.properties;
+                let groupprops = groupObj.system.properties;
                 //console.log(groupprops);
                 setProperty(attData[attribute], "istable", true);
                 setProperty(attData[attribute], "totals", {});
-                if (!hasProperty(this.actor.data.data.attributes[attribute], "tableitems")) {
+                if (!hasProperty(this.actor.system.attributes[attribute], "tableitems")) {
                     setProperty(attData[attribute], "tableitems", []);
                 }
 
@@ -1361,11 +1435,11 @@ ${dialogPanel.data.data.title}
                     let propId = groupprops[i].id;
                     //let propData = game.items.get(propId);
                     let propData = await auxMeth.getTElement(propId, "property", groupprops[i].ikey);
-                    let propKey = propData.data.data.attKey;
+                    let propKey = propData.system.attKey;
                     setProperty(attTableKey.totals, propKey, {});
                     const tableAtt = attTableKey.totals[propKey];
                     setProperty(tableAtt, "id", propId);
-                    if (propData.data.data.totalize) {
+                    if (propData.system.totalize) {
 
                         setProperty(tableAtt, "total", "");
                         setProperty(tableAtt, "prev", "");
@@ -1401,7 +1475,7 @@ ${dialogPanel.data.data.title}
     async checkTabsExisting() {
 
         //Check Tabs
-        let tabs = this.actor.data.flags.tabarray;
+        let tabs = this.actor.flags.tabarray;
         let changed = false;
         const items = game.items;
 
@@ -1429,14 +1503,13 @@ ${dialogPanel.data.data.title}
    */
 
     async addNewTab(newHTML, tabitem, index) {
-        console.log("adding Tabs");
+        console.log("Sandbox | addNewTab | Adding Tab ["+tabitem.system.tabKey+"] for actor " + this.actor.name);
 
         var wrapper = document.createElement('div');
 
-        if (newHTML == null) {
-            wrapper.innerHTML = this.actor.data.data._html;
+        if (newHTML == null) {            
+            wrapper.innerHTML = this.actor.system._html;
         }
-
         else {
             wrapper.innerHTML = newHTML;
         }
@@ -1444,8 +1517,8 @@ ${dialogPanel.data.data.title}
         let deftemplate = wrapper;
         //console.log(deftemplate);
 
-        let tabname = tabitem.data.title;
-        let tabKey = tabitem.data.tabKey;
+        let tabname = tabitem.system.title;
+        let tabKey = tabitem.system.tabKey;
 
         //Tab selector
         let p = deftemplate.querySelector("#tabs");
@@ -1463,18 +1536,18 @@ ${dialogPanel.data.data.title}
         p.setAttribute("tabs", totaltabs + 1);
 
         //ADD VISIBILITY RULES TO TAB
-        if (tabitem.data.condop != "NON") {
+        if (tabitem.system.condop != "NON") {
             let attProp = ".value";
-            if (tabitem.data.condat != null) {
-                if (tabitem.data.condat.includes("max")) {
+            if (tabitem.system.condat != null) {
+                if (tabitem.system.condat.includes("max")) {
                     attProp = "";
                 }
             }
 
 
-            if (tabitem.data.condop == "EQU") {
+            if (tabitem.system.condop == "EQU") {
                 // if (tabitem.data.condvalue == "true" || tabitem.data.condvalue == "false" || tabitem.data.condvalue == true || tabitem.data.condvalue == false) {
-                newElement.insertAdjacentHTML('beforebegin', "{{#if actor.data.attributes." + tabitem.data.condat + attProp + "}}");
+                newElement.insertAdjacentHTML('beforebegin', "{{#if actor.system.attributes." + tabitem.system.condat + attProp + "}}");
                 newElement.insertAdjacentHTML('afterend', "{{/if}}");
                 // }
                 // else {
@@ -1484,23 +1557,23 @@ ${dialogPanel.data.data.title}
 
             }
 
-            else if (tabitem.data.condop == "HIH") {
-                newElement.insertAdjacentHTML('beforebegin', "{{#ifGreater actor.data.attributes." + tabitem.data.condat + attProp + " '" + tabitem.data.condvalue + "'}}");
+            else if (tabitem.system.condop == "HIH") {
+                newElement.insertAdjacentHTML('beforebegin', "{{#ifGreater actor.system.attributes." + tabitem.system.condat + attProp + " '" + tabitem.system.condvalue + "'}}");
                 newElement.insertAdjacentHTML('afterend', "{{/ifGreater}}");
             }
 
-            else if (tabitem.data.condop == "LOW") {
-                newElement.insertAdjacentHTML('beforebegin', "{{#ifLess actor.data.attributes." + tabitem.data.condat + attProp + " '" + tabitem.data.condvalue + "'}}");
+            else if (tabitem.system.condop == "LOW") {
+                newElement.insertAdjacentHTML('beforebegin', "{{#ifLess actor.system.attributes." + tabitem.system.condat + attProp + " '" + tabitem.system.condvalue + "'}}");
                 newElement.insertAdjacentHTML('afterend', "{{/ifLess}}");
             }
 
-            else if (tabitem.data.condop == "NOT") {
-                newElement.insertAdjacentHTML('beforebegin', "{{#ifNot actor.data.attributes." + tabitem.data.condat + attProp + " '" + tabitem.data.condvalue + "'}}");
+            else if (tabitem.system.condop == "NOT") {
+                newElement.insertAdjacentHTML('beforebegin', "{{#ifNot actor.system.attributes." + tabitem.system.condat + attProp + " '" + tabitem.system.condvalue + "'}}");
                 newElement.insertAdjacentHTML('afterend', "{{/ifNot}}");
             }
         }
 
-        if (tabitem.data.controlby == "gamemaster") {
+        if (tabitem.system.controlby == "gamemaster") {
             newElement.insertAdjacentHTML('beforebegin', "{{#isGM}}");
             newElement.insertAdjacentHTML('afterend', "{{/isGM}}");
         }
@@ -1528,39 +1601,40 @@ ${dialogPanel.data.data.title}
         let tokenshield = deftemplate.getElementsByClassName("token-shieldstat");
         let tokenname = deftemplate.getElementsByClassName("token-displayName");
 
-        let displayName = this.actor.data.data.displayName;
-        console.log(displayName);
+        let displayName = this.actor.system.displayName;
+        //console.log(displayName);
         if (displayName == null)
             displayName = "NONE";
 
-        tokenbar[0].setAttribute("tkvalue", this.actor.data.data.tokenbar1);
+        tokenbar[0].setAttribute("tkvalue", this.actor.system.tokenbar1);
         tokenname[0].setAttribute("tkvalue", displayName);
-        tokenshield[0].setAttribute("tkvalue", this.actor.data.data.shieldstat);
+        tokenshield[0].setAttribute("tkvalue", this.actor.system.shieldstat);
 
         let biovisiblefield = deftemplate.getElementsByClassName("check-biovisible");
         let resizablefield = deftemplate.getElementsByClassName("check-resizable");
-        console.log(biovisiblefield);
-        biovisiblefield[0].setAttribute("biovisible", this.actor.data.data.biovisible);
-        resizablefield[0].setAttribute("resizable", this.actor.data.data.resizable);
+        //console.log(biovisiblefield);
+        biovisiblefield[0].setAttribute("biovisible", this.actor.system.biovisible);
+        resizablefield[0].setAttribute("resizable", this.actor.system.resizable);
 
         let visitabfield = deftemplate.getElementsByClassName("token-visitabs");
-        visitabfield[0].setAttribute("visitabs", this.actor.data.data.visitabs);
+        visitabfield[0].setAttribute("visitabs", this.actor.system.visitabs);
 
         let finalreturn = new XMLSerializer().serializeToString(deftemplate);
         return finalreturn;
     }
 
     async addNewPanel(newHTML, tabpanel, tabKey, tabname, firstmrow, multiID = null, multiName = null, _paneldata = null, multiheadergroup = null) {
+     
         //Variables
-        console.log("adding Panel " + tabpanel.name + " in " + tabKey);
-        console.log(tabpanel);
+        console.log("Sandbox | addNewPanel | Adding Panel " + tabpanel.name + " in " + tabKey);
+        //console.log(tabpanel);
 
         //        if(tabpanel.data==null)
         //            return;
 
         var wrapper = document.createElement('div');
         if (newHTML == null) {
-            wrapper.innerHTML = this.actor.data.data._html;
+            wrapper.innerHTML = this.actor.system._html;
         }
 
         else {
@@ -1570,7 +1644,7 @@ ${dialogPanel.data.data.title}
         //let deftemplate= wrapper;
         let deftemplate = new DOMParser().parseFromString(newHTML, "text/html");
         const actor = this.actor;
-        const flags = this.actor.data.flags;
+        const flags = this.actor.flags;
         const parentNode = deftemplate.querySelector('#' + tabKey + 'Body');
         //console.log(tabpanel);
         //console.log(deftemplate);
@@ -1578,11 +1652,11 @@ ${dialogPanel.data.data.title}
         let fontgroup = "";
         let inputgroup = "";
 
-        if (tabpanel.data.fontgroup != null)
-            fontgroup = tabpanel.data.fontgroup;
+        if (tabpanel.system.fontgroup != null)
+            fontgroup = tabpanel.system.fontgroup;
 
-        if (tabpanel.data.inputgroup != null)
-            inputgroup = tabpanel.data.inputgroup;
+        if (tabpanel.system.inputgroup != null)
+            inputgroup = tabpanel.system.inputgroup;
 
         //        let fontgroup = tabpanel.data.fontgroup;
         //        let inputgroup = tabpanel.data.inputgroup;
@@ -1592,10 +1666,10 @@ ${dialogPanel.data.data.title}
 
 
         if (multiID == null) {
-            console.log("INITIAL _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows);
+            //console.log("INITIAL _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows);
         }
         else {
-            console.log("INITIAL _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
+            //console.log("INITIAL _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
         }
 
         if (flags.rwidth >= 1) {
@@ -1618,7 +1692,7 @@ ${dialogPanel.data.data.title}
         }
 
         if (flags.multiwidth >= flags.maxwidth) {
-            console.log("newmultirow");
+            //console.log("newmultirow");
             flags.multiwidth == 0;
         }
 
@@ -1642,10 +1716,10 @@ ${dialogPanel.data.data.title}
         }
 
         let labelwidth;
-        var columns = tabpanel.data.columns;
+        var columns = tabpanel.system.columns;
 
         //Set panel width
-        if (tabpanel.data.width === "1") {
+        if (tabpanel.system.width === "1") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-1';
             if (multiID == null) {
@@ -1653,12 +1727,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 1;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width);
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
 
-        else if (tabpanel.data.width === "1/3") {
+        else if (tabpanel.system.width === "1/3") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-3';
             if (multiID == null) {
@@ -1666,12 +1740,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.333;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "2/3") {
+        else if (tabpanel.system.width === "2/3") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-2-3';
             if (multiID == null) {
@@ -1679,12 +1753,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.666;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "3/4") {
+        else if (tabpanel.system.width === "3/4") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-3-4';
             if (multiID == null) {
@@ -1692,12 +1766,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.75;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "5/6") {
+        else if (tabpanel.system.width === "5/6") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-5-6';
             if (multiID == null) {
@@ -1705,12 +1779,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.833;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "1/2") {
+        else if (tabpanel.system.width === "1/2") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-2';
             if (multiID == null) {
@@ -1718,12 +1792,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.5;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "1/4") {
+        else if (tabpanel.system.width === "1/4") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-4';
             if (multiID == null) {
@@ -1731,12 +1805,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.25;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "1/6") {
+        else if (tabpanel.system.width === "1/6") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-6';
             if (multiID == null) {
@@ -1744,12 +1818,12 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.166;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
-        else if (tabpanel.data.width === "1/8") {
+        else if (tabpanel.system.width === "1/8") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-8';
             if (multiID == null) {
@@ -1757,11 +1831,11 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.125;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
-        else if (tabpanel.data.width === "3/10") {
+        else if (tabpanel.system.width === "3/10") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-3-10';
             if (multiID == null) {
@@ -1769,11 +1843,11 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.3;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
-        else if (tabpanel.data.width === "1/16") {
+        else if (tabpanel.system.width === "1/16") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-1-16';
             if (multiID == null) {
@@ -1781,11 +1855,11 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.0625;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
-        else if (tabpanel.data.width === "5/8") {
+        else if (tabpanel.system.width === "5/8") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-5-8';
             if (multiID == null) {
@@ -1793,11 +1867,11 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.625;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
-        else if (tabpanel.data.width === "3/8") {
+        else if (tabpanel.system.width === "3/8") {
             if ((firstmrow && multiID == null) || (multiID != null))
                 div6.className = 'col-3-8';
             if (multiID == null) {
@@ -1805,7 +1879,7 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 0.375;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
@@ -1818,25 +1892,25 @@ ${dialogPanel.data.data.title}
             }
             else {
                 flags.multiwidth += 1;
-                div6.className = this.getmultiWidthClass(tabpanel.data.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width)
             }
 
         }
 
         if (multiID == null) {
-            console.log("PRE _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows);
+            //console.log("PRE _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows);
         }
         else {
-            console.log("PRE _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
+            //console.log("PRE _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
         }
 
-        div6.className += " " + tabpanel.data.panelKey + "_container";
+        div6.className += " " + tabpanel.system.panelKey + "_container";
 
         if (flags.rwidth > 0.95 && flags.rwidth <= 1)
             flags.rwidth = 1.015;
 
 
-        console.log("firstmrow: " + firstmrow);
+        //console.log("firstmrow: " + firstmrow);
         if (flags.rwidth > 1.015) {
             // flags.rwidth -= 1;
             // if (flags.rwidth < 0.1)
@@ -1848,7 +1922,7 @@ ${dialogPanel.data.data.title}
 
         }
 
-        console.log("rows: " + flags.rows);
+        //console.log("rows: " + flags.rows);
 
         if (flags.multiwidth > 0.95 && flags.multiwidth <= 1)
             flags.multiwidth = 1;
@@ -1866,40 +1940,40 @@ ${dialogPanel.data.data.title}
         }
 
         if (multiID == null) {
-            console.log("POST _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows + " initial:" + initial);
+            //console.log("POST _ " + tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows + " initial:" + initial);
         }
         else {
-            console.log("POST _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
+            //console.log("POST _ " + tabpanel.name + " maxrows: " + flags.maxrows + " multiwidth: " + flags.multiwidth + "maxwidth: " + flags.maxwidth);
         }
 
         if (initial) {
-            console.log("creating row initial true");
+            //console.log("creating row initial true");
         }
         else {
-            console.log("getting multirow");
+            //console.log("getting multirow");
         }
 
 
         //console.log(tabpanel.name + "post  width: " +flags.rwidth + " rows:" + flags.rows);
 
-        if (tabpanel.data.title != "") {
+        if (tabpanel.system.title != "") {
             var new_header = deftemplate.createElement("DIV");
 
-            if (tabpanel.data.backg == "T") {
+            if (tabpanel.system.backg == "T") {
                 new_header.className = "panelheader-t";
             }
             else {
                 new_header.className = "panelheader";
             }
 
-            if (tabpanel.data.headergroup != "")
-                new_header.className += " " + tabpanel.data.headergroup;
+            if (tabpanel.system.headergroup != "")
+                new_header.className += " " + tabpanel.system.headergroup;
 
-            new_header.textContent = tabpanel.data.title;
+            new_header.textContent = tabpanel.system.title;
             div6.appendChild(new_header);
         }
 
-        let properties = tabpanel.data.properties;
+        let properties = tabpanel.system.properties;
 
         var count = 0;
         var divtemp;
@@ -1912,10 +1986,10 @@ ${dialogPanel.data.data.title}
             let rawproperty = properties[n];
 
             //label alignment
-            if (tabpanel.data.alignment == "right") {
+            if (tabpanel.system.alignment == "right") {
                 labelwidth = "righttext";
             }
-            else if (tabpanel.data.alignment == "center") {
+            else if (tabpanel.system.alignment == "center") {
                 labelwidth = "centertext";
             }
 
@@ -1923,13 +1997,14 @@ ${dialogPanel.data.data.title}
                 labelwidth = "";
             }
 
-            console.log(rawproperty);
+            //console.log(rawproperty);
             //let propertybase = game.items.get(rawproperty.id);
             let propertybase = await auxMeth.getTElement(rawproperty.id, "property", rawproperty.ikey);
 
 
 
             if (propertybase == null) {
+                console.warn("The property " + rawproperty.name + " in panel " + tabpanel.name + " does not exist anymore. Please remove the reference to it");
                 ui.notifications.warn("The property " + rawproperty.name + " in panel " + tabpanel.name + " does not exist anymore. Please remove the reference to it");
                 throw new Error("No property!");
                 return "noproperty";
@@ -1939,43 +2014,43 @@ ${dialogPanel.data.data.title}
 
 
 
-                let property = propertybase.data;
+                let property = propertybase;
 
-                if (property.data.attKey == null || property.data.attKey == "") {
+                if (property.system.attKey == null || property.system.attKey == "") {
                     ui.notifications.warn("The property " + rawproperty.name + " in panel " + tabpanel.name + " does not have a key");
                     throw new Error("No property Key!");
                     return "noproperty";
                 }
 
 
-                fontgroup = tabpanel.data.fontgroup;
-                inputgroup = tabpanel.data.inputgroup;
+                fontgroup = tabpanel.system.fontgroup;
+                inputgroup = tabpanel.system.inputgroup;
 
-                if (property.data.fontgroup != "")
-                    fontgroup = property.data.fontgroup;
+                if (property.system.fontgroup != "")
+                    fontgroup = property.system.fontgroup;
 
-                if (property.data.inputgroup != "")
-                    inputgroup = property.data.inputgroup;
+                if (property.system.inputgroup != "")
+                    inputgroup = property.system.inputgroup;
 
                 if (fontgroup == null)
-                    fontgroup = tabpanel.data.fontgroup;
+                    fontgroup = tabpanel.system.fontgroup;
                 if (inputgroup == null)
-                    inputgroup = tabpanel.data.inputgroup;
+                    inputgroup = tabpanel.system.inputgroup;
 
                 if (count == 0) {
 
                     new_row.className = "new-row ";
-                    new_row.className += tabpanel.data.panelKey;
+                    new_row.className += tabpanel.system.panelKey;
                     divtemp = deftemplate.createElement("DIV");
 
-                    if (tabpanel.data.contentalign == "center") {
-                        divtemp.className = "flexblock-center " + tabpanel.data.panelKey + "_row";
+                    if (tabpanel.system.contentalign == "center") {
+                        divtemp.className = "flexblock-center " + tabpanel.system.panelKey + "_row";
                     }
-                    else if (tabpanel.data.contentalign == "right") {
-                        divtemp.className = "flexblock-right " + tabpanel.data.panelKey + "_row";
+                    else if (tabpanel.system.contentalign == "right") {
+                        divtemp.className = "flexblock-right " + tabpanel.system.panelKey + "_row";
                     }
                     else {
-                        divtemp.className = "flexblock-left " + tabpanel.data.panelKey + "_row";
+                        divtemp.className = "flexblock-left " + tabpanel.system.panelKey + "_row";
                     }
 
 
@@ -1989,69 +2064,78 @@ ${dialogPanel.data.data.title}
                 let sInputArrows;
 
                 //Set Label
-                if (property.data.haslabel && property.data.datatype != "table" && property.data.datatype != "badge" && property.data.datatype != "button") {
+                if (property.system.haslabel && property.system.datatype != "table" && property.system.datatype != "badge" && property.system.datatype != "button") {
                     //Attribute label
                     var sLabel = deftemplate.createElement("H3");
 
-                    if (property.data.labelsize == "F") {
+                    if (property.system.labelsize == "F") {
                         labelwidth += " label-free";
                     }
 
-                    else if (property.data.labelsize == "S") {
+                    else if (property.system.labelsize == "S") {
                         labelwidth += " label-small";
                     }
 
-                    else if (property.data.labelsize == "T") {
+                    else if (property.system.labelsize == "T") {
                         labelwidth += " label-tiny";
                     }
 
-                    else if (property.data.labelsize == "M") {
+                    else if (property.system.labelsize == "M") {
                         labelwidth += " label-med";
                     }
 
-                    else if (property.data.labelsize == "L") {
+                    else if (property.system.labelsize == "L") {
                         labelwidth += " label-medlarge";
                     }
 
-                    sLabel.className = labelwidth + " " + property.data.attKey + "_label";
-                    sLabel.textContent = property.data.tag;
+                    sLabel.className = labelwidth + " " + property.system.attKey + "_label";
+                    sLabel.textContent = property.system.tag;
 
-                    if (property.data.tooltip != null)
-                        if (property.data.tooltip != "")
-                            if (property.data.tooltip.length > 0)
-                                sLabel.title = property.data.tooltip;
+                    if (property.system.tooltip != null)
+                        if (property.system.tooltip != "")
+                            if (property.system.tooltip.length > 0)
+                                sLabel.title = property.system.tooltip;
 
                     divtemp.appendChild(sLabel);
 
                     //Adds identifier
-                    sLabel.setAttribute("id", property.data.attKey);
+                    sLabel.setAttribute("id", property.system.attKey);
                     sLabel.setAttribute("attid", rawproperty.id);
 
-                    if (property.data.labelformat == "B") {
+                    if (property.system.labelformat == "B") {
                         sLabel.className += " boldtext";
                     }
 
-                    else if (property.data.labelformat == "D") {
+                    else if (property.system.labelformat == "D" || property.system.labelformat == "I") {
                         sLabel.textContent = "";
 
                         let dieContainer = deftemplate.createElement("DIV");
-                        dieContainer.setAttribute("title", property.data.tag);
+                        dieContainer.setAttribute("title", property.system.tag);
 
                         let dieSymbol = deftemplate.createElement('i');
-                        dieSymbol.className = "fas fa-dice-d20";
+                        if(property.system.labelformat == "D"){                        
+                          dieSymbol.className = "fas fa-dice-d20";
+                        } else {
+                          if(property.system.icon==''){
+                            // set default
+                            dieSymbol.className = "fas fa-dice-d20";
+                          } else {
+                            dieSymbol.className = "fas " + property.system.icon;
+                          }
+                        }
                         dieContainer.appendChild(dieSymbol);
 
                         sLabel.appendChild(dieContainer);
 
                     }
 
-                    else if (property.data.labelformat == "S") {
+                    else if (property.system.labelformat == "S") {
                         sLabel.className += " smalltext";
 
                     }
 
                     //Sets class required for rolling
-                    if (property.data.hasroll) {
+                    if (property.system.hasroll) {
                         sLabel.className += " rollable";
                     }
 
@@ -2059,79 +2143,121 @@ ${dialogPanel.data.data.title}
                     if (fontgroup != "")
                         sLabel.className += " " + fontgroup;
 
-                    console.log(sLabel.className + " " + sLabel.textContent);
+                    //console.log(sLabel.className + " " + sLabel.textContent);
 
 
                 }
 
                 //Check property type
-                if (property.data.datatype === "checkbox") {
-
-                    if (!property.data.customcheck && (property.data.onPath == "" || property.data.offPath == "")) {
+                if (property.system.datatype === "checkbox") {
+                    
+                    if (!property.system.customcheck && (property.system.onPath == "" || property.system.offPath == "")) {
                         sInput = deftemplate.createElement("INPUT");
                         sInput.className = "input-small";
-                        if (property.data.labelsize == "T")
+                        if (property.system.labelsize == "T")
                             sInput.className = "input-tiny";
-                        sInput.setAttribute("name", "data.attributes." + property.data.attKey + ".value");
+                        sInput.setAttribute("name", "system.attributes." + property.system.attKey + ".value");
                         sInput.setAttribute("type", "checkbox");
-                        sInput.setAttribute("toparse", "{{checked actor.data.attributes." + property.data.attKey + ".value}}~~");
+                        if (property.system.auto != "") {
+                            sInput.disabled=true;                            
+                        }
+                        
+                        
+                        sInput.setAttribute("toparse", "{{checked actor.system.attributes." + property.system.attKey + ".value}}~~");
+                        sInput.setAttribute("title", property.system.tooltip);
                     }
 
                     else {
                         sInput = deftemplate.createElement("DIV");
                         sInput.className = "input-small";
-                        if (property.data.inputsize == "T")
+                        if (property.system.inputsize == "T")
                             sInput.className = "input-tiny";
-                        sInput.setAttribute("attKey", property.data.attKey);
-                        sInput.setAttribute("onPath", property.data.onPath);
-                        sInput.setAttribute("offPath", property.data.offPath);
+                        sInput.setAttribute("attKey", property.system.attKey);
+                        sInput.setAttribute("onPath", property.system.onPath);
+                        sInput.setAttribute("offPath", property.system.offPath);
+                        sInput.setAttribute("title", property.system.tooltip);
                         sInput.className += " customcheck";
                     }
+                    
                 }
 
                 //Check property type
-                else if (property.data.datatype === "radio") {
+                else if (property.system.datatype === "radio") {
 
                     sInput = deftemplate.createElement("DIV");
                     sInput.className = "radio-input";
-                    sInput.setAttribute("name", property.data.attKey);
+                    sInput.setAttribute("name", property.system.attKey);
+                    sInput.setAttribute("title", property.system.tooltip);
 
                 }
 
-                else if (property.data.datatype === "textarea") {
+                else if (property.system.datatype === "textarea") {
 
                     sInput = deftemplate.createElement("TEXTAREA");
-                    if (property.data.inputsize == "S") {
+                    if (property.system.inputsize == "S") {
                         sInput.className = "texteditor-small";
                     }
 
-                    else if (property.data.inputsize == "L") {
+                    else if (property.system.inputsize == "L") {
                         sInput.className = "texteditor-large";
                     }
                     else {
                         sInput.className = "texteditor-med";
                     }
 
-                    sInput.setAttribute("name", "data.attributes." + property.data.attKey + ".value");
-                    sInput.textContent = "{{" + "data.data.attributes." + property.data.attKey + ".value}}";
+                    sInput.setAttribute("name", "system.attributes." + property.system.attKey + ".value");
+                    sInput.setAttribute("title", property.system.tooltip);
+                    sInput.textContent = "{{" + "actor.system.attributes." + property.system.attKey + ".value}}";
 
                 }
 
-                else if (property.data.datatype === "badge") {
+                else if (property.system.datatype === "badge") {
 
                     sInput = deftemplate.createElement("DIV");
                     sInput.className = "badge-block centertext";
-                    sInput.setAttribute("name", property.data.attKey);
+                    sInput.setAttribute("name", property.system.attKey);
 
                     let badgelabel = deftemplate.createElement("LABEL");
                     badgelabel.className = "badgelabel";
-                    badgelabel.className += " badgelabel-" + property.data.attKey;
-                    badgelabel.textContent = property.data.tag;
+                    badgelabel.className += " badgelabel-" + property.system.attKey;
+                    badgelabel.textContent = property.system.tag;
+                    //
+                    if (property.system.labelformat == "B") {
+                        badgelabel.className += " boldtext";
+                    }
 
-                    if (property.data.tooltip != null)
-                        if (property.data.tooltip != "")
-                            if (property.data.tooltip.length > 0)
-                                badgelabel.title = property.data.tooltip;
+                    else if (property.system.labelformat == "D" || property.system.labelformat == "I") {
+                        badgelabel.textContent = "";
+
+                        let dieContainer = deftemplate.createElement("DIV");
+                        dieContainer.setAttribute("title", property.system.tag);
+
+                        let dieSymbol = deftemplate.createElement('i');
+                        if(property.system.labelformat == "D"){                        
+                          dieSymbol.className = "fas fa-dice-d20";
+                        } else {
+                          if(property.system.icon==''){
+                            // set default
+                            dieSymbol.className = "fas fa-dice-d20";
+                          } else {
+                            dieSymbol.className = "fas " + property.system.icon;
+                          }
+                        }
+                        dieContainer.appendChild(dieSymbol);
+
+                        badgelabel.appendChild(dieContainer);
+
+                    }
+
+                    else if (property.system.labelformat == "S") {
+                        badgelabel.className += " smalltext";
+
+                    }
+                    //  
+                    if (property.system.tooltip != null)
+                        if (property.system.tooltip != "")
+                            if (property.system.tooltip.length > 0)
+                                badgelabel.title = property.system.tooltip;
 
                     sInput.appendChild(badgelabel);
 
@@ -2140,19 +2266,20 @@ ${dialogPanel.data.data.title}
 
                     let badgea = deftemplate.createElement('a');
                     badgea.className = "badge-image";
-                    badgea.className += " badge-" + property.data.attKey;
+                    badgea.className += " badge-" + property.system.attKey;
 
                     let badgei = deftemplate.createElement('i');
                     badgei.className = "badge-click";
-                    badgei.setAttribute("attKey", property.data.attKey);
+                    badgei.setAttribute("attKey", property.system.attKey);
                     badgei.setAttribute("attId", property._id);
+                    badgei.setAttribute("title", property.system.tooltip);
                     badgea.appendChild(badgei);
 
                     extraDiv.appendChild(badgea);
 
                     if (game.user.isGM) {
                         let gmbadgea = deftemplate.createElement('a');
-                        gmbadgea.setAttribute("attKey", property.data.attKey);
+                        gmbadgea.setAttribute("attKey", property.system.attKey);
                         gmbadgea.setAttribute("attId", property._id);
                         gmbadgea.className = "badge-clickgm";
 
@@ -2166,26 +2293,26 @@ ${dialogPanel.data.data.title}
                     sInput.appendChild(extraDiv);
                 }
 
-                else if (property.data.datatype === "list") {
+                else if (property.system.datatype === "list") {
 
                     sInput = deftemplate.createElement("SELECT");
-                    if (property.data.inputsize == "F") {
+                    if (property.system.inputsize == "F") {
                         sInput.className = "input-free";
                     }
 
-                    else if (property.data.labelsize == "S") {
+                    else if (property.system.labelsize == "S") {
                         sInput.className = "input-small";
                     }
 
-                    else if (property.data.labelsize == "T") {
+                    else if (property.system.labelsize == "T") {
                         sInput.className = "input-tiny";
                     }
 
-                    else if (property.data.labelsize == "M") {
+                    else if (property.system.labelsize == "M") {
                         sInput.className = "input-med";
                     }
 
-                    else if (property.data.labelsize == "L") {
+                    else if (property.system.labelsize == "L") {
                         sInput.className = "input-medlarge";
                     }
 
@@ -2194,11 +2321,14 @@ ${dialogPanel.data.data.title}
                     }
 
                     //sInput.className = "input-med";
-                    sInput.setAttribute("name", "data.attributes." + property.data.attKey + ".value");
-                    sInput.insertAdjacentHTML('beforeend', "{{#select data.data.attributes." + property.data.attKey + ".value}}");
+                    
+               // R: might need actor in handlebars
+                    sInput.setAttribute("name", "system.attributes." + property.system.attKey + ".value");
+                    sInput.setAttribute("title", property.system.tooltip);
+                    sInput.insertAdjacentHTML('beforeend', "{{#select actor.system.attributes." + property.system.attKey + ".value}}");
 
                     //IM ON IT
-                    var rawlist = property.data.listoptions;
+                    var rawlist = property.system.listoptions;
                     var listobjects = rawlist.split(',');
 
                     for (var i = 0; i < listobjects.length; i++) {
@@ -2213,38 +2343,47 @@ ${dialogPanel.data.data.title}
                     sInput.insertAdjacentHTML('beforeend', "{{/select}}");
                 }
 
-                else if (property.data.datatype === "button") {
+                else if (property.system.datatype === "button") {
                     sInput = deftemplate.createElement("a");
-                    if (property.data.labelformat != "D") {
+                    sInput.setAttribute("title", property.system.tooltip);
+                    if (property.system.labelformat != "D") {
                         sInput.className = "sbbutton";
                     }
 
                     let buttonContent = deftemplate.createElement("i");
 
-                    buttonContent.className = property.data.attKey + "_button macrobutton";
-                    if (property.data.labelformat != "D") {
-                        buttonContent.textContent = property.data.tag;
+                    buttonContent.className = property.system.attKey + "_button macrobutton";
+                    if (property.system.labelformat != "D" && property.system.labelformat != "I") {
+                        buttonContent.textContent = property.system.tag;
                     }
                     else {
-                        buttonContent.className += " fas fa-dice-d20 ";
+                        if(property.system.labelformat == "D"){
+                          buttonContent.className += " fas fa-dice-d20 ";
+                        } else if(property.system.labelformat == "I"){
+                          if(property.system.icon==''){
+                            buttonContent.className += " fas fa-dice-d20 ";
+                          } else {
+                            buttonContent.className += " fas " + property.system.icon;
+                          }
+                        }
                     }
 
-                    buttonContent.setAttribute("macroid", property.data.macroid);
+                    buttonContent.setAttribute("macroid", property.system.macroid);
                     sInput.appendChild(buttonContent);
                 }
 
-                else if (property.data.datatype === "table") {
-                    new_row.className = "table-row " + property.data.attKey + "_row";
+                else if (property.system.datatype === "table") {
+                    new_row.className = "table-row " + property.system.attKey + "_row";
 
                     //TABLE LAYOUT
                     sInput = deftemplate.createElement("TABLE");
-                    if (property.data.tableheight == "S") {
+                    if (property.system.tableheight == "S") {
                         sInput.className = "table-small";
                     }
-                    else if (property.data.tableheight == "M") {
+                    else if (property.system.tableheight == "M") {
                         sInput.className = "table-med";
                     }
-                    else if (property.data.tableheight == "T") {
+                    else if (property.system.tableheight == "T") {
                         sInput.className = "table-tall";
                     }
                     else {
@@ -2253,73 +2392,104 @@ ${dialogPanel.data.data.title}
 
                     sInput.className += " sbtable";
 
-                    sInput.setAttribute("name", "data.attributes." + property.data.attKey);
+                    sInput.setAttribute("name", "system.attributes." + property.system.attKey);
                     sInput.setAttribute("inputgroup", inputgroup);
-                    sInput.setAttribute("value", "{{data.data.attributes." + property.data.attKey + ".value}}");
+                    sInput.setAttribute("value", "{{actor.system.attributes." + property.system.attKey + ".value}}");
 
                     sInput.innerHTML = '';
 
                     //get group
                     //const group = game.items.get(property.data.group.id);
-                    const group = await auxMeth.getTElement(property.data.group.id, "group", property.data.group.ikey);
+                    const group = await auxMeth.getTElement(property.system.group.id, "group", property.system.group.ikey);
 
                     //Create header
                     let header = deftemplate.createElement("THEAD");
-                    if (!property.data.hasheader)
+                    if (!property.system.hasheader)
                         header.style.display = "none";
                     sInput.appendChild(header);
                     let header_row = deftemplate.createElement("TR");
                     header_row.className += " " + fontgroup;
-                    header_row.setAttribute("tableKey", property.data.attKey);
+                    header_row.setAttribute("tableKey", property.system.attKey);
                     header.appendChild(header_row);
-
+                    let firstColumnAssigned=false;
                     //Add name ta
-                    if ((property.data.onlynames == "DEFAULT" || property.data.onlynames == "ONLY_NAMES") && !property.data.isfreetable) {
-                        if (!property.data.namecolumn) {
-                            property.data.namecolumn = "Item";
+                    if ((property.system.onlynames == "DEFAULT" || property.system.onlynames == "ONLY_NAMES")  && !property.system.isfreetable) {
+                        if (!property.system.namecolumn) {
+                            property.system.namecolumn = "Item";
                         }
 
                         let hnameCell = deftemplate.createElement("TH");
                         //hnameCell.className = "input-free";
                         hnameCell.className = "label-large";
-                        hnameCell.textContent = property.data.namecolumn;
-                        hnameCell.className += " tableheader nameheader";
+                        hnameCell.textContent = property.system.namecolumn;
+                        hnameCell.className += " tableheader nameheader sb-table-column-header-first-column";
+                        firstColumnAssigned=true;
                         header_row.appendChild(hnameCell);
                     }
+                    if ((property.system.onlynames == "NO_NAMES" && property.system.tableoptions.showicons==true )&& !property.system.isfreetable){
+                      if (!property.system.namecolumn) {
+                          property.system.namecolumn = "Item";
+                      }
+
+                      let hnameCell = deftemplate.createElement("TH");
+                      
+                      hnameCell.className = "sb-table-column-header-icon";
+                      hnameCell.textContent = property.system.namecolumn;
+                      hnameCell.title = property.system.namecolumn;
+                      hnameCell.className += " tableheader nameheader sb-table-column-header-first-column";
+                      firstColumnAssigned=true;
+                      header_row.appendChild(hnameCell);
+                    }
+                    
 
 
-                    if (property.data.onlynames != "ONLY_NAMES") {
-                        if (property.data.hasactivation && !property.data.isfreetable) {
+                    if (property.system.onlynames != "ONLY_NAMES") {
+                        if (property.system.hasactivation && !property.system.isfreetable) {
                             let hactiveCell = deftemplate.createElement("TH");
                             hactiveCell.className = "input-min";
                             hactiveCell.className += " tableheader";
-                            hactiveCell.textContent = "Active";
+                            if(!firstColumnAssigned){
+                              firstColumnAssigned=true;
+                              hactiveCell.className += " sb-table-column-header-first-column";
+                            }
+                            hactiveCell.textContent = property.system.tableoptions.columnheaderlabels.active;
+                            hactiveCell.title = property.system.tableoptions.columnheaderlabels.active;
                             header_row.appendChild(hactiveCell);
                         }
 
-                        if (property.data.hasunits && !property.data.isfreetable) {
+                        if (property.system.hasunits && !property.system.isfreetable) {
                             let hnumberCell = deftemplate.createElement("TH");
                             hnumberCell.className = "input-min";
                             hnumberCell.className += " tableheader";
-                            hnumberCell.textContent = "Num";
+                            if(!firstColumnAssigned){
+                              firstColumnAssigned=true;
+                              hnumberCell.className += " sb-table-column-header-first-column";
+                            }
+                            hnumberCell.textContent = property.system.tableoptions.columnheaderlabels.num;
+                            hnumberCell.title = property.system.tableoptions.columnheaderlabels.num;
                             header_row.appendChild(hnumberCell);
                         }
 
                         //REMOVE USES WORKSTREAM
-                        if (property.data.hasuses && property.data.hasactivation && !property.data.isfreetable) {
+                        if (property.system.hasuses && property.system.hasactivation && !property.system.isfreetable) {
                             let husesCell = deftemplate.createElement("TH");
                             husesCell.className = "input-uses";
                             husesCell.className += " tableheader";
-                            husesCell.textContent = "Uses";
+                            if(!firstColumnAssigned){
+                              firstColumnAssigned=true;
+                              husesCell.className += " sb-table-column-header-first-column";
+                            }
+                            husesCell.textContent = property.system.tableoptions.columnheaderlabels.uses;
+                            husesCell.title = property.system.tableoptions.columnheaderlabels.uses;
                             header_row.appendChild(husesCell);
                         }
 
                         if (group != null) {
 
-                            const groupprops = group.data.data.properties;
+                            const groupprops = group.system.properties;
                             //let isfirstFree = true;
                             for (let i = 0; i < groupprops.length; i++) {
-                                console.log(groupprops[i].id + " key:" + groupprops[i].ikey + " name:" + groupprops[i].name);
+                                //console.log(groupprops[i].id + " key:" + groupprops[i].ikey + " name:" + groupprops[i].name);
 
                                 //let propTable = game.items.get(groupprops[i].id);
                                 let propTable = await auxMeth.getTElement(groupprops[i].id, "property", groupprops[i].ikey);
@@ -2329,23 +2499,23 @@ ${dialogPanel.data.data.title}
 
                                 hCell.className = "input-med";
 
-                                if (propTable.data.data.labelsize == "F") {
+                                if (propTable.system.labelsize == "F") {
                                     hCell.className = "label-free";
 
                                 }
-                                else if (propTable.data.data.labelsize == "S") {
+                                else if (propTable.system.labelsize == "S") {
                                     hCell.className = "label-small";
                                 }
-                                else if (propTable.data.data.labelsize == "T") {
+                                else if (propTable.system.labelsize == "T") {
                                     hCell.className = "label-tiny";
                                 }
-                                else if (propTable.data.data.labelsize == "L" && propTable.data.data.inputsize == "M") {
+                                else if (propTable.system.labelsize == "L" && propTable.system.inputsize == "M") {
                                     hCell.className = "label-medlarge";
                                 }
-                                else if (propTable.data.data.labelsize == "L" && propTable.data.data.inputsize == "L") {
+                                else if (propTable.system.labelsize == "L" && propTable.system.inputsize == "L") {
                                     hCell.className = "label-big";
                                 }
-                                else if (propTable.data.data.labelsize == "L") {
+                                else if (propTable.system.labelsize == "L") {
                                     hCell.className = "label-large";
                                 }
                                 else {
@@ -2359,17 +2529,42 @@ ${dialogPanel.data.data.title}
 
 
                                 hCell.className += " tableheader propheader";
-                                hCell.setAttribute("attKey", propTable.data.data.attKey);
-                                hCell.textContent = propTable.data.data.tag;
+                                if(!firstColumnAssigned){
+                                  firstColumnAssigned=true;
+                                  hCell.className += " sb-table-column-header-first-column";
+                                }
+                                hCell.setAttribute("attKey", propTable.system.attKey);
+                                // if tag is not set check for label format
+                                if(propTable.system.tag==''){
+                                  switch(propTable.system.labelformat){
+                                    case 'I':                                    
+                                      hCell.innerHTML='<i class="fas '+ propTable.system.icon +'"></i>'
+                                      hCell.title = propTable.system.tooltip;
+                                      break;
+                                    case 'D':                                    
+                                      hCell.innerHTML='<i class="fas fa-dice-d20"></i>'
+                                      hCell.title = propTable.system.tooltip;
+                                      break;
+                                    default:
+                                      hCell.textContent = propTable.system.tag;
+                                      hCell.title = propTable.system.tooltip;
+                                      break;
 
-                                if (!propTable.data.data.ishidden)
+                                  }
+                                } else {
+                                  hCell.textContent = propTable.system.tag;
+                                  hCell.title = propTable.system.tooltip;
+                                }
+                                
+
+                                if (!propTable.system.ishidden)
                                     header_row.appendChild(hCell);
                             }
                         }
                     }
 
                     //Add transfer column
-                    if (property.data.transferrable) {
+                    if (property.system.transferrable && !property.system.isfreetable) {
                         let transferCell = deftemplate.createElement("TH");
                         transferCell.className = "input-min tableheader";
                         header_row.appendChild(transferCell);
@@ -2392,43 +2587,44 @@ ${dialogPanel.data.data.title}
 
                     sInput = deftemplate.createElement("INPUT");
 
-                    sInput.setAttribute("name", "data.attributes." + property.data.attKey + ".value");
-                    sInput.setAttribute("value", "{{data.data.attributes." + property.data.attKey + ".value}}");
+                    sInput.setAttribute("name", "system.attributes." + property.system.attKey + ".value");
+                    sInput.setAttribute("value", "{{actor.system.attributes." + property.system.attKey + ".value}}");
+                    sInput.setAttribute("title", property.system.tooltip);
 
-                    if (property.data.datatype === "simplenumeric") {
+                    if (property.system.datatype === "simplenumeric") {
 
                         sInput.setAttribute("type", "text");
                         sInput.className = "input-min";
 
-                        if (property.data.inputsize == "M") {
+                        if (property.system.inputsize == "M") {
                             sInput.className = "input-med";
                         }
 
-                        if (!hasProperty(property.data, "maxvisible")) {
-                            property.data.maxvisible = true;
+                        if (!hasProperty(property.system, "maxvisible")) {
+                            property.system.maxvisible = true;
                         }
 
-                        if (property.data.automax != "" && property.data.maxvisible) {
+                        if (property.system.automax != "" && property.system.maxvisible) {
                             sInputMax = await deftemplate.createElement("INPUT");
                             sInputMax.setAttribute("type", "text");
                             sInput.className = "input-ahalf ";
-                            sInputMax.className = "input-bhalf input-disabled inputGM " + property.data.attKey + ".max";
-                            sInputMax.setAttribute("name", "data.attributes." + property.data.attKey + ".max");
-                            sInputMax.setAttribute("value", "{{data.data.attributes." + property.data.attKey + ".max}}");
+                            sInputMax.className = "input-bhalf input-disabled inputGM " + property.system.attKey + ".max";
+                            sInputMax.setAttribute("name", "system.attributes." + property.system.attKey + ".max");
+                            sInputMax.setAttribute("value", "{{actor.system.attributes." + property.system.attKey + ".max}}");
                         }
 
-                        if (property.data.arrows && !property.data.ishidden) {
+                        if (property.system.arrows && !property.system.ishidden) {
                             sInputArrows = deftemplate.createElement("SPAN");
                             let arrContainer = deftemplate.createElement("A");
                             arrContainer.className = "arrcontainer";
                             arrContainer.style.display = "inline-block";
-                            arrContainer.setAttribute("attKey", property.data.attKey);
+                            arrContainer.setAttribute("attKey", property.system.attKey);
                             let arrUp = deftemplate.createElement("I");
                             arrUp.className = "arrup";
                             let arrDown = deftemplate.createElement("I");
                             arrDown.className = "arrdown";
 
-                            if (!property.data.editable) {
+                            if (!property.system.editable) {
                                 arrContainer.setAttribute("arrlock", true);
                             }
 
@@ -2440,7 +2636,7 @@ ${dialogPanel.data.data.title}
 
                     }
 
-                    else if (property.data.datatype == "label") {
+                    else if (property.system.datatype == "label") {
                         sInput.setAttribute("type", "text");
                         sInput.className = "input-free";
                         sInput.style.display = "none";
@@ -2449,23 +2645,23 @@ ${dialogPanel.data.data.title}
                     else {
                         sInput.setAttribute("type", "text");
                         sInput.className = "";
-                        if (property.data.inputsize != null) {
-                            if (property.data.inputsize == "F") {
+                        if (property.system.inputsize != null) {
+                            if (property.system.inputsize == "F") {
                                 sInput.className = "input-free";
                             }
 
-                            else if (property.data.inputsize == "S") {
+                            else if (property.system.inputsize == "S") {
                                 sInput.className = "input-small";
                             }
 
-                            else if (property.data.inputsize == "M") {
+                            else if (property.system.inputsize == "M") {
                                 sInput.className = "input-med";
                             }
 
-                            else if (property.data.inputsize == "L") {
+                            else if (property.system.inputsize == "L") {
                                 sInput.className = "input-large";
                             }
-                            else if (property.data.inputsize == "T") {
+                            else if (property.system.inputsize == "T") {
                                 sInput.className = "input-tiny";
                             }
                         }
@@ -2474,7 +2670,7 @@ ${dialogPanel.data.data.title}
                         }
                     }
 
-                    if (property.data.auto != "") {
+                    if (property.system.auto != "") {
                         sInput.setAttribute("readonly", "true");
                         sInput.className += " input-disabled";
                     }
@@ -2482,26 +2678,28 @@ ${dialogPanel.data.data.title}
                 }
 
                 //Adds identifier
-                sInput.className += " " + property.data.attKey;
-                if (property.data.datatype != "table")
+                sInput.className += " " + property.system.attKey;
+                sInput.setAttribute('data-property-key',property.system.attKey);
+                sInput.setAttribute('data-property-type',property.system.datatype);
+                if (property.system.datatype != "table")
                     sInput.className += " " + inputgroup;
-                console.log(property);
+                //console.log(property);
                 sInput.setAttribute("attId", property._id);
 
-                if (!property.data.editable)
+                if (!property.system.editable)
                     sInput.className += " inputGM";
 
-                if (property.data.ishidden) {
+                if (property.system.ishidden) {
                     sInput.style.display = "none";
-                    if (sLabel != null && property.data.haslabel)
+                    if (sLabel != null && property.system.haslabel)
                         sLabel.style.display = "none";
                 }
 
 
-                if (property.data.datatype != "label")
+                if (property.system.datatype != "label")
                     await divtemp.appendChild(sInput);
 
-                if (property.data.automax != "" && property.data.maxvisible && sInputMax != null) {
+                if (property.system.automax != "" && property.system.maxvisible && sInputMax != null) {
                     //sInputMax.className += " " + inputgroup;
                     //divtemp.insertBefore(sInputMax, sInput.nextSibling);
                     await divtemp.appendChild(sInputMax);
@@ -2524,16 +2722,16 @@ ${dialogPanel.data.data.title}
         var parentRow;
         //console.log("rwidth: " + flags.rwidth + " rows: " + flags.rows);
         if (multiID == null) {
-            console.log(tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows + " initial: " + initial);
+            //console.log(tabpanel.name + " width: " + flags.rwidth + " rows: " + flags.rows + " initial: " + initial);
         }
         else {
-            console.log(tabpanel.name + " rwidth: " + flags.rwidth + " multiwidth: " + flags.multiwidth + " initial: " + initial + " maxrows " + flags.maxrows);
+            //console.log(tabpanel.name + " rwidth: " + flags.rwidth + " multiwidth: " + flags.multiwidth + " initial: " + initial + " maxrows " + flags.maxrows);
         }
 
         let checktest = deftemplate.getElementById(tabname + "row" + flags.rows);
 
         if ((flags.rwidth == 0 || initial) && (firstmrow || checktest == null)) {
-            console.log("setting new row attribute");
+            //console.log("setting new row attribute");
             parentRow = deftemplate.createElement("DIV");
             parentRow.className = 'new-block';
 
@@ -2543,7 +2741,7 @@ ${dialogPanel.data.data.title}
             }
             else {
                 let multiwclass = flags.multiwclass;
-                console.log("MultiPanel Container " + multiwclass);
+                //console.log("MultiPanel Container " + multiwclass);
                 let parentRoot;
                 let parentGranda = deftemplate.createElement("DIV");
                 parentGranda.setAttribute('id', multiID + "multi");
@@ -2553,7 +2751,7 @@ ${dialogPanel.data.data.title}
                 if (multiName != null && multiName != "") {
                     let new_header = document.createElement("DIV");
 
-                    if (tabpanel.data.backg == "T") {
+                    if (tabpanel.system.backg == "T") {
                         new_header.className = "panelheader-t";
                     }
                     else {
@@ -2566,13 +2764,13 @@ ${dialogPanel.data.data.title}
 
 
 
-                console.log("MultiRow Container: " + multiID + "multirow" + flags.maxrows);
+                //console.log("MultiRow Container: " + multiID + "multirow" + flags.maxrows);
                 parentRow.setAttribute('id', multiID + "multirow" + flags.maxrows);
 
                 if (flags.rwidth == 0) {
                     parentRoot = document.createElement("DIV");
                     parentRoot.className = 'new-block';
-                    console.log("creating row: " + flags.rows);
+                    //console.log("creating row: " + flags.rows);
                     parentRoot.setAttribute('id', tabname + "row" + flags.rows);
                     await parentNode.appendChild(parentRoot);
                     await parentRoot.appendChild(parentGranda);
@@ -2627,7 +2825,7 @@ ${dialogPanel.data.data.title}
         else {
 
             if (multiID == null) {
-                console.log("getting existing row id " + tabname + "row" + flags.rows);
+                //console.log("getting existing row id " + tabname + "row" + flags.rows);
                 parentRow = deftemplate.getElementById(tabname + "row" + flags.rows);
             }
             else {
@@ -2639,13 +2837,13 @@ ${dialogPanel.data.data.title}
                     let parentRoot;
                     let parentGranda = deftemplate.getElementById(multiID + "multi");
 
-                    console.log("Creating multiRow Container: " + multiID + "multirow" + flags.maxrows);
+                    //console.log("Creating multiRow Container: " + multiID + "multirow" + flags.maxrows);
                     parentRow.setAttribute('id', multiID + "multirow" + flags.maxrows);
 
                     if (flags.rwidth == 0) {
                         parentRoot = deftemplate.createElement("DIV");
                         parentRoot.className = 'new-block';
-                        console.log("creating row: " + flags.rows);
+                        //console.log("creating row: " + flags.rows);
                         parentRoot.setAttribute('id', tabname + "row" + flags.rows);
                     }
 
@@ -2665,60 +2863,60 @@ ${dialogPanel.data.data.title}
             }
 
         }
-        console.log("almost there");
+        //console.log("almost there");
         await parentRow.appendChild(div6);
-        console.log(div6);
+        //console.log(div6);
 
         //ADD VISIBILITY RULES TO PANEL
-        if (tabpanel.data.condop != "NON") {
+        if (tabpanel.system.condop != "NON") {
             let attProp = ".value";
-            if (tabpanel.data.condat != null) {
-                if (tabpanel.data.condat.includes(".max")) {
+            if (tabpanel.system.condat != null) {
+                if (tabpanel.system.condat.includes(".max")) {
                     attProp = "";
                 }
             }
 
 
-            if (tabpanel.data.condop == "EQU") {
-                console.log(div6);
-                if ((tabpanel.data.condvalue === "true" || tabpanel.data.condvalue === "false" || tabpanel.data.condvalue === true || tabpanel.data.condvalue === false)) {
-                    div6.insertAdjacentHTML('beforebegin', "{{#if actor.data.attributes." + tabpanel.data.condat + attProp + "}}");
+            if (tabpanel.system.condop == "EQU") {
+                //console.log(div6);
+                if ((tabpanel.system.condvalue === "true" || tabpanel.system.condvalue === "false" || tabpanel.system.condvalue === true || tabpanel.system.condvalue === false)) {
+                    div6.insertAdjacentHTML('beforebegin', "{{#if actor.system.attributes." + tabpanel.system.condat + attProp + "}}");
                     div6.insertAdjacentHTML('afterend', "{{/if}}");
                 }
                 else {
-                    div6.insertAdjacentHTML('afterbegin', "{{#ifCond actor.data.attributes." + tabpanel.data.condat + attProp + " '" + tabpanel.data.condvalue + "'}}");
+                    div6.insertAdjacentHTML('afterbegin', "{{#ifCond actor.system.attributes." + tabpanel.system.condat + attProp + " '" + tabpanel.system.condvalue + "'}}");
                     div6.insertAdjacentHTML('beforeend', "{{/ifCond}}");
                 }
 
             }
 
-            else if (tabpanel.data.condop == "HIH") {
-                div6.insertAdjacentHTML('afterbegin', "{{#ifGreater actor.data.attributes." + tabpanel.data.condat + attProp + " '" + tabpanel.data.condvalue + "'}}");
+            else if (tabpanel.system.condop == "HIH") {
+                div6.insertAdjacentHTML('afterbegin', "{{#ifGreater actor.system.attributes." + tabpanel.system.condat + attProp + " '" + tabpanel.system.condvalue + "'}}");
                 div6.insertAdjacentHTML('beforeend', "{{/ifGreater}}");
             }
 
-            else if (tabpanel.data.condop == "LOW") {
-                div6.insertAdjacentHTML('afterbegin', "{{#ifLess actor.data.attributes." + tabpanel.data.condat + attProp + " '" + tabpanel.data.condvalue + "'}}");
+            else if (tabpanel.system.condop == "LOW") {
+                div6.insertAdjacentHTML('afterbegin', "{{#ifLess actor.system.attributes." + tabpanel.system.condat + attProp + " '" + tabpanel.system.condvalue + "'}}");
                 div6.insertAdjacentHTML('beforeend', "{{/ifLess}}");
             }
 
-            else if (tabpanel.data.condop == "NOT") {
-                div6.insertAdjacentHTML('afterbegin', "{{#ifNot actor.data.attributes." + tabpanel.data.condat + attProp + " '" + tabpanel.data.condvalue + "'}}");
+            else if (tabpanel.system.condop == "NOT") {
+                div6.insertAdjacentHTML('afterbegin', "{{#ifNot actor.system.attributes." + tabpanel.system.condat + attProp + " '" + tabpanel.system.condvalue + "'}}");
                 div6.insertAdjacentHTML('beforeend', "{{/ifNot}}");
             }
         }
 
-        if (tabpanel.data.isimg) {
-            div6.setAttribute("img", tabpanel.data.imgsrc);
+        if (tabpanel.system.isimg) {
+            div6.setAttribute("img", tabpanel.system.imgsrc);
             div6.className += " isimg";
 
-            if (tabpanel.data.contentalign == "center")
+            if (tabpanel.system.contentalign == "center")
                 div6.className += " centertext";
         }
 
-        console.log(div6);
+        //console.log(div6);
 
-        console.log("almost there 2");
+        //console.log("almost there 2");
         let finalreturn = new XMLSerializer().serializeToString(deftemplate);
         return finalreturn;
         //this.actor.data.data._html = deftemplate.innerHTML;
@@ -2732,7 +2930,7 @@ ${dialogPanel.data.data.title}
         data.append('target', 'worlds/' + game.data.world.name + "/");
         data.append('upload', blob, filename + '.html');
         data.append('source', 'data');
-        console.log(data);
+        //console.log(data);
 
         fetch('upload', { method: 'POST', body: data });
 
@@ -2746,13 +2944,13 @@ ${dialogPanel.data.data.title}
 
     async buildSheet() {
         const actor = this.actor;
-        const tabs = actor.data.data.tabs;
-        const flags = this.actor.data.flags;
-
+        const tabs = actor.system.tabs;
+        const flags = this.actor.flags;
+        console.log("Sandbox | buildSheet | Building sheet for actor "+ actor.name);
         let newhtml = await auxMeth.buildSheetHML();
         let stringHTML = new XMLSerializer().serializeToString(newhtml)
         //console.log(stringHTML);
-        await this.actor.update({ "data._html": stringHTML });
+        await this.actor.update({ "system._html": stringHTML });
 
         setProperty(flags, "rows", 0);
         setProperty(flags, "rwidth", 0);
@@ -2761,149 +2959,30 @@ ${dialogPanel.data.data.title}
         setProperty(flags, "maxrows", 0);
         setProperty(flags, "multiwclass", "");
 
-        console.log(actor);
+        //console.log(actor);
 
         let keychecker = await this.checkTemplateKeys(tabs);
-        await this.actor.update({ "data.buildlog": keychecker.checkerMsg });
-        console.log(keychecker);
+        await this.actor.update({ "system.buildlog": keychecker.checkerMsg });
+        //console.log(keychecker);
         if (keychecker.hasissue) {
             ui.notifications.warn("Template actor has consistency problems, please check Config Tab");
             return;
         }
         else {
             await this.buildHTML(tabs);
-            this.actor.update({ "data.flags": flags }, { diff: false });
+            // Note. Weird workflow.
+            // This will never happen since the call chain from buildHTML ends with registerHTML that does a reload???
+            console.log("Sandbox | buildSheet | Updating flags for actor "+ actor.name);
+            this.actor.update({ "flags": flags }, { diff: false });
+            console.log("Sandbox | buildSheet | Build complete for actor "+ actor.name);
         }
 
 
     }
 
-    async setcItemsKey() {
-        let gamecItems = game.items.filter(y => y.data.type == "cItem");
-        for (let i = 0; i < gamecItems.length; i++) {
-            const mycitem = gamecItems[i];
-            if (mycitem.data.data.ciKey == "")
-                await mycitem.update({ "data.data.ciKey": mycitem.id });
-        }
-    }
-
-    async checkConsistency() {
-
-        let gamecItems = game.items.filter(y => y.data.type == "cItem");
-        let toupdate = false;
-        for (let i = 0; i < gamecItems.length; i++) {
-            const mycitem = gamecItems[i];
-            const mycitemmods = mycitem.data.data.mods;
-            for (let j = 0; j < mycitemmods.length; j++) {
-                let mymod = mycitemmods[j];
-                //setProperty(mymod, "citem", mycitem.data.id);
-                // if (!hasProperty(mymod, "index")) {
-                //     setProperty(mymod, "index", j);
-                //     toupdate = true;
-                // }
-
-                if (mymod.items.length > 0) {
-                    for (let h = 0; h < mymod.items.length; h++) {
-                        if (mymod.items[h].ciKey == null) {
-                            let toaddotem = await auxMeth.getcItem(mymod.items[h].id, mymod.items[h].ciKey);
-                            if (toaddotem) {
-                                toupdate = true;
-                                mymod.items[h].ciKey = toaddotem.data.data.ciKey;
-                            }
-
-                        }
-
-                    }
-                }
-
-            }
-            if (toupdate) {
-                console.log("updating consistency");
-                await mycitem.update({ "data": mycitem.data.data });
-            }
-
-        }
-
-        // let gameactors = game.actors;
-        // for (let i = 0; i < gameactors.entities.length; i++) {
-
-        //     const myactor = gameactors.entities[i];
-        //     const myactorcitems = myactor.data.data.citems;
-        //     //console.log("checking actor " + myactor.name);
-        //     //console.log(myactorcitems);
-        //     if (!myactor.data.data.istemplate) {
-        //         if (myactorcitems != null) {
-        //             for (let j = myactorcitems.length - 1; j >= 0; j--) {
-        //                 let mycitem = myactorcitems[j];
-        //                 //console.log(mycitem);
-        //                 if (mycitem != null) {
-        //                     //let templatecItem = game.items.get(mycitem.id);
-        //                     let templatecItem = await auxMeth.getcItem(mycitem.id, mycitem.iKey);
-        //                     //console.log(templatecItem);
-
-        //                     if (templatecItem != null) {
-        //                         let isconsistent = true;
-        //                         let mymods = mycitem.mods;
-        //                         if (mymods != null) {
-        //                             for (let r = 0; r < mymods.length; r++) {
-        //                                 if (mycitem.id != mymods[r].citem)
-        //                                     mymods[r].citem = mycitem.id;
-        //                                 if (!hasProperty(mymods[r], "index"))
-        //                                     setProperty(mymods[r], "index", 0);
-
-        //                                 if (templatecItem.data.data.mods[mymods[r].index] == null) {
-        //                                     //console.log(templatecItem.name);
-        //                                     //isconsistent = false;
-        //                                 }
-
-        //                                 else {
-        //                                     if (mymods[r].expr != templatecItem.data.data.mods[mymods[r].index].value)
-        //                                         isconsistent = false;
-        //                                 }
+    
 
 
-        //                             }
-        //                         }
-
-        //                         //MOD change consistency checker
-        //                         if (!isconsistent) {
-        //                             console.log(templatecItem.name + " is fucked in " + myactor.name);
-        //                             let newData = await myactor.deletecItem(templatecItem.id, true);
-        //                             await this.actor.update({ "data": newData.data });
-        //                             let subitems = await myactor.addcItem(templatecItem);
-        //                             if (subitems)
-        //                                 this.updateSubItems(false, subitems);
-        //                             //await myactor.update(myactor.data);
-        //                         }
-
-        //                     }
-
-        //                     else {
-        //                         delete myactorcitems[j];
-        //                     }
-
-        //                 }
-
-        //                 else {
-        //                     //myactorcitems.split(myactorcitems[j],1);
-        //                     delete myactorcitems[j];
-        //                 }
-
-
-        //             }
-        //         }
-
-        //         try {
-        //             await myactor.update({ "data": myactor.data.data }, { stopit: true });
-        //         }
-        //         catch (err) {
-        //             ui.notifications.warn("Character " + myactor.name + " has consistency problems");
-        //         }
-        //     }
-
-
-        // }
-    }
 
     async checkTemplateKeys(tabs) {
         let hasissue = false;
@@ -2916,8 +2995,9 @@ ${dialogPanel.data.data.title}
         var dd = String(today.getDate()).padStart(2, '0');
         var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
         var yyyy = today.getFullYear();
+        var sNow = today.getHours() + ":" + today.getMinutes() + ":" + today.getSeconds();
 
-        today = mm + '/' + dd + '/' + yyyy;
+        today = mm + '/' + dd + '/' + yyyy + ' ' + sNow;
         compilationMsg += "Last rebuilt: " + today + ", ";
 
         let allProps = [];
@@ -2928,8 +3008,8 @@ ${dialogPanel.data.data.title}
             let titem = await auxMeth.getTElement(tabs[y].id, "sheettab", tabs[y].ikey);
             let tabitempanels = [];
             if (titem != null) {
-                tabitempanels = titem.data.data.panels;
-                allTabs.push(titem.data.data.tabKey);
+                tabitempanels = titem.system.panels;
+                allTabs.push(titem.system.tabKey);
             }
             else {
                 allTabs.push(tabs[y].name + "_TAB_NONEXISTING");
@@ -2942,32 +3022,34 @@ ${dialogPanel.data.data.title}
             for (let i = 0; i < tabitempanels.length; i++) {
                 //let tabpanel = game.items.get(tabitempanels[i].id);
                 let tabpanel = await auxMeth.getTElement(tabitempanels[i].id, "panel", tabitempanels[i].ikey);
-                console.log("building panel with Key: " + tabitempanels[i].ikey);
+                console.log("Sandbox | checkTemplateKeys | Building panel with Key: " + tabitempanels[i].ikey);
                 if (tabpanel == null)
-                    console.log("PANEL NOT FOUND");
+                    //ui.notifications.warn("Panel not found. Key[" + tabitempanels[i].ikey + "]");
+                    console.log("Sandbox | checkTemplateKeys | Panel not found. Key[" + tabitempanels[i].ikey + "]");
                 //console.log(tabpanel.name);
                 let panelproperties = [];
                 if (tabpanel != null) {
-                    if (tabpanel.data.type == "multipanel") {
-                        for (let b = 0; b < tabpanel.data.data.panels.length; b++) {
+                    if (tabpanel.system.type == "multipanel") {
+                        for (let b = 0; b < tabpanel.system.panels.length; b++) {
                             //let subpanel = game.items.get(tabpanel.data.data.panels[b].id);
-                            console.log(tabpanel.data.data.panels[b]);
-                            //console.log(tabpanel.data.data.panels[b].ikey);
-                            let subpanel = await auxMeth.getTElement(tabpanel.data.data.panels[b].id, "panel", tabpanel.data.data.panels[b].ikey);
+                            //console.log(tabpanel.system.panels[b]);
+                            
+                            let subpanel = await auxMeth.getTElement(tabpanel.system.panels[b].id, "panel", tabpanel.system.panels[b].ikey);
                             if (subpanel) {
-                                let subproperties = subpanel.data.data.properties;
-                                allPanels.push(subpanel.data.data.panelKey);
+                                let subproperties = subpanel.system.properties;
+                                allPanels.push(subpanel.system.panelKey);
                                 panelproperties = [].concat(panelproperties, subproperties);
                             }
                             else {
-                                ui.notifications.warn("Please remove panel " + tabpanel.data.data.panels[b].name + " at multipanel " + tabpanel.name);
+                                ui.notifications.warn("Please remove panel " + tabpanel.system.panels[b].name + " at multipanel " + tabpanel.name);
+                                console.warn("Sandbox | checkTemplateKeys | Please remove panel " + tabpanel.system.panels[b].name + " at multipanel " + tabpanel.name);
                             }
 
                         }
                     }
                     else {
-                        panelproperties = tabpanel.data.data.properties;
-                        allPanels.push(tabpanel.data.data.panelKey);
+                        panelproperties = tabpanel.system.properties;
+                        allPanels.push(tabpanel.system.panelKey);
                     }
 
                 }
@@ -2983,12 +3065,12 @@ ${dialogPanel.data.data.title}
                     //let property = game.items.get(panelproperties[j].id);
                     let property = await auxMeth.getTElement(panelproperties[j].id, "property", panelproperties[j].ikey);
                     if (property != null) {
-                        if (property.data.data.datatype == "table" && property.data.data.group.id == null) {
+                        if (property.system.datatype == "table" && property.system.group.id == null) {
                             compilationMsg += panelproperties[j].name + " table property lacks table group"
                             hasissue = true;
                         }
 
-                        allProps.push(property.data.data.attKey);
+                        allProps.push(property.system.attKey);
 
 
                     }
@@ -3081,60 +3163,44 @@ ${dialogPanel.data.data.title}
         return result;
     }
 
-    async buildHTML(tabs) {
-        console.log("building HTML");
-
+    async buildHTML(tabs) {        
+        console.log("Sandbox | buildHTML | Building HTML for actor "+ this.actor.name);
         let newHTML;
-
         //if (game.settings.get("sandbox", "consistencycheck") != "") {
-        await this.checkConsistency();
+        //await auxMeth.checkConsistency();
         //}
-
-
-        const flags = this.actor.data.flags;
+        const flags = this.actor.flags;
         for (let y = 0; y < tabs.length; y++) {
-
             //const titem = game.items.get(tabs[y].id).data;
             let titemfinder = await auxMeth.getTElement(tabs[y].id, "sheettab", tabs[y].ikey);
-            const titem = titemfinder.data;
-            console.log(titem);
-            console.log(tabs[y].ikey);
+            const titem = titemfinder;
+            //console.log(titem);
+            //console.log(tabs[y].ikey);
             flags.rwidth = 0;
             newHTML = await this.addNewTab(newHTML, titem, y + 1);
             //console.log(newHTML);
-            let tabname = titem.data.tabKey;
-
+            let tabname = titem.system.tabKey;
             //let gtabitem = JSON.parse(titem.data.panels);
-            let tabitempanels = titem.data.panels;
+            let tabitempanels = titem.system.panels;
             //console.log(tabitempanels);
-
             flags.maxrows = 0;
-
-
             for (let i = 0; i < tabitempanels.length; i++) {
                 //let tabpanel = game.items.get(tabitempanels[i].id);
                 let tabpanel = await auxMeth.getTElement(tabitempanels[i].id, "panel", tabitempanels[i].ikey);
                 //console.log(tabpanel);
-
-
                 if (tabpanel.type == "panel")
-                    newHTML = await this.addNewPanel(newHTML, tabpanel.data, titem.data.tabKey, tabname, true);
-
+                    newHTML = await this.addNewPanel(newHTML, tabpanel, titem.system.tabKey, tabname, true);
                 //                if(newpanelHTML!=null)
                 //                    break;
                 //console.log(newHTML);
-
-                if (tabpanel.data.type == "multipanel") {
-                    console.log("hay multi!");
-
-                    let multipanels = tabpanel.data.data.panels;
-                    let multiwidth = this.freezeMultiwidth(tabpanel.data);
+                if (tabpanel.type == "multipanel") {
+                    //console.log("hay multi!");
+                    let multipanels = tabpanel.system.panels;
+                    let multiwidth = this.freezeMultiwidth(tabpanel);
                     let newtotalwidth = flags.rwidth + multiwidth;
-
                     flags.maxwidth = multiwidth;
                     flags.multiwidth = 0;
-                    flags.multiwclass = this.getmultiWidthClass(tabpanel.data.data.width);
-
+                    flags.multiwclass = this.getmultiWidthClass(tabpanel.system.width);
                     //console.log(multipanels);
                     let firstmrow = true;
                     let ismulti = true;
@@ -3143,33 +3209,27 @@ ${dialogPanel.data.data.title}
                         let singlepanel = await auxMeth.getTElement(multipanels[j].id, "panel", multipanels[j].ikey);
                         //console.log(multipanels[j]);
                         //LAst argument is only to pass the conditionals. Poorly done, to fix in the future.
-                        newHTML = await this.addNewPanel(newHTML, singlepanel.data, titem.data.tabKey, tabname, firstmrow, tabpanel.data.data.panelKey, tabpanel.data.data.title, null, tabpanel.data.data.headergroup);
-                        newHTML = await this.addMultipanelVisibility(newHTML, tabpanel.data.data.panelKey, tabpanel.data.data.condat, tabpanel.data.data.condop, tabpanel.data.data.condvalue);
+                        newHTML = await this.addNewPanel(newHTML, singlepanel, titem.system.tabKey, tabname, firstmrow, tabpanel.system.panelKey, tabpanel.system.title, null, tabpanel.system.headergroup);
+                        newHTML = await this.addMultipanelVisibility(newHTML, tabpanel.system.panelKey, tabpanel.system.condat, tabpanel.system.condop, tabpanel.system.condvalue);
                         if (firstmrow)
                             flags.rwidth += multiwidth;
                         firstmrow = false;
-
                     }
                 }
-
             }
             //            if(newpanelHTML!=null)
             //                break;
         }
-
         if (newHTML == null)
-            newHTML = this.actor.data.data._html;
-
-        console.log("panels built");
+            newHTML = this.actor.system._html;
+        //console.log("panels built");
         await this.hideTabsinTemplate();
         //console.log(newHTML);
-
         var wrapper = document.createElement('div');
         wrapper.innerHTML = newHTML;
-        this.actor.data.data._html = newHTML;
+        this.actor.system._html = newHTML;
         let deftemplate = wrapper;
         //console.log(deftemplate);
-
         await this.registerHTML(deftemplate.querySelector("#sheet").outerHTML);
     }
 
@@ -3187,28 +3247,28 @@ ${dialogPanel.data.data.title}
 
             if (op == "EQU") {
                 if (val == "true" || val == "false" || typeof val === "boolean") {
-                    parentGranda.insertAdjacentHTML('beforebegin', "{{#if actor.data.attributes." + att + attProp + "}}");
+                    parentGranda.insertAdjacentHTML('beforebegin', "{{#if actor.system.attributes." + att + attProp + "}}");
                     parentGranda.insertAdjacentHTML('afterend', "{{/if}}");
                 }
                 else {
-                    parentGranda.insertAdjacentHTML('afterbegin', "{{#ifCond actor.data.attributes." + att + attProp + " '" + val + "'}}");
+                    parentGranda.insertAdjacentHTML('afterbegin', "{{#ifCond actor.system.attributes." + att + attProp + " '" + val + "'}}");
                     parentGranda.insertAdjacentHTML('beforeend', "{{/ifCond}}");
                 }
 
             }
 
             else if (op == "HIH") {
-                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifGreater actor.data.attributes." + att + attProp + " '" + val + "'}}");
+                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifGreater actor.system.attributes." + att + attProp + " '" + val + "'}}");
                 parentGranda.insertAdjacentHTML('beforeend', "{{/ifGreater}}");
             }
 
             else if (op == "LOW") {
-                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifLess actor.data.attributes." + att + attProp + " '" + val + "'}}");
+                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifLess actor.system.attributes." + att + attProp + " '" + val + "'}}");
                 parentGranda.insertAdjacentHTML('beforeend', "{{/ifLess}}");
             }
 
             else if (op == "NOT") {
-                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifNot actor.data.attributes." + att + attProp + " '" + val + "'}}");
+                parentGranda.insertAdjacentHTML('afterbegin', "{{#ifNot actor.system.attributes." + att + attProp + " '" + val + "'}}");
                 parentGranda.insertAdjacentHTML('beforeend', "{{/ifNot}}");
             }
         }
@@ -3219,13 +3279,13 @@ ${dialogPanel.data.data.title}
 
     hideTabsinTemplate() {
         var wrapper = document.createElement('div');
-        wrapper.innerHTML = this.actor.data.data._html;
+        wrapper.innerHTML = this.actor.system._html;
         let deftemplate = wrapper;
 
         //Tab selector
         let p = deftemplate.querySelector("#tab-0");
         let c = deftemplate.querySelector("#tab-last");
-        p.insertAdjacentHTML('beforebegin', "{{#if actor.data.istemplate}}");
+        p.insertAdjacentHTML('beforebegin', "{{#if actor.system.istemplate}}");
         p.insertAdjacentHTML('beforebegin', "{{else}}");
         c.insertAdjacentHTML('afterend', "{{/if}}");
 
@@ -3234,51 +3294,51 @@ ${dialogPanel.data.data.title}
 
     freezeMultiwidth(tabpanel) {
         let newidth = 0;
-        if (tabpanel.data.width === "1") {
+        if (tabpanel.system.width === "1") {
             newidth = 1;
         }
 
-        else if (tabpanel.data.width === "1/3") {
+        else if (tabpanel.system.width === "1/3") {
             newidth = 0.333;
         }
 
-        else if (tabpanel.data.width === "2/3") {
+        else if (tabpanel.system.width === "2/3") {
             newidth = 0.666;
         }
 
-        else if (tabpanel.data.width === "5/6") {
+        else if (tabpanel.system.width === "5/6") {
             newidth = 0.833;
         }
 
-        else if (tabpanel.data.width === "3/4") {
+        else if (tabpanel.system.width === "3/4") {
             newidth = 0.75;
         }
 
-        else if (tabpanel.data.width === "1/2") {
+        else if (tabpanel.system.width === "1/2") {
             newidth = 0.5;
         }
 
-        else if (tabpanel.data.width === "1/4") {
+        else if (tabpanel.system.width === "1/4") {
             newidth = 0.25;
         }
 
-        else if (tabpanel.data.width === "1/6") {
+        else if (tabpanel.system.width === "1/6") {
             newidth = 0.166;
         }
 
-        else if (tabpanel.data.width === "1/8") {
+        else if (tabpanel.system.width === "1/8") {
             newidth = 0.125;
         }
-        else if (tabpanel.data.width === "3/10") {
+        else if (tabpanel.system.width === "3/10") {
             newidth = 0.3;
         }
-        else if (tabpanel.data.width === "1/16") {
+        else if (tabpanel.system.width === "1/16") {
             newidth = 0.0625;
         }
-        else if (tabpanel.data.width === "5/8") {
+        else if (tabpanel.system.width === "5/8") {
             newidth = 0.625;
         }
-        else if (tabpanel.data.width === "3/8") {
+        else if (tabpanel.system.width === "3/8") {
             newidth = 0.375;
         }
 
@@ -3346,32 +3406,27 @@ ${dialogPanel.data.data.title}
 
 
 
-    async registerHTML(htmlObject) {
-        console.log("registering HTML");
-
+    async registerHTML(htmlObject) {        
+        console.log("Sandbox | registerHTML | Registering HTML for actor "+ this.actor.name);
         let stringed = htmlObject.replace('=""', '');
-
         stringed = stringed.replace(/toparse="/g, '');
         stringed = stringed.replace(/~~"/g, '');
-
         //this.actor.data.data.gtemplate = this.actor.name;
         this.refreshSheet(this.actor.name);
         //this.actor.data.data._html = stringed;
-
-        await this.actor.update({ "data._html": stringed });
+        await this.actor.update({ "system._html": stringed });
         //console.log(stringed);
-
         //THIS IS THE LIMITANT CHANGE:
         //await this.actor.update(this.actor.data);
-
         await this.actor.update();
-
-        await auxMeth.getSheets();
-
-        await this.setcItemsKey();
-
-        //Comment this for debug
-        location.reload();
+        await auxMeth.getSheets();               
+        let reloadAfterTemplateRebuildDisabled=game.user.getFlag('world','reloadAfterTemplateRebuildDisabled') || false;
+        if(!reloadAfterTemplateRebuildDisabled){
+          await auxMeth.checkConsistency();
+          console.log("Sandbox | registerHTML | Re-loading for actor "+ this.actor.name);
+          //Comment this for debug
+          location.reload();
+        }
     }
 
     /* -------------------------------------------- */
@@ -3388,17 +3443,18 @@ ${dialogPanel.data.data.title}
 
         try {
             dropdata = JSON.parse(event.dataTransfer.getData('text/plain'));
-            dropitem = game.items.get(dropdata.id);
+            dropitem = await Item.implementation.fromDropData(dropdata);
 
-            if (dropitem.data.type !== "sheettab" && dropitem.data.type !== "cItem") {
+            if (dropitem.type !== "sheettab" && dropitem.type !== "cItem") {
+                ui.notifications.warn('You can only drop sheettabs or cItems!');
                 console.log("You can only drop sheettabs or cItems!");
                 return false;
             }
         }
         catch (err) {
-            console.log("drop error")
-            console.log(event.dataTransfer.getData('text/plain'));
-            console.log(err);
+            console.error("drop error")
+            console.error(event.dataTransfer.getData('text/plain'));
+            console.error(err);
             return false;
         }
 
@@ -3416,33 +3472,34 @@ ${dialogPanel.data.data.title}
         let subiDataKey;
         let isUnique = true;
 
-        if (dropitem.data.type == "sheettab") {
+        if (dropitem.type == "sheettab") {
             subitemsTag = "tabs";
             subiDataKey = "tabKey";
         }
-        else if (dropitem.data.type == "cItem") {
+        else if (dropitem.type == "cItem") {
             subitemsTag = "citems";
             isTab = false;
             subiDataKey = "ciKey";
 
-            if (!dropitem.data.data.isUnique) {
+            if (!dropitem.system.isUnique) {
                 isUnique = false;
             }
         }
 
         //Add tab id to panel
-        let subitems = duplicate(this.actor.data.data[subitemsTag]);
+        let subitems = duplicate(this.actor.system[subitemsTag]);
         let increaseNum = false;
 
         for (let i = 0; i < subitems.length; i++) {
             if (subitems[i].id == dropitem.id) {
                 if (isUnique) {
-                    console.log("item is unique, can not double");
+                    ui.notifications.warn('Item is unique, can not double');
+                    console.warn("item is unique, can not double");
                     return;
                 }
                 else {
                     subitems[i].number = parseInt(subitems[i].number) + 1;
-                    subitems[i].uses = parseInt(subitems[i].uses) + parseInt(dropitem.data.data.maxuses);
+                    subitems[i].uses = parseInt(subitems[i].uses) + parseInt(dropitem.system.maxuses);
                     increaseNum = true;
                     //await this.updateSubItems(isTab,subitems);
                     //await this.actor.actorUpdater();
@@ -3453,19 +3510,19 @@ ${dialogPanel.data.data.title}
         }
 
         if (!increaseNum) {
-            if (dropitem.data.type == "cItem") {
+            if (dropitem.type == "cItem") {
                 //console.log("adding cItem");
                 subitems = await this.actor.addcItem(dropitem);
             }
             else {
-                let itemKey = dropitem.data.data[subiDataKey];
+                let itemKey = dropitem.system[subiDataKey];
                 let newItem = {};
-                console.log(dropitem);
+                //console.log(dropitem);
                 setProperty(newItem, itemKey, {});
                 newItem[itemKey].id = dropitem.id;
                 newItem[itemKey].ikey = itemKey;
-                newItem[itemKey].name = dropitem.data.name;
-                console.log(newItem);
+                newItem[itemKey].name = dropitem.name;
+                //console.log(newItem);
 
 
                 subitems.push(newItem[itemKey]);
@@ -3477,15 +3534,14 @@ ${dialogPanel.data.data.title}
         await this.updateSubItems(isTab, subitems);
 
     }
-
     async updateSubItems(isTab, subitems) {
 
         //await this.actor.update();
 
         if (isTab) {
             //await this.actor.update({"data.tabs": subitems}, {diff: false});
-            this.actor.data.data.tabs = subitems;
-            await this.actor.update({ "data.tabs": subitems });
+            this.actor.system.tabs = subitems;
+            await this.actor.update({ "system.tabs": subitems });
         }
 
         else {
@@ -3494,12 +3550,12 @@ ${dialogPanel.data.data.title}
             //await this.actor.update(this.actor.data);
             if (this.actor.isToken) {
                 let myToken = canvas.tokens.get(this.actor.token.id);
-                await myToken.document.update({ "actorData.data.citems": subitems });
+                await myToken.document.update({ "actorData.system.citems": subitems });
             }
 
             else {
                 //console.log(subitems);
-                await this.actor.update({ "data.citems": subitems });
+                await this.actor.update({ "system.citems": subitems });
             }
         }
         //console.log("updating after drop");
@@ -3507,15 +3563,26 @@ ${dialogPanel.data.data.title}
 
         return subitems;
     }
-
-
     /* -------------------------------------------- */
-
+    
+    
     async refreshCItems(basehtml) {
         //console.log("refreshingCItems");
+        const OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID);
+        const OPTION_USE_CITEM_INFO_FORM_FOR_GMS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_GMS.ID);
+        let showCitemInfoOnly=false;
+        if (game.user.isGM){
+          if (OPTION_USE_CITEM_INFO_FORM_FOR_GMS){
+            showCitemInfoOnly=true;
+          }
+        } else {
+          if(OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS){
+            showCitemInfoOnly=true;
+          }
+        }
         //TEST
         var parser = new DOMParser();
-        let htmlcode = await auxMeth.getTempHTML(this.actor.data.data.gtemplate);
+        let htmlcode = await auxMeth.getTempHTML(this.actor.system.gtemplate);
         var _basehtml = await parser.parseFromString(htmlcode, 'text/html').querySelector('form');
         if (_basehtml == null) {
             ui.notifications.warn("Please rebuild character sheet before assigning");
@@ -3524,12 +3591,13 @@ ${dialogPanel.data.data.title}
 
         //console.log(basehtml);
         //GET CITEMS
-        let myactor = this.actor.data.data;
+        let myactor = this.actor.system;
 
         if (this.actor.isToken) {
-            let tokenId = this.id.split("-")[2];
+            // v10 has longer ids
+            let tokenId = this.id.split("-")[4];
             let mytoken = canvas.tokens.get(tokenId);
-            myactor = mytoken.actor.data.data;
+            myactor = mytoken.actor.system;
         }
         const citems = myactor.citems;
         const attributes = myactor.attributes;
@@ -3539,7 +3607,7 @@ ${dialogPanel.data.data.title}
         const _html = await _basehtml.querySelectorAll('table');
 
         //Gets all game properties
-        const propitems = game.items.filter(y => y.data.type == "property" && y.data.data.datatype == "table");
+        const propitems = game.items.filter(y => y.type == "property" && y.system.datatype == "table");
         //console.log(propitems);
 
         let totalTables = [];
@@ -3564,12 +3632,14 @@ ${dialogPanel.data.data.title}
         }
 
         //console.log(totalTables);
-
+        let tableHasValidFilter=null;
         for (let i = 0; i < totalTables.length; i++) {
-            //console.log(html);
+            //console.log(totalTables[i]);
             let tableID = totalTables[i].tableID;
             let table = html[i];
+            
             let inputgroup;
+            let columncount=0;
 
             //let table = html.find(y=>y.id==tableID);
             //console.log(tableID);
@@ -3593,16 +3663,19 @@ ${dialogPanel.data.data.title}
             let isFree;
 
             if (propTable != null) {
-                groupID = propTable.data.data.group;
+                groupID = propTable.system.group;
                 //group = game.items.get(groupID.id);
                 group = await auxMeth.getTElement(groupID.id, "group", groupID.ikey);
-                tableKey = propTable.data.data.attKey;
-                isFree = propTable.data.data.isfreetable;
+                tableKey = propTable.system.attKey;
+                isFree = propTable.system.isfreetable;
+                if(!isFree){
+                  tableHasValidFilter=sb_property_has_valid_table_filter(propTable); 
+                }
             }
 
             if (group != null) {
 
-                let groupprops = group.data.data.properties;
+                let groupprops = group.system.properties;
                 let groupcitems;
 
                 if (isFree) {
@@ -3611,7 +3684,7 @@ ${dialogPanel.data.data.title}
 
                         if (this.sortOption != null) {
                             if (this.sortOption[tableKey] != null) {
-                                groupcitems = groupcitems.sort(auxMeth.aTdynamicSort(this.sortOption[tableKey], propTable.data.data.datatype));
+                                groupcitems = groupcitems.sort(auxMeth.aTdynamicSort(this.sortOption[tableKey], propTable.system.datatype));
                             }
 
                         }
@@ -3624,17 +3697,36 @@ ${dialogPanel.data.data.title}
                 else {
                     groupcitems = await citems.filter(y => y.groups.find(item => item.id == groupID.id || item.ikey == groupID.ikey));
                     groupcitems = groupcitems.sort(auxMeth.dynamicSort("name"));
+                    if(tableHasValidFilter!=null){
+                      // only allow other sorting if no filter exists(would mess up the totals)
+                      if (this.sortOption != null) {
+                          if (this.sortOption[tableKey] != null && this.sortOption[tableKey] != "name") {
+                              groupcitems = groupcitems.sort(auxMeth.aTdynamicSort(this.sortOption[tableKey], propTable.system.datatype));
+                          }
 
-                    if (this.sortOption != null) {
-                        if (this.sortOption[tableKey] != null && this.sortOption[tableKey] != "name") {
-                            groupcitems = groupcitems.sort(auxMeth.aTdynamicSort(this.sortOption[tableKey], propTable.data.data.datatype));
-                        }
-
+                      }
                     }
                 }
-
+                let filter_passed_count=0;
                 for (let n = 0; n < groupcitems.length; n++) {
                     let ciObject = groupcitems[n];
+                    if (!isFree) {
+                    // check for filter                    
+                      if (tableHasValidFilter!=null){
+                        //console.warn('Filter found for table '+ propTable.name )
+                        //console.warn(ciObject)
+                        // check filter
+                        if(sb_table_filter_passed(tableHasValidFilter, ciObject, filter_passed_count)){
+                          // passsed
+                          filter_passed_count = filter_passed_count + 1;
+                        } else{
+                          // skip this
+                          continue;
+                        }
+
+                      }
+                    }
+                    
                     let ciTemplate;
                     if (!isFree) {
                         //ciTemplate = game.items.get(ciObject.id);
@@ -3675,7 +3767,7 @@ ${dialogPanel.data.data.title}
 
                     //console.log(ciObject.name);
                     let new_row = document.createElement("TR");
-                    new_row.className = "table-row " + inputgroup + " " + propTable.data.data.attKey + "_row";
+                    new_row.className = "table-row " + inputgroup + " " + propTable.system.attKey + "_row";
                     let rowname = "table-row-" + ciObject.id;
                     if (!isFree)
                         rowname = ciObject.name;
@@ -3687,23 +3779,71 @@ ${dialogPanel.data.data.title}
 
                     if (ciObject != null && (ciTemplate != null || isFree)) {
                         //Link Element
-                        if ((propTable.data.data.onlynames == "DEFAULT" || propTable.data.data.onlynames == "ONLY_NAMES") && !isFree) {
+                        let isFirstColumnSet=false;
+                        if ((propTable.system.onlynames == "DEFAULT" || propTable.system.onlynames == "ONLY_NAMES") && !isFree) {
                             let firstcell = document.createElement("TD");
-                            firstcell.className = "input-free linkable tablenamecell " + propTable.data.data.attKey + "_namecell";
+                            firstcell.className = "input-free linkable tablenamecell " + propTable.system.attKey + "_namecell ";
+                            if(!isFirstColumnSet){
+                              firstcell.className += " sb-table-row-first-column"
+                              isFirstColumnSet=true;
+                            }
                             firstcell.className += " " + inputgroup;
-                            firstcell.textContent = ciObject.name;
+                            // check if to use image
+                            if(propTable.system.tableoptions.showicons){
+                              const citem=game.items.find(y => (y.system.ciKey == ciObject.ciKey));;
+                              if(citem!=null){
+                                const citemimg=citem.img;
+                                firstcell.innerHTML = auxMeth.sb_two_col_card(`<img title="${ciObject.name}" src="${citemimg}" class="sb-citem-table-icon" /> `,  ciObject.name);
+                              } else {
+                                firstcell.textContent = ciObject.name;
+                              }
+                            } else {
+                              firstcell.textContent = ciObject.name;
+                            }
+                                                                                    
                             firstcell.setAttribute("item_id", ciObject.id);
                             firstcell.setAttribute("item_ciKey", ciObject.ciKey);
-                            firstcell.addEventListener("click", this.linkCItem, false);
+                            //firstcell.addEventListener("click", this.linkCItem, false);
+                            firstcell.addEventListener("click", (event) => {this.linkCItem(event, showCitemInfoOnly);}, false);
+                            
+                            
                             new_row.appendChild(firstcell);
+                        }
+                        if (propTable.system.onlynames == "NO_NAMES" && !isFree) {
+                          // check if to use image
+                          if(propTable.system.tableoptions.showicons){
+                            const citem=game.items.find(y => (y.system.ciKey == ciObject.ciKey));;
+                            if(citem!=null){
+                              const citemimg=citem.img;
+                              let firstcell = document.createElement("TD");
+                              firstcell.className = "input-free linkable tablenamecell " + propTable.system.attKey + "_namecell ";
+                              if(!isFirstColumnSet){
+                                firstcell.className += " sb-table-row-first-column"
+                                isFirstColumnSet=true;
+                              }
+                              firstcell.className += " " + inputgroup;
+                              firstcell.innerHTML = auxMeth.sb_two_col_card(`<img title="${ciObject.name}" src="${citemimg}" class="sb-citem-table-icon" /> `,  "");
+                              firstcell.setAttribute("item_id", ciObject.id);
+                              firstcell.setAttribute("item_ciKey", ciObject.ciKey);
+                              //firstcell.addEventListener("click", this.linkCItem, false);
+                              firstcell.addEventListener("click", (event) => {this.linkCItem(event, showCitemInfoOnly);}, false);
+                              new_row.appendChild(firstcell);
+                            } else {
+                              firstcell.textContent = ciObject.name;
+                            }
+                          }
                         }
 
 
-                        if ((propTable.data.data.onlynames != "ONLY_NAMES")) {
-                            if (propTable.data.data.hasactivation && !isFree) {
+                        if ((propTable.system.onlynames != "ONLY_NAMES")) {
+                            if (propTable.system.hasactivation && !isFree) {
                                 let activecell = document.createElement("TD");
                                 activecell.className = "input-min centertext";
                                 activecell.className += " " + inputgroup;
+                                if(!isFirstColumnSet){
+                                  activecell.className += " sb-table-row-first-column"
+                                  isFirstColumnSet=true;
+                                }
                                 new_row.appendChild(activecell);
 
                                 if (ciObject.usetype == "ACT" && !isFree) {
@@ -3742,18 +3882,33 @@ ${dialogPanel.data.data.title}
                                     activecell.appendChild(inputwrapper);
 
                                     let activeinput = document.createElement('i');
-                                    if (ciObject.icon == "BOOK") {
+                                    switch(ciObject.icon){
+                                      case 'BOOK':
                                         activeinput.className = "fas fa-book";
-                                    }
-                                    else if (ciObject.icon == "VIAL") {
+                                        break;
+                                      case 'VIAL':
                                         activeinput.className = "fas fa-vial";
-                                    }
-                                    else {
+                                        break;
+                                      case 'STAR':
                                         activeinput.className = "fas fa-star";
+                                        break;
+                                      case '':
+                                        activeinput.className = "fas fa-book";
+                                        break;
+                                      default:
+                                        if(ciObject.icon !=''){
+                                          activeinput.className = "fas " + ciObject.icon;
+                                        } else {
+                                          activeinput.className = "fas fa-book";
+                                        }
+                                        break;
                                     }
+                                    
+                                    
 
                                     if (torecharge) {
                                         activeinput.className = "fas fa-recycle";
+                                        inputwrapper.title = "Recharge item";
                                         inputwrapper.addEventListener("click", (event) => this.rechargeCI(ciObject.id, ciObject.ciKey));
                                     }
 
@@ -3763,14 +3918,20 @@ ${dialogPanel.data.data.title}
 
                             }
 
-                            if (propTable.data.data.hasunits && !isFree) {
+                            if (propTable.system.hasunits && !isFree) {
                                 let numcell = document.createElement("TD");
                                 numcell.className = "input-min centertext";
                                 numcell.className += " " + inputgroup;
+                                if(!isFirstColumnSet){
+                                  numcell.className += " sb-table-row-first-column"
+                                  isFirstColumnSet=true;
+                                }
                                 new_row.appendChild(numcell);
 
                                 let numinput = document.createElement("INPUT");
+                                numinput.setAttribute("type", "number");
                                 numinput.className = "table-input table-num centertext";
+                                
                                 numinput.className += " " + inputgroup;
 
                                 let ciNumber = ciObject.number;
@@ -3782,19 +3943,25 @@ ${dialogPanel.data.data.title}
                             }
 
                             //REMOVE USES WORKSTREAM
-                            if (propTable.data.data.hasuses && propTable.data.data.hasactivation && !isFree) {
+                            if (propTable.system.hasuses && propTable.system.hasactivation && !isFree) {
                                 let usescell = document.createElement("TD");
                                 usescell.className = "tabblock-center";
                                 usescell.className += " " + inputgroup;
+                                if(!isFirstColumnSet){
+                                  usescell.className += " sb-table-row-first-column"
+                                  isFirstColumnSet=true;
+                                }
                                 new_row.appendChild(usescell);
 
                                 let usevalue = document.createElement("INPUT");
+                                usevalue.setAttribute("type", "number");
                                 usevalue.className = "table-num centertext";
+                                
                                 usevalue.className += " " + inputgroup;
 
                                 usescell.appendChild(usevalue);
 
-                                if (!propTable.data.data.editable && !game.user.isGM) {
+                                if (!propTable.system.editable && !game.user.isGM) {
                                     //usevalue.setAttribute("readonly", "true");  
                                     usevalue.className += " inputGM";
                                 }
@@ -3858,24 +4025,25 @@ ${dialogPanel.data.data.title}
                                 let propRef = groupprops[k].id;
                                 //let propObj = game.items.get(groupprops[k].id);
                                 let propObj = await auxMeth.getTElement(groupprops[k].id, "property", groupprops[k].ikey);
-                                let propdata = propObj.data.data;
-                                let propKey = propObj.data.data.attKey;
+                                let propdata = propObj.system;
+                                let propKey = propObj.system.attKey;
                                 let new_cell = document.createElement("TD");
                                 let isconstant = groupprops[k].isconstant;
 
                                 new_cell.className = "centertext ";
                                 new_cell.className += propKey;
                                 new_cell.className += " " + inputgroup;
+                                if(!isFirstColumnSet){
+                                  new_cell.className += " sb-table-row-first-column"
+                                  isFirstColumnSet=true;
+                                }
 
                                 if (((ciObject.attributes[propKey] != null && propdata.datatype != "label") || (propdata.datatype == "label")) && !propdata.ishidden) {
                                     if (propdata.datatype == "textarea") {
-
                                         let textiContainer = document.createElement('a');
-
                                         let textSymbol = document.createElement('i');
                                         textSymbol.className = "far fa-file-alt";
                                         textiContainer.appendChild(textSymbol);
-
                                         new_cell.appendChild(textiContainer);
                                         new_row.appendChild(new_cell);
                                         let isdisabled = false;
@@ -3888,25 +4056,20 @@ ${dialogPanel.data.data.title}
                                             else {
                                                 this.showTextAreaDialog(ciObject.id, propKey, isdisabled);
                                             }
-
-
                                         });
-                                        //}
-
                                     }
 
                                     else if (propdata.datatype != "radio" && propdata.datatype != "table") {
-
                                         let constantvalue;
                                         let constantauto = false;
                                         if (propdata.datatype != "label")
                                             if (!isFree) {
-                                                if (ciTemplate.data.data.attributes[propKey] == null) {
-                                                    ui.notifications.warn("Inconsistent cItem. Please remove and readd cItem " + ciTemplate.data.name + " to Actor");
-                                                    console.log(propKey + " fails from " + ciTemplate.data.name);
+                                                if (ciTemplate.system.attributes[propKey] == null) {
+                                                    ui.notifications.warn("Inconsistent cItem. Please remove and readd cItem " + ciTemplate.name + " to Actor");
+                                                    console.warn(propKey + " not found in cItem:" + ciTemplate.name);
                                                 }
                                                 //REDUNDANT MUCH LIKELY - CONSTANTVALUE MIGHT NOT BE NEEDED
-                                                constantvalue = ciTemplate.data.data.attributes[propKey].value;
+                                                constantvalue = ciTemplate.system.attributes[propKey].value;
                                                 if (propdata.auto != "") {
                                                     constantauto = true;
                                                     constantvalue = propdata.auto;
@@ -3914,33 +4077,31 @@ ${dialogPanel.data.data.title}
                                                 let cvalueToString = constantvalue.toString();
                                                 let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
                                                 let checknonumsum = cvalueToString.match(nonumsum);
-
                                                 let justexpr = true;
                                                 if (propdata.datatype == "simplenumeric")
                                                     justexpr = false;
                                                 //REDUNDANT MUCH LIKELY
                                                 if (checknonumsum) {
+                                                    
                                                     constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
                                                     constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
                                                     constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
-                                                    constantvalue = await auxMeth.autoParser(constantvalue, this.actor.data.data.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses);
+                                                    constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);
+                                                    
+                                                    constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
                                                 }
-
                                             }
-
                                             else {
                                                 constantvalue = propdata.defvalue;
                                             }
-
                                         //AUTO FOR CITEMS CHANGED!!!
                                         // if (propdata.auto != "")
                                         //     constantvalue = ciObject.attributes[propKey].value;
-
                                         if (isconstant) {
                                             let cContent = constantvalue;
                                             //console.log(propdata);
                                             if (propdata.datatype == "label") {
-                                                if (propdata.labelformat == "D") {
+                                                if (propdata.labelformat == "D" || propdata.labelformat == "I") {
                                                     cContent = "";
                                                     //console.log("adding roll");
                                                     let dieContainer = document.createElement("DIV");
@@ -3963,7 +4124,15 @@ ${dialogPanel.data.data.title}
                                                     }
 
                                                     let dieSymbol = document.createElement('i');
-                                                    dieSymbol.className = "fas fa-dice-d20";
+                                                    if(propdata.labelformat == "D"){
+                                                      dieSymbol.className = "fas fa-dice-d20";
+                                                    } else {
+                                                      if(propdata.icon == ""){
+                                                        dieSymbol.className = "fas fa-dice-d20";
+                                                      } else {
+                                                        dieSymbol.className = "fas " + propdata.icon;
+                                                      }
+                                                    }
                                                     dieContainer.appendChild(dieSymbol);
 
                                                     new_cell.appendChild(dieContainer);
@@ -4002,6 +4171,7 @@ ${dialogPanel.data.data.title}
 
                                                     cellvalue.checked = setvalue;
                                                     cellvalue.setAttribute("disabled", "disabled");
+                                                    cellvalue.disabled=true;
                                                     //console.log("lol");
                                                     new_cell.appendChild(cellvalue);
 
@@ -4047,18 +4217,24 @@ ${dialogPanel.data.data.title}
                                         }
 
                                         else {
+                                            // -----------------------
+                                            // not constant properties
+                                            // ----------------------- 
                                             //console.log(propdata);
                                             let cellvalue = document.createElement("INPUT");
                                             //cellvalue.className = "table-input centertext";
-
                                             if (propdata.datatype === "checkbox") {
-
+                                              
                                                 cellvalue = document.createElement("INPUT");
                                                 cellvalue.className = "input-small";
                                                 if (propdata.labelsize == "T")
                                                     cellvalue.className = "input-tiny";
                                                 cellvalue.className += " " + inputgroup;
                                                 cellvalue.setAttribute("type", "checkbox");
+                                                if(propdata.auto!='' || (!propdata.editable && !game.user.isGM) ){
+                                                  // has auto expression, disable this
+                                                  cellvalue.disabled=true;  
+                                                }
                                                 let setvalue = false;
 
                                                 if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
@@ -4153,7 +4329,7 @@ ${dialogPanel.data.data.title}
                                                 cellvalue = document.createElement("INPUT");
                                                 cellvalue.setAttribute("type", "text");
                                                 cellvalue.className = "table-input centertext";
-                                                cellvalue.className += " " + propTable.data.data.inputgroup;
+                                                cellvalue.className += " " + propTable.system.inputgroup;
 
 
                                                 if (propdata.inputsize == "M") {
@@ -4167,51 +4343,37 @@ ${dialogPanel.data.data.title}
                                                 else {
                                                     cellvalue.className += " table-small";
                                                 }
-
                                             }
 
                                             if (!propdata.editable && !game.user.isGM)
                                                 cellvalue.setAttribute("readonly", true);
 
                                             if (propdata.datatype != "checkbox") {
-
                                                 if (ciObject.attributes[propKey].value == "" || constantauto) {
                                                     ciObject.attributes[propKey].value = constantvalue;
                                                 }
-
                                                 cellvalue.value = ciObject.attributes[propKey].value;
-
                                                 // Set attribute value to the actual value for css selector functionality
                                                 cellvalue.setAttribute("value", cellvalue.value);
-
-
                                                 if (propdata.auto != "") {
 
                                                     cellvalue.setAttribute("readonly", true);
                                                 }
-
                                             }
-
                                             else {
                                                 let setvalue = false;
                                                 //console.log(ciObject.attributes[propKey].value);
                                                 if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
                                                     setvalue = true;
                                                 }
-
                                                 cellvalue.checked = setvalue;
-
                                             }
-
                                             cellvalue.className += " " + propdata.attKey;
-                                            // if (isFree && isfirstFree) {
-                                            //     if (propdata.inputsize == "F")
-                                            //         cellvalue.className += " firstcol";
-                                            //     isfirstFree = false;
-                                            // }
-
+//                                            if (isfirstFree) {                                          
+//                                                 new_cell.className += " sb-table-row-first-column";
+//                                                 isfirstFree = false;
+//                                            }
                                             if (!isFree) {
-
                                                 new_cell.addEventListener("change", (event) => this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value));
                                             }
                                             else {
@@ -4221,60 +4383,76 @@ ${dialogPanel.data.data.title}
                                                 }
                                                 new_cell.addEventListener("change", (event) => this.saveNewFreeItem(ciObject.id, tableKey, propKey, event.target.value, ischeck, event.target.checked));
                                             }
-
                                             new_cell.appendChild(cellvalue);
-
                                         }
-
-
                                     }
-
                                     new_row.appendChild(new_cell);
                                 }
-
                             }
                         }
 
                         //Add transfer column
-                        if (propTable.data.data.transferrable) {
+                        if (propTable.system.transferrable && !propTable.system.isfreetable) {
                             let transferCell = document.createElement("TD");
                             transferCell.className = "ci-transfercell";
 
-                            let wraptransferCell = document.createElement('A');
-                            wraptransferCell.className = "ci-transfer";
+                            let wraptransferCell = document.createElement('i');
+                            
+                            
+                            
                             //wraptransferCell.className += " " + inputgroup;
-                            wraptransferCell.title = "Grab Item";
-                            wraptransferCell.draggable = "true";
+                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                              //wraptransferCell.className = "ci-transfer";
+                              wraptransferCell.className = "fas fa-sack sb-citem-removable";
+                              wraptransferCell.title = "Drag item";
+                              wraptransferCell.draggable = "true";
+                            } else {
+                              wraptransferCell.className = "fas fa-sack sb-citem-non-removable";
+                              wraptransferCell.title = "This item cannot transferred";
+                            }
                             transferCell.appendChild(wraptransferCell);
-                            let tokenID;
-                            if (this.token != null)
-                                tokenID = this.token.id;
-                            transferCell.addEventListener("dragstart", (event) => this.dragcItem(event, ciObject.id, ciObject.number, this.actor.id, tokenID));
+                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                              let tokenID;
+                              if (this.token != null)
+                                  tokenID = this.token.id;
+                              transferCell.addEventListener("dragstart", (event) => this.dragcItem(event, ciObject.id, ciObject.number, this.actor.id, tokenID));
+                            }
                             new_row.appendChild(transferCell);
                         }
 
 
                         //Delete Element
-                        if (propTable.data.data.editable || game.user.isGM) {
+                        if (propTable.system.editable || game.user.isGM) {
                             let deletecell = document.createElement("TD");
                             deletecell.className = "ci-delete";
                             //deletecell.className += " " + inputgroup;
                             let wrapdeleteCell = document.createElement('a');
                             wrapdeleteCell.className = "ci-delete";
                             //wrapdeleteCell.className += " " + inputgroup;
-                            wrapdeleteCell.title = "Delete Item";
+                            wrapdeleteCell.title = "Remove item";
                             deletecell.appendChild(wrapdeleteCell);
 
-                            let wrapdeleteBton = document.createElement('i');
-                            wrapdeleteBton.className = "fas fa-times-circle";
                             if (!isFree) {
-                                wrapdeleteBton.addEventListener('click', this.deleteCItem.bind(this, ciObject.id, false), false);
+                              let wrapdeleteBton = document.createElement('i');
+                              if(!ciObject.hasOwnProperty('addedBy')){                                                                  
+                                wrapdeleteBton.className = "fas fa-times-circle";
+                                wrapdeleteBton.addEventListener('click', this.deleteCItem.bind(this, ciObject.id, false), false);                                                               
+                              } else {
+                                // added by item momd, nondeleteable
+                                wrapdeleteBton.className = "fas fa-times-circle sb-citem-non-removable";
+                                wrapdeleteCell.title = "This item can not be removed";
+                                
+                              }
+                              wrapdeleteCell.appendChild(wrapdeleteBton); 
                             }
                             else {
-                                wrapdeleteBton.addEventListener('click', this.deleteFreeItem.bind(this, ciObject.id, tableKey), false);
+                              let wrapdeleteBton = document.createElement('i');
+                              wrapdeleteBton.className = "fas fa-times-circle";
+                              wrapdeleteBton.addEventListener('click', this.deleteFreeItem.bind(this, ciObject.id, tableKey), false);
+                              wrapdeleteCell.appendChild(wrapdeleteBton);
                             }
 
-                            wrapdeleteCell.appendChild(wrapdeleteBton);
+                            
 
                             new_row.appendChild(deletecell);
                         }
@@ -4284,7 +4462,7 @@ ${dialogPanel.data.data.title}
 
                 }
 
-                if (groupcitems.length == 0) {
+                if (groupcitems.length == 0 || (tableHasValidFilter!=null && filter_passed_count==0 )) {
                     //Empty row;
 
                     let new_row = document.createElement("TR");
@@ -4294,7 +4472,7 @@ ${dialogPanel.data.data.title}
                     let headercells = document.getElementsByTagName("table");
 
                     for (let x = 0; x < headercells.length; x++) {
-                        if (headercells[x].classList.contains(propTable.data.data.attKey)) {
+                        if (headercells[x].classList.contains(propTable.system.attKey)) {
                             let columns = headercells[x].getElementsByTagName("th");
                             for (let w = 0; w < columns.length; w++) {
                                 let empty_cell = document.createElement("TD");
@@ -4310,29 +4488,37 @@ ${dialogPanel.data.data.title}
 
                 if (isFree && table != undefined) {
                     let new_row = document.createElement("TR");
-                    new_row.className = "transparent-row";
+                    new_row.className = "sb-table-plus-row transparent-row";
                     if (inputgroup)
                         new_row.className += " " + inputgroup;
-                    new_row.setAttribute("id", propTable.data.data.attKey + "_plus");
+                    new_row.setAttribute("id", propTable.system.attKey + "_plus");
 
                     let new_pluscell = document.createElement("TD");
                     new_pluscell.className = "pluscell";
-
+                    new_pluscell.className += " sb-table-row-first-column";
+                                      
                     let plusContainer = document.createElement("A");
                     plusContainer.className = "mod-button addRow";
                     //plusContainer.addEventListener('click',this.addFreeRow.bind(propTable.data.data.attKey),false);
-                    plusContainer.addEventListener("click", (event) => this.addFreeRow(propTable.data.data.attKey));
+                    plusContainer.addEventListener("click", (event) => this.addFreeRow(propTable.system.attKey));
 
                     let plusButton = document.createElement("I");
                     plusButton.className = "fas fa-plus-circle fa-1x";
-
+                    plusButton.setAttribute("title", "Add new row"); 
                     plusContainer.appendChild(plusButton);
                     new_pluscell.appendChild(plusContainer);
+                    
+                    // get columns count of last row
+                    const colcount = table.lastChild.cells.length;
+                    // set colspan
+                    new_pluscell.colSpan=colcount
+                    // add it
                     new_row.appendChild(new_pluscell);
+                  
                     table.appendChild(new_row);
                 }
 
-                if (propTable.data.data.hastotals && table != null) {
+                if (propTable.system.hastotals && table != null) {
                     let new_row = document.createElement("TR");
                     new_row.className = "totals-row";
 
@@ -4344,9 +4530,9 @@ ${dialogPanel.data.data.title}
                     let cellcounter = 0;
                     let totalin = false;
 
-                    if (propTable.data.data.onlynames != "ONLY_NAMES" && lastRow.children[cellcounter] != null) {
+                    if (propTable.system.onlynames != "ONLY_NAMES" && lastRow.children[cellcounter] != null) {
 
-                        if (propTable.data.data.onlynames != "NO_NAMES" && !isFree) {
+                        if ((propTable.system.onlynames != "NO_NAMES" || propTable.system.tableoptions.showicons) && !isFree) {
                             let empty_cell = document.createElement("TD");
                             empty_cell.textContent = "TOTAL";
                             empty_cell.className = lastRow.children[cellcounter].className;
@@ -4357,26 +4543,44 @@ ${dialogPanel.data.data.title}
                             totalin = true;
                         }
 
-                        if (propTable.data.data.hasactivation) {
+                        if (propTable.system.hasactivation && !isFree) {
                             let empty_cell = document.createElement("TD");
                             empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                            empty_cell.className += " sb-table-totals-row-hasactivation"; 
                             new_row.appendChild(empty_cell);
                             cellcounter += 1;
+                            if (!totalin) {
+                                empty_cell.textContent = "TOTAL";
+                                empty_cell.className += " boldtext";
+                                totalin = true;
+                            }
 
                         }
 
-                        if (propTable.data.data.hasunits) {
+                        if (propTable.system.hasunits && !isFree) {
                             let empty_cell = document.createElement("TD");
                             empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                            empty_cell.className += " sb-table-totals-row-hasunits";
                             new_row.appendChild(empty_cell);
                             cellcounter += 1;
+                            if (!totalin) {
+                                empty_cell.textContent = "TOTAL";
+                                empty_cell.className += " boldtext";
+                                totalin = true;
+                            }
                         }
 
-                        if (propTable.data.data.hasuses) {
+                        if (propTable.system.hasuses && !isFree) {
                             let empty_cell = document.createElement("TD");
                             empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                            empty_cell.className += " sb-table-totals-row-hasuses";
                             new_row.appendChild(empty_cell);
                             cellcounter += 1;
+                            if (!totalin) {
+                                empty_cell.textContent = "TOTAL";
+                                empty_cell.className += " boldtext";
+                                totalin = true;
+                            }
                         }
 
                         for (let k = 0; k < groupprops.length; k++) {
@@ -4384,8 +4588,8 @@ ${dialogPanel.data.data.title}
                             let propRef = groupprops[k].id;
                             //let propObj = game.items.get(groupprops[k].id);
                             let propObj = await auxMeth.getTElement(groupprops[k].id, "property", groupprops[k].ikey);
-                            let propdata = propObj.data.data;
-                            let propKey = propObj.data.data.attKey;
+                            let propdata = propObj.system;
+                            let propKey = propObj.system.attKey;
 
                             if (!propdata.ishidden) {
                                 if (propdata.totalize) {
@@ -4401,21 +4605,37 @@ ${dialogPanel.data.data.title}
                                         newtotal = 0;
                                     total_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
                                     total_cell.className += " centertext";
-                                    total_cell.textContent = newtotal;
+                                    total_cell.className += " sb-table-totals-row-totalize" + propKey; 
+                                    
+                                    const numberAsString = newtotal.toString();
+                                    let numberofdecimals=0;
+                                    // String Contains Decimal
+                                    if (numberAsString.includes('.')) {
+                                      numberofdecimals= numberAsString.split('.')[1].length;                                   
+                                    }
+                                    
+                                    if (numberofdecimals>2){
+                                      //parseFloat(n.toFixed(4));
+                                      newtotal=parseFloat(newtotal.toFixed(3));
+                                    }
+                                    
+                                    
+                                    total_cell.textContent = newtotal;  // output total
                                     new_row.appendChild(total_cell);
                                     cellcounter += 1;
                                 }
                                 else {
                                     let empty_cell = document.createElement("TD");
                                     empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                                    empty_cell.className += " sb-table-totals-row-no-totalize-" + propKey; 
                                     new_row.appendChild(empty_cell);
                                     cellcounter += 1;
-
                                     if (!totalin) {
                                         empty_cell.textContent = "TOTAL";
                                         empty_cell.className += " boldtext";
                                         totalin = true;
                                     }
+                                    
 
                                 }
                             }
@@ -4424,17 +4644,19 @@ ${dialogPanel.data.data.title}
                         }
 
                         //For transfer cell
-                        if (propTable.data.data.transferrable) {
+                        if (propTable.system.transferrable && !isFree) {
                             let empty_cell = document.createElement("TD");
                             empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                            empty_cell.className += " sb-table-totals-row-transfer"; 
                             new_row.appendChild(empty_cell);
                             cellcounter += 1;
                         }
 
                         //Extra for deleted cell
-                        if (propTable.data.data.editable || game.user.isGM) {
+                        if (propTable.system.editable || game.user.isGM) {
                             let empty_cell = document.createElement("TD");
-                            empty_cell.className = lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
+                            empty_cell.className += " sb-table-totals-row-delete"; 
+                            empty_cell.className += lastRow.children[cellcounter] != null ? lastRow.children[cellcounter].className : "";
                             new_row.appendChild(empty_cell);
                             cellcounter += 1;
                         }
@@ -4452,20 +4674,19 @@ ${dialogPanel.data.data.title}
         }
 
         if (forceUpdate)
-            await this.actor.update({ "data.citems": citems });
+            await this.actor.update({ "system.citems": citems });
         //console.log("refreshcItem finished");
     }
-
     async dragcItem(ev, iD, number, originiD, tokenID = null) {
         ev.stopPropagation();
 
         let ciTemTemplate = game.items.get(iD);
 
-        let dragData = { type: ciTemTemplate, id: iD, ownerID: originiD, tokenID: tokenID };
+        //let dragData = { type: ciTemTemplate, id: iD, ownerID: originiD, tokenID: tokenID };
+        let dragData = { type: "Item",uuid:"Item."+iD, id: iD, ownerID: originiD, tokenID: tokenID };
         ev.dataTransfer.setData("text/plain", JSON.stringify(dragData));
         this._dragType = dragData.type;
     }
-
     async showTransferDialog(id, ownerID, tokenID) {
         let actorOwner;
         if (tokenID == null) {
@@ -4475,91 +4696,112 @@ ${dialogPanel.data.data.title}
             let myToken = canvas.tokens.get(tokenID);
             actorOwner = myToken.actor;
         }
-        let ownercItems = duplicate(actorOwner.data.data.citems);
+        let ownercItems = duplicate(actorOwner.system.citems);
         let cItem = ownercItems.find(y => y.id == id);
         let cItemOrig = await auxMeth.getcItem(id);
 
         let d = new Dialog({
-            title: "Transfer from " + actorOwner.name,
+            title: game.i18n.localize("SANDBOX.TransferFrom") + " " + actorOwner.name,
             content: `	<div class="transfer-itemmname">
-<label class="label-citemtransfer">` + cItem.name + ` max: ` + cItem.number + `</label>
+<label class="label-citemtransfer">` + cItem.name + game.i18n.localize("Maximum") + ` : ` + cItem.number + `</label>
 </div>
 <div class="transfer-itemnumber">
-<input class="input-transfer" type="number" id="transfer-number" value="1">
+<input class="input-transfer" type="number" id="transfer-number" value="1" max="`+cItem.number+`" min="1">
 </div>
 <div class="transfer-takeall">
-<label class="label-transfer">Take All</label>
+<label class="label-transfer">` + game.i18n.localize("SANDBOX.TransferTakeAll") + `</label>
 <input class="check-transfer" type="checkbox" id="transfer-all">
+</div>
+<div class="transfer-takeall">
+<label class="label-transfer-consumed-first">` + game.i18n.localize("SANDBOX.TransferTransferConsumedFirst") + `</label>
+<input class="check-transfer-consumed-first" type="checkbox" id="transfer-consumed-first" checked>
 </div>`,
             buttons: {
                 one: {
                     icon: '<i class="fas fa-check"></i>',
-                    label: "Save",
+                    label: game.i18n.localize("Ok"),
                     callback: async (html) => {
                         let numElem = html[0].getElementsByClassName("input-transfer");
                         numElem = numElem[0].value;
                         let transferAll = html[0].getElementsByClassName("check-transfer");
                         transferAll = transferAll[0].checked;
+                        
+                        let transferConsumedFirst = html[0].getElementsByClassName("check-transfer-consumed-first");
+                        transferConsumedFirst = transferConsumedFirst[0].checked;
+                        
                         let mynum = 1;
-
+                        let myuses=null;
                         let regE = /^\d+$/g;
                         let isnum = numElem.match(regE);
                         if (isnum)
                             mynum = parseInt(numElem);
+                        // make sure that transfreed number is valid
+                        if (mynum > cItem.number){
+                          mynum = cItem.number;
+                        }
+                        // if 0 or negative just exit
+                        if(mynum<=0){
+                          return;
+                        }
 
-
-                        if (transferAll)
+                        if (transferAll){
                             mynum = parseInt(cItem.number);
+                            myuses= parseInt(cItem.uses);
+                            cItem.number=0;
+                            cItem.uses=0;
+                        } else{
+                          // calculate consumed uses
+                          let consumeduses=(parseInt(cItem.number) * parseInt(cItemOrig.system.maxuses)) - cItem.uses 
+                          if(transferConsumedFirst){
+                            myuses=(mynum * parseInt(cItemOrig.system.maxuses))-consumeduses 
+                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses))
+                          } else{    
+                            myuses=(mynum * parseInt(cItemOrig.system.maxuses))
+                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses))-consumeduses
+                          }
+                          cItem.number -= mynum;
+                          
+                          
+                        }
+                        
 
-                        if (mynum > cItem.number)
-                            mynum = cItem.number;
-
-                        cItem.number -= mynum;
-
+                        
                         //REQUEST IF NOT GM
                         if (!game.user.isGM) {
-                            await this.actor.requestTransferToGM(this.actor.id, ownerID, id, mynum);
+                            await this.actor.requestTransferToGM(this.actor.id, ownerID, id, mynum,myuses);
                         }
-
                         else {
-                            await actorOwner.update({ "data.citems": ownercItems })
+                            await actorOwner.update({ "system.citems": ownercItems })
                         }
-
-
-                        let newcitems = duplicate(this.actor.data.data.citems);
+                        let newcitems = duplicate(this.actor.system.citems);
                         let citemowned = newcitems.find(y => y.id == id);
-
                         if (!citemowned) {
-                            newcitems = await this.actor.addcItem(cItemOrig, null, null, mynum);
+                            newcitems = await this.actor.addcItem(cItemOrig, null, null, mynum,myuses);
                         }
                         else {
                             citemowned.number += mynum;
+                            citemowned.uses += myuses;
                         }
-
                         await this.updateSubItems(false, newcitems);
-
-
-
                     }
                 },
                 two: {
                     icon: '<i class="fas fa-times"></i>',
-                    label: "Cancel",
-                    callback: () => { console.log("canceling text edition"); }
+                    label: game.i18n.localize("Cancel"),
+                    callback: () => { console.log("Sandbox | showTransferDialog | Player canceled transfer dialog"); }
                 }
             },
             default: "one",
             close: () => {
-                console.log("Text edition dialog was shown to player.");
+                console.log("Sandbox | showTransferDialog | Transfer dialog was shown to player.");
             }
         });
 
         d.render(true);
     }
-
     showTextAreaDialog(citemID, citemAttribute, disabled) {
-        let citem = this.actor.data.data.citems.find(y => y.id == citemID);
-        let ciProp = game.items.find(y => y.data.data.attKey == citemAttribute);
+        let citem = this.actor.system.citems.find(y => y.id == citemID);
+        let ciProp = game.items.find(y => y.system.attKey == citemAttribute);
         if (ciProp == null)
             return;
         let isdisabled = ""
@@ -4568,7 +4810,7 @@ ${dialogPanel.data.data.title}
 
 
         let content = `
-            <textarea id="dialog-textarea-${citemID}-${citemAttribute}" class="textdialog texteditor-large ${ciProp.data.data.inputgroup}" ${isdisabled}>${citem.attributes[citemAttribute].value}</textarea>
+            <textarea id="dialog-textarea-${citemID}-${citemAttribute}" class="textdialog texteditor-large ${ciProp.system.inputgroup}" ${isdisabled}>${citem.attributes[citemAttribute].value}</textarea>
             `;
         content += `
             <div class="new-row">
@@ -4588,7 +4830,7 @@ ${dialogPanel.data.data.title}
                     callback: async (html) => {
                         if (!disabled) {
                             citem.attributes[citemAttribute].value = d.data.dialogValue;
-                            await this.actor.update({ "data.citems": this.actor.data.data.citems }, { diff: false });
+                            await this.actor.update({ "system.citems": this.actor.system.citems }, { diff: false });
                         }
 
                     }
@@ -4609,11 +4851,10 @@ ${dialogPanel.data.data.title}
 
         d.render(true);
     }
-
     showFreeTextAreaDialog(freeId, freeTableKey, freePropKey, disabled) {
 
-        let freeitem = this.actor.data.data.attributes[freeTableKey].tableitems.find(y => y.id == freeId);
-        let ciProp = game.items.find(y => y.data.data.attKey == freePropKey);
+        let freeitem = this.actor.system.attributes[freeTableKey].tableitems.find(y => y.id == freeId);
+        let ciProp = game.items.find(y => y.system.attKey == freePropKey);
         if (ciProp == null)
             return;
         let isdisabled = ""
@@ -4624,7 +4865,7 @@ ${dialogPanel.data.data.title}
         let content = `
             <textarea id="dialog-textarea-${freeId}-${freePropKey}" class="textdialog texteditor-large" ${isdisabled}>${freeitem.attributes[freePropKey].value}</textarea>
             `
-        if (game.user.isGM || ciProp.data.data.editable)
+        if (game.user.isGM || ciProp.system.editable)
             content += `
             <div class="new-row">
                 <div class="lockcontent">
@@ -4645,11 +4886,11 @@ ${dialogPanel.data.data.title}
                     label: "Save",
                     callback: async (html) => {
                         if (!disabled) {
-                            let key = "data.attributes." + freeTableKey + ".tableitems[" + freeId + "].attributes." + freePropKey + ".value";
-                            let freeattributes = duplicate(this.actor.data.data.attributes[freeTableKey].tableitems);
+                            let key = "system.attributes." + freeTableKey + ".tableitems[" + freeId + "].attributes." + freePropKey + ".value";
+                            let freeattributes = duplicate(this.actor.system.attributes[freeTableKey].tableitems);
                             let freeTarget = freeattributes.find(y => y.id == freeId)
                             freeTarget.attributes[freePropKey].value = d.data.dialogValue;
-                            await this.actor.update({ [`data.attributes.${freeTableKey}.tableitems`]: freeattributes });
+                            await this.actor.update({ [`system.attributes.${freeTableKey}.tableitems`]: freeattributes });
                         }
 
                     }
@@ -4670,17 +4911,16 @@ ${dialogPanel.data.data.title}
 
         d.render(true);
     }
-
     async saveNewCIAtt(ciId, propId, propKey, value) {
         //console.log("changing citem");
-        let cItemsID = duplicate(this.actor.data.data.citems);
+        let cItemsID = duplicate(this.actor.system.citems);
         let citem = cItemsID.find(y => y.id == ciId);
         let propObj = await auxMeth.getTElement(propId, "property", propKey);
         //console.log(value);
 
-        if (propObj.data.data.datatype != "checkbox") {
-            if (propObj.data.data.automax != "") {
-                let ciMax = await auxMeth.autoParser(propObj.data.data.automax, this.actor.data.data.attributes, citem.attributes, false);
+        if (propObj.system.datatype != "checkbox") {
+            if (propObj.system.automax != "") {
+                let ciMax = await auxMeth.autoParser(propObj.system.automax, this.actor.system.attributes, citem.attributes, false);
                 if (value > ciMax) {
                     value = ciMax;
                 }
@@ -4691,18 +4931,18 @@ ${dialogPanel.data.data.title}
         else {
 
             let setvalue = true;
-            if (citem.attributes[propObj.data.data.attKey].value) {
+            if (citem.attributes[propObj.system.attKey].value) {
                 setvalue = false;
             }
-            citem.attributes[propObj.data.data.attKey].value = setvalue;
+            citem.attributes[propObj.system.attKey].value = setvalue;
 
-            if (propObj.data.data.checkgroup != null)
-                if (propObj.data.data.checkgroup != "") {
-                    let checkgroup = propObj.data.data.checkgroup;
+            if (propObj.system.checkgroup != null)
+                if (propObj.system.checkgroup != "") {
+                    let checkgroup = propObj.system.checkgroup;
                     let unparsedchkgroupArray = checkgroup.split(";");
                     let chkgroupArray = [];
                     for (let j = 0; j < unparsedchkgroupArray.length; j++) {
-                        let parsedgrpCheck = await auxMeth.autoParser(unparsedchkgroupArray[j], this.actor.data.data.attributes, citem.attributes, true);
+                        let parsedgrpCheck = await auxMeth.autoParser(unparsedchkgroupArray[j], this.actor.system.attributes, citem.attributes, true);
                         if (parsedgrpCheck == " ")
                             parsedgrpCheck = "";
                         chkgroupArray.push(parsedgrpCheck);
@@ -4714,109 +4954,96 @@ ${dialogPanel.data.data.title}
                             for (const [propKey, propValues] of Object.entries(anycitem.attributes)) {
 
                                 if (anycitem.id != ciId) {
-                                    let propKeyObj = game.items.find(y => y.data.data.attKey == propKey);
+                                    let propKeyObj = game.items.find(y => y.system.attKey == propKey);
                                     if (propKeyObj != null && propKey != "name") {
 
-                                        if (propKeyObj.data.data.datatype == "checkbox" && propKeyObj.data.data.checkgroup != "") {
-                                            let pointerchkgroupArray = propKeyObj.data.data.checkgroup.split(";");
+                                        if (propKeyObj.system.datatype == "checkbox" && propKeyObj.system.checkgroup != "") {
+                                            let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
                                             for (let z = 0; z < pointerchkgroupArray.length; z++) {
                                                 let checkKey = pointerchkgroupArray[z];
-                                                let parsedKey = await auxMeth.autoParser(checkKey, this.actor.data.data.attributes, anycitem.attributes, true);
+                                                let parsedKey = await auxMeth.autoParser(checkKey, this.actor.system.attributes, anycitem.attributes, true);
                                                 if (chkgroupArray.includes(parsedKey))
                                                     propValues.value = false;
                                             }
-
                                         }
-
                                     }
-
-
                                 }
-
-
                             }
-
                         }
-
-
-
-
                     }
-
-
                 }
         }
 
         if (!this.actor.isToken) {
-            this.actor.update({ "data.citems": cItemsID });
+            this.actor.update({ "system.citems": cItemsID });
         }
-        else {
-            let tokenId = this.id.split("-")[2];
+        else {            
+            // v10 has longer ids, 
+            // gActorSheet-Scene-ry4G1mjyCSGzxpHC-Token-8jswJPrzu0DQtoDv
+            let tokenId = this.id.split("-")[4];
             let mytoken = canvas.tokens.get(tokenId);
-            await mytoken.document.update({ "actorData.data.citems": cItemsID });
+            await mytoken.document.update({ "actorData.system.citems": cItemsID });
         }
 
 
     }
-
     async saveNewFreeItem(id, tableKey, fpropKey, value, ischeck = false, checked = null) {
-        let myfreeItems = await duplicate(this.actor.data.data.attributes[tableKey].tableitems);
+        let myfreeItems = await duplicate(this.actor.system.attributes[tableKey].tableitems);
         let myItem = myfreeItems.find(y => y.id == id);
 
         if (ischeck) {
             value = checked;
-            let propObj = game.items.find(y => y.data.data.attKey == fpropKey);
-            if (propObj.data.data.checkgroup != null)
-                if (propObj.data.data.checkgroup != "") {
-                    let checkgroup = propObj.data.data.checkgroup;
+            let propObj = game.items.find(y => y.system.attKey == fpropKey);
+            if (propObj.system.checkgroup != null)
+                if (propObj.system.checkgroup != "") {
+                    let checkgroup = propObj.system.checkgroup;
                     let chkgroupArray = checkgroup.split(";");
                     if (value) {
                         for (const [propKey, propValues] of Object.entries(myItem.attributes)) {
 
-                            if (propKey != propObj.data.data.attKey) {
-                                let propKeyObj = game.items.find(y => y.data.data.attKey == propKey);
+                            if (propKey != propObj.system.attKey) {
+                                let propKeyObj = game.items.find(y => y.system.attKey == propKey);
                                 if (propKeyObj != null) {
-                                    if (propKeyObj != "" && propKeyObj.data.data.datatype == "checkbox") {
-                                        let pointerchkgroupArray = propKeyObj.data.data.checkgroup.split(";");
+                                    if (propKeyObj != "" && propKeyObj.system.datatype == "checkbox") {
+                                        let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
                                         for (let z = 0; z < chkgroupArray.length; z++) {
                                             let checkKey = chkgroupArray[z];
-                                            let parsedKey = await auxMeth.autoParser(checkKey, this.actor.data.data.attributes, myItem.attributes, true);
+                                            let parsedKey = await auxMeth.autoParser(checkKey, this.actor.system.attributes, myItem.attributes, true);
                                             if (pointerchkgroupArray.includes(parsedKey))
                                                 propValues.value = false;
                                         }
                                     }
-
                                 }
-
-
                             }
-
-
                         }
-
-
-
                     }
-
-
                 }
         }
-
-
         myItem.attributes[fpropKey].value = value;
-        await this.actor.update({ [`data.attributes.${tableKey}.tableitems`]: myfreeItems });
+        await this.actor.update({ [`system.attributes.${tableKey}.tableitems`]: myfreeItems });
     }
-
-    async linkCItem(evt) {
+    
+    async linkCItem(evt,showinfoonly=false) {
         //console.log();
         let item = await auxMeth.getcItem(evt.currentTarget.getAttribute("item_id"), evt.currentTarget.getAttribute("item_ciKey"));
-        item.sheet.render(true);
-    }
-
+        if(showinfoonly){
+          auxMeth.showCIitemInfo(item);
+        } else {
+          item.sheet.render(true);
+        }
+    };
+    
+   
+  
+    
+    
+    
+    
     async useCIIcon(itemId, ciKey, value, iscon = false, isactivation = false) {
+      
         //const citemObj = game.items.get(itemId).data.data;
         let citemObjfinder = await auxMeth.getcItem(itemId, ciKey);
-        const citemObj = citemObjfinder.data.data;
+        const citemObj = citemObjfinder.system;
 
 
         if (citemObj.roll != "" && (!isactivation || (isactivation && value))) {
@@ -4831,15 +5058,14 @@ ${dialogPanel.data.data.title}
             this.activateCI(itemId, value, iscon, null, isactivation);
         }
     }
-
     async activateCI(itemId, value, iscon = false, roll = null, isactivation = false) {
-        const actorData = duplicate(this.actor.data.data);
+        const actorData = duplicate(this.actor.system);
         const citems = actorData.citems;
         const citem = citems.find(y => y.id == itemId);
-        const attributes = this.actor.data.data.attributes;
+        const attributes = this.actor.system.attributes;
 
         let citemObjfinder = await auxMeth.getcItem(itemId, citem.ciKey);
-        const citemObj = citemObjfinder.data.data;
+        const citemObj = citemObjfinder.system;
         let objectUses = duplicate(citem.uses);
 
         if (isactivation) {
@@ -4877,58 +5103,54 @@ ${dialogPanel.data.data.title}
 
         }
 
-        this.actor.data.flags.haschanged = true;
+        this.actor.flags.haschanged = true;
 
         if (roll != null) {
             citem.attributes._lastroll = roll;
         }
 
-        await this.actor.update({ "data.citems": citems });
+        await this.actor.update({ "system.citems": citems });
     }
-
     async rechargeCI(itemId, ciKey) {
-        const citems = duplicate(this.actor.data.data.citems);
+        const citems = duplicate(this.actor.system.citems);
         const citem = citems.find(y => y.id == itemId);
         //const citemObj = game.items.get(itemId).data.data;
         let citemObjfinder = await auxMeth.getcItem(itemId, ciKey);
-        const citemObj = citemObjfinder.data.data;
+        const citemObj = citemObjfinder.system;
 
         let totalnumber = citem.number;
         if (totalnumber == 0)
             totalnumber = 1;
 
         citem.uses = citem.maxuses;
-        await this.actor.update({ "data.citems": citems });
+        await this.actor.update({ "system.citems": citems });
     }
-
-    async deleteCItem(itemID, cascading = false) {
-        //get Item
-        //console.log("deleting");
-
-        let subitems = await this.actor.deletecItem(itemID, cascading);
-
-        //console.log(subitems);
+    async deleteCItem(itemID, cascading = false,askforconfirmation=false) {
+      let bOkToProceed=true;
+      if(askforconfirmation){
+        const item=game.items.get(itemID);
+        if(item!=null){
+          // ask user for confirmation          
+          bOkToProceed=await confirmRemoveSubItem(this.actor.name,game.i18n.localize("DOCUMENT.Actor").toLowerCase(),item.name,'');
+        } else {
+          ui.notifications.warn('Sandbox | Unable to find item '+itemID);
+        }
+      } 
+      if(bOkToProceed){ 
+        let subitems = await this.actor.deletecItem(itemID, cascading);         
         if (this.actor.isToken) {
-
             let myToken = canvas.tokens.get(this.actor.token.id);
 
-            await myToken.actor.update({ "data": subitems.data });
-            //await myToken.update({"data.citems": this.actor.data.data.citems});
+            await myToken.actor.update({ "system": subitems.system });              
         }
-
         else {
-            await this.actor.update({ "data": subitems.data });
-            //await this.actor.update(this.actor.data);
+            await this.actor.update({ "system": subitems.system });              
         }
-
-
-        //await this.actor.update(this.actor.data);
-
+       }        
     }
-
     async addFreeRow(tableKey) {
 
-        let myfreeItems = await duplicate(this.actor.data.data.attributes[tableKey].tableitems);
+        let myfreeItems = await duplicate(this.actor.system.attributes[tableKey].tableitems);
         let lastIndex = -1;
         if (myfreeItems.length)
             lastIndex = myfreeItems[myfreeItems.length - 1].id;
@@ -4943,16 +5165,16 @@ ${dialogPanel.data.data.title}
         let tableTemplate = await auxMeth.getTElement(null, "property", tableKey);
 
         if (tableTemplate != null) {
-            let tableGroup = tableTemplate.data.data.group.id;
+            let tableGroup = tableTemplate.system.group.id;
             if (tableGroup != null) {
-                let groupTemplate = await auxMeth.getTElement(tableTemplate.data.data.group.id, "group", tableTemplate.data.data.group.ikey);
-                let groupProps = groupTemplate.data.data.properties;
+                let groupTemplate = await auxMeth.getTElement(tableTemplate.system.group.id, "group", tableTemplate.system.group.ikey);
+                let groupProps = groupTemplate.system.properties;
                 if (groupProps.length > 0) {
                     for (let i = 0; i < groupProps.length; i++) {
                         //let propTemplate = game.items.get(groupProps[i].id);
                         let propTemplate = await auxMeth.getTElement(groupProps[i].id, "property", groupProps[i].ikey);
-                        newItem.attributes[propTemplate.data.data.attKey] = {};
-                        newItem.attributes[propTemplate.data.data.attKey].value = propTemplate.data.data.defvalue;
+                        newItem.attributes[propTemplate.system.attKey] = {};
+                        newItem.attributes[propTemplate.system.attKey].value = propTemplate.system.defvalue;
                     }
                 }
             }
@@ -4960,17 +5182,31 @@ ${dialogPanel.data.data.title}
         }
 
         myfreeItems.push(newItem);
-        await this.actor.update({ [`data.attributes.${tableKey}.tableitems`]: myfreeItems });
+        await this.actor.update({ [`system.attributes.${tableKey}.tableitems`]: myfreeItems });
 
 
     }
-
     async deleteFreeItem(id, tableKey) {
-        let myfreeItems = await duplicate(this.actor.data.data.attributes[tableKey].tableitems);
+      let itemtype='Table row nunber';
+      let tablename='';
+      // ask user for confirmation
+      const tableproperty= game.system.customitemmaps.properties.get(tableKey);
+      if(tableproperty!=null){
+          
+        tablename=tableproperty.name; // use table´s group name    
+      }
+      const rownr=id;
+      let itemname=rownr;
+      
+      let parentname= this.actor.name;
+      let parenttype='free table <strong>'+ tablename +'</strong> on ' +game.i18n.localize("DOCUMENT.Actor").toLowerCase();
+      const bOkToProceed=await confirmRemoveSubItem(parentname,parenttype,itemname,itemtype);
+      if(bOkToProceed){ 
+        let myfreeItems = await duplicate(this.actor.system.attributes[tableKey].tableitems);
         myfreeItems.splice(myfreeItems.indexOf(myfreeItems.find(y => y.id == id)), 1);
-        await this.actor.update({ [`data.attributes.${tableKey}.tableitems`]: myfreeItems });
+        await this.actor.update({ [`system.attributes.${tableKey}.tableitems`]: myfreeItems });
+      }
     }
-
     handleGMinputs(basehtml) {
         //SET TABLES INFO
         const gminputs = basehtml.find(".inputGM");
@@ -4978,18 +5214,21 @@ ${dialogPanel.data.data.title}
             let input = gminputs[i];
 
             if (!game.user.isGM) {
-                input.setAttribute("readonly", true);
+                if(input.type=='checkbox'){
+                  input.disabled=true;
+                } else{
+                  input.setAttribute("readonly", true);
+                }
 
                 if (input.type == "select-one")
                     input.className += " list-noneditable";
             }
         }
     }
-
     async changeCINum(itemID, ciKey, value) {
 
-        let citemIDs = duplicate(this.actor.data.data.citems);
-        let citem = this.actor.data.data.citems.find(y => y.id == itemID);
+        let citemIDs = duplicate(this.actor.system.citems);
+        let citem = this.actor.system.citems.find(y => y.id == itemID);
         let citemNew = citemIDs.find(y => y.id == itemID);
 
         if (value == 0) {
@@ -5014,12 +5253,11 @@ ${dialogPanel.data.data.title}
         //await this.scrollbarSet(false);
         //this.actor.update(this.actor.data);
 
-        await this.actor.update({ "data.citems": citemIDs });
+        await this.actor.update({ "system.citems": citemIDs });
 
     }
-
     async changeCIUses(itemID, value) {
-        let citemIDs = duplicate(this.actor.data.data.citems);
+        let citemIDs = duplicate(this.actor.system.citems);
         let citem = citemIDs.find(y => y.id == itemID);
         let myindex = citemIDs.indexOf(citem);
 
@@ -5031,22 +5269,19 @@ ${dialogPanel.data.data.title}
 
         //await this.scrollbarSet(false);
         //await this.actor.update(this.actor.data);
-        await this.actor.update({ "data.citems": citemIDs });
+        await this.actor.update({ "system.citems": citemIDs });
 
     }
-
-
     async refreshBadge(basehtml) {
         const html = await basehtml.find(".badge-click");
         for (let i = 0; i < html.length; i++) {
             let badgeNode = html[i];
             let propKey = badgeNode.getAttribute("attKey");
-            const att = this.actor.data.data.attributes[propKey];
+            const att = this.actor.system.attributes[propKey];
             if (att != null)
                 badgeNode.textContent = att.value;
         }
     }
-
     // call before super._render
     async _saveScrollStates() {
 
@@ -5066,7 +5301,6 @@ ${dialogPanel.data.data.title}
 
         return scrollStates;
     }
-
     // call after super._render
     async _setScrollStates() {
         let html = this._element;
@@ -5085,7 +5319,6 @@ ${dialogPanel.data.data.title}
             }
         }
     }
-
     async _render(force = false, options = {}) {
         this.scrollStates = await this._saveScrollStates();
 
@@ -5096,13 +5329,12 @@ ${dialogPanel.data.data.title}
 
         // await this._setScrollStates();
     }
-
     async modifyLists(basehtml) {
-        const attKeys = Object.keys(this.actor.data.data.attributes)
+        const attKeys = Object.keys(this.actor.system.attributes)
 
         attKeys.forEach((key, index) => {
 
-            let aProp = this.actor.data.data.attributes[key];
+            let aProp = this.actor.system.attributes[key];
 
             if (aProp.listedit != null) {
                 let mytag = "." + key;
@@ -5142,7 +5374,6 @@ ${dialogPanel.data.data.title}
         });
 
     }
-
     async populateRadioInputs(basehtml) {
         //console.log("reinput");
         const html = await basehtml.find(".radio-input");
@@ -5150,19 +5381,19 @@ ${dialogPanel.data.data.title}
 
             let radioNode = html[i];
 
-            const attributes = this.actor.data.data.attributes;
+            const attributes = this.actor.system.attributes;
             let value = 0;
             let propId = radioNode.getAttribute("attId");
             let propRawName = radioNode.getAttribute("name");
-            propRawName = propRawName.replace("data.attributes.", '');
+            propRawName = propRawName.replace("system.attributes.", '');
             propRawName = propRawName.replace(".value", '');
             //let property = game.items.get(propId);
             let property = await auxMeth.getTElement(propId, "property", propRawName);
 
             if (property != null) {
 
-                let attKey = property.data.data.attKey;
-                let radiotype = property.data.data.radiotype;
+                let attKey = property.system.attKey;
+                let radiotype = property.system.radiotype;
 
                 if (attributes[attKey] != null) {
                     let maxRadios = attributes[attKey].max;
@@ -5176,6 +5407,8 @@ ${dialogPanel.data.data.title}
                             let clickValue = j;
                             radiocontainer.setAttribute("clickValue", clickValue);
                             radiocontainer.className = "radio-element";
+                            radiocontainer.setAttribute('data-property-key',property.system.attKey);
+                            radiocontainer.setAttribute('data-radio-element-value',clickValue);
                             //radiocontainer.style = "font-size:14px;";
                             //if (radiotype == "S")
                             //radiocontainer.style = "font-size:16px;";
@@ -5185,30 +5418,27 @@ ${dialogPanel.data.data.title}
 
                             if (j == 0) {
                                 radiobutton.className = "far fa-times-circle";
+                                // if this is an auto calculated radio, or (non-editable and not gm) hide the reset icon
+                                if(!property.system.auto=='' || (!property.system.editable && !game.user.isGM) ){
+                                  radiocontainer.style.display = "none";; 
+                                }
                             }
 
                             else if (value >= clickValue) {
-                                radiobutton.className = "fas fa-circle";
-                                if (radiotype == "S") {
-
-                                    radiobutton.className = "fas fa-square";
-                                }
-
-
+                                radiobutton.className = "fas " + radiotype;                                
                             }
                             else {
-                                radiobutton.className = "far fa-circle";
-                                if (radiotype == "S") {
-                                    radiobutton.className = "far fa-square";
-                                }
-
-
+                                radiobutton.className = "far " + radiotype;
                             }
+                            
 
                             radiocontainer.appendChild(radiobutton);
-                            if (property.data.data.editable || game.user.isGM)
+                            if ((property.system.editable || game.user.isGM) && property.system.auto==''){
                                 radiobutton.addEventListener("click", (event) => this.clickRadioInput(clickValue, propId, event.target));
-
+                            } else {
+                              // add class to indicated non-clickable
+                              radiocontainer.className +=" sb-radio-element-non-clickable";
+                            }
                             await radioNode.appendChild(radiocontainer);
 
                         }
@@ -5220,7 +5450,6 @@ ${dialogPanel.data.data.title}
 
         }
     }
-
     //Set external images
     async setImages(basehtml) {
         const html = await basehtml.find(".isimg");
@@ -5235,15 +5464,12 @@ ${dialogPanel.data.data.title}
             imgNode.appendChild(imgEl);
         }
     }
-
     async addHeaderButtons(basehtml) {
 
     }
-
     async customCallOverride(basehtml) {
 
     }
-
     //Set external images
     async setCheckboxImages(basehtml) {
         const html = await basehtml.find(".customcheck");
@@ -5253,8 +5479,8 @@ ${dialogPanel.data.data.title}
             let offPath = checkNode.getAttribute("offPath");
             let propKey = checkNode.getAttribute("attKey");
 
-            if (this.actor.data.data.attributes[propKey] != null) {
-                let myvalue = this.actor.data.data.attributes[propKey].value;
+            if (this.actor.system.attributes[propKey] != null) {
+                let myvalue = this.actor.system.attributes[propKey].value;
 
                 let selected = offPath;
                 if (myvalue)
@@ -5264,15 +5490,14 @@ ${dialogPanel.data.data.title}
 
         }
     }
-
     async clickRadioInput(clickValue, propId, target) {
         //let property = game.items.get(propId);
         let property = await auxMeth.getTElement(propId);
-        let radiotype = property.data.data.radiotype;
-        let attKey = property.data.data.attKey;
-        const attributes = this.actor.data.data.attributes;
+        let radiotype = property.system.radiotype;
+        let attKey = property.system.attKey;
+        const attributes = this.actor.system.attributes;
         //attributes[attKey].value =  clickValue;
-        await this.actor.update({ [`data.attributes.${attKey}.value`]: clickValue });
+        await this.actor.update({ [`system.attributes.${attKey}.value`]: clickValue });
         //await this.actor.actorUpdater();
         //await this.actor.update({"data.attributes":attributes}, {diff: false});
         if (clickValue > 0) {
@@ -5287,7 +5512,6 @@ ${dialogPanel.data.data.title}
         //await this.scrollbarSet();
 
     }
-
     async displaceTabs2(next = null, newhtml) {
         //console.log("displacing");
         let tabs;
@@ -5300,7 +5524,7 @@ ${dialogPanel.data.data.title}
         fakelastTab.remove();
 
         let biotab = $(newhtml).find('#tab-0');
-        if (!this.actor.data.data.biovisible) {
+        if (!this.actor.system.biovisible) {
             nonbio = true;
 
             if (biotab.length > 0)
@@ -5324,7 +5548,7 @@ ${dialogPanel.data.data.title}
 
         let foundfirst = false;
         let passedfirst = false;
-        let maxtabs = this.actor.data.data.visitabs - 1;
+        let maxtabs = this.actor.system.visitabs - 1;
         let totaltabs = tabs.length;
         //console.log(tabs);
 
@@ -5415,16 +5639,15 @@ ${dialogPanel.data.data.title}
         })
 
     }
-
     async setSheetStyle() {
         //console.log(this.actor.data.data.gtemplate);
 
-        let _mytemplate = await game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == this.actor.data.data.gtemplate);
+        let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
         if (_mytemplate == null)
             return;
         let basehtml = this.element;
 
-        if (this.actor.data.data.gtemplate == "Default")
+        if (this.actor.system.gtemplate == "Default")
             return;
 
         let bground = await basehtml.find(".window-content");
@@ -5433,25 +5656,30 @@ ${dialogPanel.data.data.title}
         let stabs = await basehtml.find(".atabs");
 
         //Set Height
-        if (_mytemplate.data.data.setheight != "" && !_mytemplate.data.data.resizable) {
-            basehtml[0].style.height = _mytemplate.data.data.setheight + "px";
+        //if (_mytemplate.system.setheight != "" && !_mytemplate.system.resizable) {
+        if (_mytemplate.system.setheight != "" && !_mytemplate.system.resizable) {
+            basehtml[0].style.height = _mytemplate.system.setheight + "px";
             let tabhandler = await basehtml.find(".tab");
             for (let j = 0; j < tabhandler.length; j++) {
                 let mytab = tabhandler[j];
 
-                let totalheight = parseInt(_mytemplate.data.data.setheight) - parseInt(wheader[0].clientHeight) - parseInt(sheader[0].clientHeight) - parseInt(stabs[0].clientHeight) - 15;
+                let totalheight = parseInt(_mytemplate.system.setheight) - parseInt(wheader[0].clientHeight) - parseInt(sheader[0].clientHeight) - parseInt(stabs[0].clientHeight) - 15;
                 mytab.style.height = totalheight + "px";
             }
         }
-
+        // set width
+        if (_mytemplate.system.setwidth != "" && !_mytemplate.system.resizable) {
+            basehtml[0].style.width = _mytemplate.system.setwidth + "px";
+          }
+        
 
         //Set Background
-        if (_mytemplate.data.data.backg != "") {
-            bground[0].style.background = "url(" + _mytemplate.data.data.backg + ") repeat";
+        if (_mytemplate.system.backg != "") {
+            bground[0].style.background = "url(" + _mytemplate.system.backg + ") repeat";
         }
 
 
-        if (!_mytemplate.data.data.resizable) {
+        if (!_mytemplate.system.resizable) {
             let sizehandler = await basehtml.find(".window-resizable-handle");
             sizehandler[0].style.visibility = "hidden";
         }
@@ -5466,10 +5694,9 @@ ${dialogPanel.data.data.title}
             }
         }
     }
-
     async checkAttributes(formData) {
         for (let att in formData) {
-            if (att.includes("data.attributes.")) {
+            if (att.includes("system.attributes.")) {
                 let thisatt = formData[att];
                 if (Array.isArray(formData[att]))
                     formData[att] = thisatt[0];
@@ -5480,11 +5707,10 @@ ${dialogPanel.data.data.title}
 
         return formData
     }
-
     //**override
     _onEditImage(event) {
         const attr = event.currentTarget.dataset.edit;
-        const current = getProperty(this.actor.data, attr);
+        const current = getProperty(this.actor, attr);
         const myactor = this.actor;
         new FilePicker({
             type: "image",
@@ -5498,10 +5724,10 @@ ${dialogPanel.data.data.title}
 
                 //myactor.update(myactor.data);
 
-                let mytoken = await this.setTokenOptions(myactor.data, path);
+                let mytoken = await this.setTokenOptions(myactor, path);
 
                 if (mytoken)
-                    await myactor.update({ "token": mytoken, "img": path });
+                    await myactor.update({ "prototypeToken": mytoken, "img": path });
 
                 this._onSubmit(event);
             },
@@ -5510,51 +5736,32 @@ ${dialogPanel.data.data.title}
         }).browse(current);
 
     }
-
     async setTokenOptions(myactorData, path = null) {
-
-        //console.log(myactorData.token);
-
         if (path == null)
-            path = myactorData.img;
-
-        let mytoken = await duplicate(myactorData.token);
-
-        if (!myactorData.data.istemplate) {
-            if (mytoken.dimLight == null)
-                mytoken.dimLight = 0;
-
-            if (mytoken.dimSight == null)
-                mytoken.dimSight = 0;
-
-            if (mytoken.brightLight == null)
-                mytoken.brightLight = 0;
-
-            mytoken.img = path;
-
+            path = this.actor.img;
+        let mytoken = await duplicate(this.actor.prototypeToken);
+        if (!myactorData.istemplate) {
+//            if (mytoken.light.dim == null)
+//                mytoken.light.dim = 0;
+//
+//            if (mytoken.dimSight == null)
+//                mytoken.dimSight = 0;
+//
+//            if (mytoken.brightLight == null)
+//                mytoken.brightLight = 0;
+            mytoken.texture.src = path;
             //mytoken.name = myactorData.name;
-
             if (game.settings.get("sandbox", "tokenOptions")) {
-
-                let displayName = myactorData.data.displayName;
-
+                let displayName = myactorData.displayName;
                 if (myactorData.token) {
-
                     mytoken.displayName = displayName;
-
                     mytoken.displayBars = displayName;
-
                     if (myactorData.data.tokenbar1 != null)
-                        mytoken.bar1.attribute = myactorData.data.tokenbar1;
-
+                        mytoken.bar1.attribute = myactorData.tokenbar1;
                 }
-
-
             }
         }
-
         return mytoken;
-
     }
 
     async _updateObject(event, formData) {
@@ -5567,7 +5774,7 @@ ${dialogPanel.data.data.title}
 
         //await this.scrollbarSet();
 
-        if (event.target == null && !game.user.isGM && !formData["data.biography"])
+        if (event.target == null && !game.user.isGM && !formData["system.biography"])
             return;
 
         if (event.target)
@@ -5577,8 +5784,8 @@ ${dialogPanel.data.data.title}
 
         //console.log(event);
 
-        if (formData["data.gtemplate"] == "")
-            formData["data.gtemplate"] = this.actor.data.data.gtemplate;
+        if (formData["system.gtemplate"] == "")
+            formData["system.gtemplate"] = this.actor.system.gtemplate;
 
 
         formData = await this.checkAttributes(formData);
@@ -5591,7 +5798,7 @@ ${dialogPanel.data.data.title}
             let escapeForm = false;
             //console.log(target);
 
-            if (target == "data.gtemplate")
+            if (target == "system.gtemplate")
                 return;
 
             //if(!escapeForm){
@@ -5619,7 +5826,7 @@ ${dialogPanel.data.data.title}
 
 
             if (property != null) {
-                if (property.data.data.datatype != "checkbox") {
+                if (property.system.datatype != "checkbox") {
                     formData[event.target.name] = event.target.value;
                 }
                 else {
@@ -5641,16 +5848,16 @@ ${dialogPanel.data.data.title}
 
             }
             else {
-                if (target == "data.biovisible") {
-                    formData["data.biovisible"] = event.target.checked;
+                if (target == "system.biovisible") {
+                    formData["system.biovisible"] = event.target.checked;
                 }
 
-                else if (target == "data.resizable") {
-                    formData["data.resizable"] = event.target.checked;
+                else if (target == "system.resizable") {
+                    formData["system.resizable"] = event.target.checked;
                 }
 
-                else if (target == "data.istemplate") {
-                    formData["data.istemplate"] = event.target.checked;
+                else if (target == "system.istemplate") {
+                    formData["system.istemplate"] = event.target.checked;
                 }
 
                 else {

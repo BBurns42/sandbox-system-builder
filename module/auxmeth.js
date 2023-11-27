@@ -1,4 +1,8 @@
 import { SBOX } from "./config.js";
+import { SandboxInfoForm } from "./sb-info-form.js";
+import { sb_custom_dialog_prompt,
+         sb_custom_dialog_confirm,
+       sb_custom_dialog_duplicate_handling} from "./sb-custom-dialogs.js"; 
 
 export class auxMeth {
 
@@ -11,7 +15,7 @@ export class auxMeth {
 
         templates.push("Default");
 
-        let templatenames = game.actors.filter(y => y.data.data.istemplate);
+        let templatenames = game.actors.filter(y => y.system.istemplate);
 
         for (let i = 0; i < templatenames.length; i++) {
 
@@ -28,7 +32,7 @@ export class auxMeth {
         let jsontxt = game.settings.get("sandbox", "idDict");
         let idDict = {};
 
-        if (jsontxt != "") {
+        if (jsontxt != null) {
             idDict = JSON.parse(jsontxt);
         }
 
@@ -55,7 +59,7 @@ export class auxMeth {
         if (ciTemplate == null) {
             let jsontxt = game.settings.get("sandbox", "idDict");
 
-            if (jsontxt != "") {
+            if (jsontxt != null) {
                 let idDict = JSON.parse(jsontxt);
                 if (idDict.ids[id] != null) {
                     ciTemplate = game.items.get(idDict.ids[id]);
@@ -72,10 +76,11 @@ export class auxMeth {
 
         if (ciTemplate == null) {
             //let allcitems = ;
-            let is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == id);
+            //let is_here = game.items.filter(y => Boolean(y.system.ciKey)).find(y => y.system.ciKey == id);
+            let is_here = game.system.customitemmaps.citemsbycikey.get(id);
             if (!is_here)
-                is_here = game.items.filter(y => Boolean(y.data.data.ciKey)).find(y => y.data.data.ciKey == ciKey);
-
+                //is_here = game.items.filter(y => Boolean(y.system.ciKey)).find(y => y.system.ciKey == ciKey);
+                is_here = game.system.customitemmaps.citemsbycikey.get(ciKey);
             if (is_here) {
                 ciTemplate = is_here;
                 await auxMeth.registerDicID(id, is_here.id, ciKey);
@@ -85,9 +90,9 @@ export class auxMeth {
         //To correct post 0.9
         if (ciTemplate == null) {
             //let allcitems = ;
-            let is_here = game.items.filter(y => Boolean(y.data._source.data.ciKey)).find(y => y.data._source.data.ciKey == id);
+            let is_here = game.items.filter(y => Boolean(y._source.system.ciKey)).find(y => y._source.system.ciKey == id);
             if (!is_here)
-                is_here = game.items.filter(y => Boolean(y.data._source.ciKey)).find(y => y.data._source.ciKey == ciKey);
+                is_here = game.items.filter(y => Boolean(y._source.system.ciKey)).find(y => y._source.system.ciKey == ciKey);
             if (is_here) {
                 ciTemplate = is_here;
                 await auxMeth.registerDicID(id, is_here.id, ciKey);
@@ -109,14 +114,12 @@ export class auxMeth {
                 let newciKey = id;
                 if (ciKey != null)
                     newciKey = ciKey;
-                let is_here = packContents.filter(y => Boolean(y.data.data)).find(y => y.data.data.ciKey == id || y.id == id || y.data.data.ciKey == newciKey);
+                let is_here = packContents.filter(y => Boolean(y.system)).find(y => y.system.ciKey == id || y.id == id || y.system.ciKey == newciKey);
                 if (is_here) {
                     locatedPack = pack;
                     locatedId = is_here.id;
                     found = true;
                 }
-
-
             }
 
 
@@ -140,47 +143,131 @@ export class auxMeth {
         return ciTemplate;
     }
 
+    // creates Map based on specific key, for quick searching    
+    static async updateItemMaps(){
+      let updateItemMapsDisabled=game.user.getFlag('world','updateItemMapsDisabled') || false;
+      if(!updateItemMapsDisabled){
+        let items;
+        let itemsummary='';
+        game.system.customitemmaps={};
+        // properties
+        game.system.customitemmaps.properties=new Map();
+        items = await game.items.filter(y=>(y.type=="property" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.properties.set(items[i].system.attKey, items[i]);
+        }
+        itemsummary += 'Properties[' + items.length  +']';
+        // panels
+        game.system.customitemmaps.panels=new Map();
+        items = await game.items.filter(y=>(y.type=="panel" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.panels.set(items[i].system.panelKey, items[i]);
+        }
+        itemsummary += ' Panels[' + items.length  +']';
+        // multipanels
+        game.system.customitemmaps.multipanels=new Map();
+        items = await game.items.filter(y=>(y.type=="multipanel" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.multipanels.set(items[i].system.panelKey, items[i]);
+        }
+        itemsummary += ' Multipanels[' + items.length  +']';
+        // sheettabs
+        game.system.customitemmaps.sheettabs=new Map();
+        items = await game.items.filter(y=>(y.type=="sheettab" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.sheettabs.set(items[i].system.tabKey, items[i]);
+        }
+        itemsummary += ' Sheettabs[' + items.length  +']';
+        // groups
+        game.system.customitemmaps.groups=new Map();
+        items = await game.items.filter(y=>(y.type=="group" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.groups.set(items[i].system.groupKey, items[i]);
+        }
+        itemsummary += ' Groups[' + items.length  +']';
+        // citems by ciKey
+        game.system.customitemmaps.citemsbycikey=new Map();
+        items = await game.items.filter(y=>(y.type=="cItem" ));
+        for (let i = 0; i < items.length; i++) {
+          game.system.customitemmaps.citemsbycikey.set(items[i].system.ciKey, items[i]);
+        }
+        itemsummary += ' Citems[' + items.length  +']';
+        console.log('Sandbox | updateItemMaps | Updated | ' + itemsummary );
+      }
+    }
+
+
     static async getTElement(id, type = null, key = null) {
         //console.log(id + " " + type + " " + key);
+        if (id != null && id.match(/_\d+/g) != null) // Skip IDs that are from CREATE mods (ie, oaisjdo123_# <--)
+            return                
         let myElem = game.items.get(id);
 
         let propKey = "";
 
         if (type == "property") {
-            propKey = "attKey";
+            propKey = "attKey";            
         }
-        if (type == "panel" || type == "multipanel") {
-            propKey = "panelKey";
+        if (type == "panel") {
+            propKey = "panelKey";            
+        }
+        if (type == "multipanel") {
+            propKey = "panelKey";            
         }
         if (type == "sheettab") {
-            propKey = "tabKey";
+            propKey = "tabKey";            
         }
         if (type == "group") {
-            propKey = "groupKey";
+            propKey = "groupKey";            
         }
-        if (key != null && myElem != null)
-            if (myElem.data.data[propKey] != key)
+        if (key != null && myElem != null){
+          if (key==='' && myElem != null){
+            key=myElem.system[propKey];
+          } else{
+            if (myElem.system[propKey] != key)
                 myElem = null;
-        if (myElem == null) {
-            myElem = await game.items.filter(y => Boolean(y.data.data[propKey])).find(y => y.data.data[propKey] == key);
+          }
+        }    
+        if (myElem == null && key!=null && key!='') {
+          if (type == "property") {            
+            //myElem = await game.items.find(y =>y.type=='property' &&  y.system.attKey == key); 
+            myElem = game.system.customitemmaps.properties.get(key);
+          }
+          if (type == "panel") {              
+              //myElem = await game.items.find(y =>y.type=='panel' &&  y.system.panelKey == key);
+              myElem = game.system.customitemmaps.panels.get(key);
+          }
+          if (type == "multipanel") {              
+              //myElem = await game.items.find(y =>y.type=='multipanel' &&  y.system.panelKey == key);
+              myElem = game.system.customitemmaps.multipanels.get(key)
+          }
+          if (type == "sheettab") {              
+              //myElem = await game.items.find(y =>y.type=='sheettab' &&  y.system.tabKey == key);
+              myElem = game.system.customitemmaps.sheettabs.get(key);
+          }
+          if (type == "group") {              
+              //myElem = await game.items.find(y =>y.type=='group' &&  y.system.groupKey == key);
+              myElem = game.system.customitemmaps.groups.get(key);
+          }  
         }
 
+ 
         //To correct post 0.9
         if (myElem == null) {
-            let is_here = game.items.filter(y => Boolean(y.data._source.data[propKey])).find(y => y.data._source.data[propKey] == id);
+            let is_here = game.items.filter(y => Boolean(y._source.system[propKey])).find(y => y._source.system[propKey] == id);
             if (is_here) {
                 myElem = is_here;
             }
         }
 
-        if (myElem == null && key != null) {
+        if (myElem == null && key != null && key!='') {
             let locatedPack;
             let locatedId;
             for (let pack of game.packs) {
                 if (pack.documentName != "Item")
                     continue;
                 const packContents = await pack.getDocuments();
-                let is_here = packContents.filter(y => Boolean(y.data.data)).find(y => y.data.data[propKey] == key);
+                let is_here = packContents.filter(y => Boolean(y.system)).find(y => y.system[propKey] == key);
                 if (is_here) {
                     locatedPack = pack;
                     locatedId = is_here.id;
@@ -200,7 +287,9 @@ export class auxMeth {
                 myElem = importedobject;
             }
         }
-        //console.log(myElem);
+        if (myElem==null) {
+          console.error('Sandbox | Unable to find item ('+ type + ') with ID:' + id + ' key(' + propKey +'):' + key );
+        }
         return myElem;
     }
 
@@ -211,10 +300,10 @@ export class auxMeth {
         let mytemplate = gtemplate;
         if (gtemplate != "Default") {
 
-            let _template = await game.actors.find(y => y.data.data.istemplate && y.data.data.gtemplate == gtemplate);
+            let _template = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == gtemplate);
 
             if (_template != null) {
-                html = _template.data.data._html;
+                html = _template.system._html;
             }
 
         }
@@ -256,7 +345,7 @@ export class auxMeth {
     }
 
     static async buildSheetHML() {
-        console.log("building base html");
+        console.log("Sandbox | buildSheetHML | Building base html");
         var parser = new DOMParser();
         var htmlcode = await auxMeth.retrieveBTemplate();
         let html = parser.parseFromString(htmlcode, 'text/html');
@@ -264,9 +353,29 @@ export class auxMeth {
     }
 
     //EXPORT TEST
+    static recurseFolders(folders,parentid){
+    let returnHTML='<ul class="sb-json-export-ul">'
+    let margin=0;
+      for (let i = 0; i < folders.length; i++) {
+        let thisfolder = folders[i];
+        if(thisfolder.folder!=null){
+          thisfolder=thisfolder.folder;
+        }
+        // ul approach
+        if(thisfolder.children.length>0){
+          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+        } else {
+          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+        }
+        returnHTML+= this.recurseFolders(thisfolder.children,thisfolder.id);
+        returnHTML +=`</li>`;
+      }
+      returnHTML+=`</ul>`;
+      return returnHTML;
+    }
 
     static exportBrowser() {
-
+        
         let entities = {};
 
         entities.actors = [];
@@ -274,170 +383,149 @@ export class auxMeth {
         entities.folders = [];
 
         let allfolders = game.folders.contents.filter(y => y.type == "Item" || y.type == "Actor");
-        let itemfolders = game.folders.contents.filter(y => y.type == "Item" && y.data.parent == null);
-        let actorfolders = game.folders.contents.filter(y => y.type == "Actor" && y.data.parent == null);
+        
+        
         //console.log(itemfolders);
-        let finalContent = `
-<div class="exportbrowser">
-`;
-        let endDiv = `
-</div>
-
-`;
-
-        finalContent += `
-<div class="new-row">ITEM FOLDERS</DIV>
-`;
-        for (let i = 0; i < itemfolders.length; i++) {
-            let thisfolder = itemfolders[i];
-
-            finalContent += `
-            <div class="new-row"><input class="exportDialog checkbox check-folder${i}" folderid ="${thisfolder.id}" type="checkbox">	
-`;
-            finalContent += `
-    <label class="exportlabel">${thisfolder.name}</label></div>
-    `;
-            let containedfolders = thisfolder.children;
-            for (let j = 0; j < containedfolders.length; j++) {
-                let subfolder = containedfolders[j];
-
-                finalContent += `
-                <div class="new-row" style="margin-left:30px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subfolder.id}" parentid="${thisfolder.id}" type="checkbox">	
-    `;
-                finalContent += `
-        <label class="exportlabel">${subfolder.name}</label></div>
-        `;
-                let subcontainedfolders = subfolder.children;
-                for (let k = 0; k < subcontainedfolders.length; k++) {
-                    let subsubfolder = subcontainedfolders[k];
-
-                    finalContent += `
-            <div class="new-row" style="margin-left:60px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subsubfolder.id}" parentid="${subfolder.id}" type="checkbox">	
-`;
-                    finalContent += `
-    <label class="exportlabel">${subsubfolder.name}</label></div>
-    `;
-                }
-            }
-        }
-
-        finalContent += `
-<div class="new-row">ACTOR FOLDERS</DIV>
-`;
-        for (let i = 0; i < actorfolders.length; i++) {
-            let thisfolder = actorfolders[i];
-
-            finalContent += `
-            <div class="new-row"><input class="exportDialog checkbox check-folder${i}" folderid ="${thisfolder.id}" type="checkbox">	
-`;
-            finalContent += `
-    <label class="exportlabel">${thisfolder.name}</label></div>
-    `;
-            let containedfolders = thisfolder.children;
-            for (let j = 0; j < containedfolders.length; j++) {
-                let subfolder = containedfolders[j];
-
-                finalContent += `
-                <div class="new-row" style="margin-left:30px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subfolder.id}" parentid="${thisfolder.id}" type="checkbox">	
-    `;
-                finalContent += `
-        <label class="exportlabel">${subfolder.name}</label></div>
-        `;
-                let subcontainedfolders = subfolder.children;
-                for (let k = 0; k < subcontainedfolders.length; k++) {
-                    let subsubfolder = subcontainedfolders[k];
-
-                    finalContent += `
-            <div class="new-row" style="margin-left:60px"><input class="exportDialog checkbox check-folder${i}" folderid ="${subsubfolder.id}" parentid="${subfolder.id}" type="checkbox">	
-`;
-                    finalContent += `
-    <label class="exportlabel">${subsubfolder.name}</label></div>
-    `;
-                }
-            }
-        }
-
-
-        //         for (let i = 0; i < entities.folders.length; i++) {
-        //             finalContent += `
-        //     <div class="new-row">
-        //     `;
-
-        //             finalContent += `
-        //     <input class="exportDialog checkbox check-folder${i}" folderid ="${entities.folders[i].id}" type="checkbox">	
-        // `;
-        //             finalContent += `
-        //     <label class="exportlabel">${entities.folders[i].name}</label>
-        //     `;
-        //             finalContent += endDiv;
-        //         }
-
+        let rootItemFolders=game.folders.contents.filter(y => y.type == "Item" && y.depth == 1);
+        let rootActorFolders=game.folders.contents.filter(y => y.type == "Actor" && y.depth == 1);
+        let finalContent = `<div class="exportbrowser">`;
+        let endDiv = `</div>`;
+          
+        // ul approach
+        finalContent +=`<ul class="sb-json-export-ul">`;
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-folderroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-folderroot" folderid ="folderroot" type="checkbox">FOLDERS</label>`;
+        finalContent +=`<ul class="sb-json-export-ul">`;
+        // items
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-itemroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-itemroot" folderid ="itemroot" parentid="folderroot" type="checkbox">ITEMS</label>`;
+        finalContent += this.recurseFolders(rootItemFolders,"itemroot");
+        finalContent +=`</li>`;
+        // actors
+        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-actorroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-actorroot" folderid ="actorroot" parentid="folderroot" type="checkbox">ACTORS</label>`;
+        finalContent += this.recurseFolders(rootActorFolders,"actorroot");
+        finalContent +=`</li>`;
+        
+        finalContent +=`</ul>`;
+        finalContent +=`</li>`;
+        finalContent +=`</ul>`;
+        
         finalContent += endDiv;
 
         let d = new Dialog({
             title: "Choose folders to export",
-            content: finalContent,
+            content: finalContent,            
             buttons: {
-                one: {
+                ok: {
                     icon: '<i class="fas fa-check"></i>',
                     label: "OK",
+                    
                     callback: async (html) => {
+                        console.log('Sandbox | JSON Export | Running consistency check before export');
+                        await auxMeth.checkConsistency();
+                        ui.notifications.info("Sandbox JSON Export started...")
                         let selectedfolder = html[0].getElementsByClassName("exportDialog");
-
                         for (let k = 0; k < selectedfolder.length; k++) {
                             let folderKey = selectedfolder[k].getAttribute("folderid");
-
                             if (selectedfolder[k].checked) {
-
-                                let theFolder = allfolders.find(y => y.id == folderKey);
-                                entities.folders.push(theFolder);
-                                for (let n = 0; n < theFolder.contents.length; n++) {
-                                    if (theFolder.contents[n].documentName == "Item") {
-                                        entities.items.push(theFolder.contents[n]);
-                                    }
-                                    if (theFolder.contents[n].documentName == "Actor") {
-                                        entities.actors.push(theFolder.contents[n]);
-                                    }
+                                let theFolder;
+                                // check for root folders
+                                if (folderKey=='itemroot'){
+                                  let rootitems=game.items.filter(y => y.folder === null)
+                                  
+                                  //console.log(rootitems)
+                                  for (let n = 0; n < rootitems.length; n++) {
+                                    entities.items.push(rootitems[n]);
+                                  }
+                                  
+                                } else if(folderKey=='actorroot'){
+                                  let rootactors=game.actors.filter(y => y.folder === null)
+                                  //console.log(rootactors)
+                                  for (let n = 0; n < rootactors.length; n++) {
+                                    entities.actors.push(rootactors[n]);
+                                  }
+                                  
+                                } else {
+                                  theFolder = allfolders.find(y => y.id == folderKey);
+                                }
+                                if(theFolder!=null){
+                                  entities.folders.push(theFolder);
+                                  
+                                  for (let n = 0; n < theFolder.contents.length; n++) {
+                                      if (theFolder.contents[n].documentName == "Item") {
+                                          entities.items.push(theFolder.contents[n]);
+                                      }
+                                      if (theFolder.contents[n].documentName == "Actor") {
+                                          entities.actors.push(theFolder.contents[n]);
+                                      }
+                                  }
                                 }
                             }
-
                         }
-
-                        auxMeth.exportTree(true, entities);
-
+                        //console.log(entities);
+                        let saveresult = await auxMeth.exportTree(true, entities);
+                        
+                        ui.notifications.info(`Exported completed`,{"permanent":true}); 
                     }
                 },
-                two: {
+                cancel: {
                     icon: '<i class="fas fa-times"></i>',
-                    label: "Cancel",
+                    label: "Cancel",                    
                     callback: () => { console.log("canceling selection"); }
                 }
             },
-            default: "one",
+            default: "cancel",
             exportDialog: true,
             close: () => console.log("cItem selection dialog was shown to player.")
         });
+        
+        d.options.height=600;
+        d.position.height=600;
+        d.options.resizable=true;
         d.render(true);
-
-
-
     }
+    
+    static nowToTimestamp(){
+      let today = new Date();
+      let dd = String(today.getDate()).padStart(2, '0');
+      let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+      let yyyy = today.getFullYear();
+      let HH = String(today.getHours()).padStart(2, '0');
+      let nn = String(today.getMinutes()).padStart(2, '0');
+      let ss = String(today.getSeconds()).padStart(2, '0');
+
+      return yyyy + mm + dd + HH + nn + ss  ;
+    }
+    
+    static convertToValidFilename(string) {
+      return (string.replace(/[\/|\\:*?"<>]/g, "_"));
+    }
+    
 
     static exportTree(writeFile = true, groups = null) {
+        ui.notifications.info("Exporting data...");
         let allData = null;
         const metadata = {
             world: game.world.id,
             system: game.system.id,
-            coreVersion: game.data.version,
-            systemVersion: game.system.data.version
+            coreVersion: game.version,
+            systemVersion: game.system.version
         };
 
         allData = JSON.stringify(groups, null, 2);
 
-        console.log(`Exported ${groups.actors.length} Actors and ${groups.items.length} Items of the world`);
-
+        console.log(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items of the world`);
+        ui.notifications.info(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items`);  
         //Trigger file save procedure
-        const filename = "export.json";
+        let filename='';
+        if (game.actors.size + game.items.size==groups.actors.length+groups.items.length){
+          filename = game.world.id + "-export-all-"+ auxMeth.nowToTimestamp()+".json";
+        } else {
+          if(groups.folders.length==1){
+            filename = game.world.id + "-export-" + groups.folders[0].name + "-"+ auxMeth.nowToTimestamp()+".json";
+          } else{
+            filename = game.world.id + "-export-subset-"+ auxMeth.nowToTimestamp()+".json";
+          }
+        }
+        filename=auxMeth.convertToValidFilename(filename);
 
         if (writeFile) auxMeth.writeJSONToFile(filename, allData);
         return {
@@ -447,20 +535,61 @@ export class auxMeth {
     }
 
     static async writeJSONToFile(filename, data) {
-        saveDataToFile(data, "text/json", filename);
+        ui.notifications.info(`Saving exported data to file...`); 
+        saveDataToFile(data, "application/json", filename);
         console.log(`Saved to file ${filename}`);
+        
     }
 
     static async getImportFile() {
-        new FilePicker({
-            type: "json",
-            callback: filePath => auxMeth.importTree(filePath),
-        }).browse();
+      // ask user to proceed
+    let prompttitle =game.i18n.format("SANDBOX.confirmStartImportPromptTitle",{});
+    let promptbody='<h4>' + game.i18n.localize("AreYouSure") +'</h4>';        
+    promptbody   +='<p>' + game.i18n.format("SANDBOX.confirmStartImportPromptBody",{}) +'</p>';        
+    let answer=await sb_custom_dialog_confirm(prompttitle,promptbody,game.i18n.localize("Yes"),game.i18n.localize("No"));
+    if(!answer){
+      return 0;
+    }
+      let currentinput = `worlds/${game.world.id}`;
+      new FilePicker({
+        current: currentinput,
+        type: "json",
+        callback: filePath => auxMeth.importTree(filePath),
+      }).browse();
+    
     }
 
+    static async getSandboxFlag(obj,flag,value=null){
+      if(!obj.hasOwnProperty('flags')){
+        // no flags at all, add it
+        console.log('getSandboxFlag | Adding flags');
+        obj.flags={};
+      }          
+      if(!obj.flags.hasOwnProperty('sandbox')){        
+        // no sandbox flags, add it
+        console.log('getSandboxFlag | Adding sandbox flags');
+        obj.flags.sandbox={};        
+      }
+      if(!obj.flags.sandbox.hasOwnProperty(flag)){        
+        // no such sandbox flag
+        if(value!=null){
+          // add it
+          console.log('getSandboxFlag | Adding sandbox flag ['+ flag +']');
+          obj.flags.sandbox[flag]=value;  
+          return value;
+        } else {
+          return null;
+        }
+      } else {
+        console.log('getSandboxFlag | Found sandbox flag ['+ flag +']',obj.flags.sandbox[flag]);
+        return obj.flags.sandbox[flag];
+      }                      
+    }
+    /* -------------------------------------------- */
     static async importTree(exportfilePath) {
         //let exportfilePath = "worlds/" + gameName + "/export.json";
-
+        await console.log('Sandbox | importTree | ' + `Data import from file ${exportfilePath} started`)
+        await ui.notifications.info(`Data import from file ${exportfilePath} started`,{console:false}); 
         const response = await fetch(exportfilePath);
         const importedPack = await response.json();
         const actors = importedPack.actors;
@@ -468,62 +597,117 @@ export class auxMeth {
         const folders = importedPack.folders;
 
         let idCollection = {};
-
+        let originalId=null;
+        await console.log('Sandbox | importTree | Importing actors phase 1')
         for (let i = 0; i < actors.length; i++) {
             let anactor = actors[i];
-            let istemplate = duplicate(anactor.data.istemplate);
+            // compability check
+            if(!anactor.hasOwnProperty('system')){
+              // to old data(pre v10) exit and set error                                                         
+              sb_custom_dialog_prompt(game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Title"),game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Body"),'Ok','Error')
+              console.error('Sandbox | importTree | Data in file ' + exportfilePath + ' is missing [system] property' );
+              return false;
+            }
+            let istemplate = duplicate(anactor.system.istemplate);
+            // -------------------------------------------
+            // detailed import, will be expanded in future                       
+            originalId=null;
+            // check for sandbox flags
+            originalId = await auxMeth.getSandboxFlag(anactor,'originalId',anactor._id)
+            // prepare import flag
+            anactor.flags.sandbox.import={'importedTime':0};  // add/reset marker for import before the create
+            anactor.flags.sandbox.import.importId=originalId;
+            // check if import has _stats(v10 and forward)
+            if(anactor.hasOwnProperty('_stats')){
+              anactor.flags.sandbox.import.systemVersion=anactor._stats.systemVersion;
+              anactor.flags.sandbox.import.coreVersion=anactor._stats.coreVersion;
+              anactor.flags.sandbox.import.createdTime=anactor._stats.createdTime;
+              anactor.flags.sandbox.import.modifiedTime=anactor._stats.modifiedTime;
+              anactor.flags.sandbox.import.lastModifiedBy=anactor._stats.lastModifiedBy;
+            }
+                                    
+            // end detailed import
+            // -------------------------------------------
+            
             let result = await Actor.create(anactor);
             if (anactor.folder)
                 result.setFlag('sandbox', 'folder', anactor.folder);
             result.setFlag('sandbox', 'istemplate', istemplate);
-            idCollection[anactor._id] = result.data._id;
+            
+            
+            idCollection[anactor._id] = result._id;
         }
-
+        await console.log('Sandbox | importTree | Importing items phase 1')
         for (let i = 0; i < items.length; i++) {
             let anitem = items[i];
+            // -------------------------------------------
+            // detailed import, will be expanded in future                       
+            originalId=null;
+            // check for sandbox flags
+            originalId = await auxMeth.getSandboxFlag(anitem,'originalId',anitem._id)
+            // prepare import flag
+            anitem.flags.sandbox.import={'importedTime':0};  // add/reset marker for import before the create
+            anitem.flags.sandbox.import.importId=originalId;
+            // check if import has _stats(v10 and forward)
+            if(anitem.hasOwnProperty('_stats')){
+              anitem.flags.sandbox.import.systemVersion=anitem._stats.systemVersion;
+              anitem.flags.sandbox.import.coreVersion=anitem._stats.coreVersion;
+              anitem.flags.sandbox.import.createdTime=anitem._stats.createdTime;
+              anitem.flags.sandbox.import.modifiedTime=anitem._stats.modifiedTime;
+              anitem.flags.sandbox.import.lastModifiedBy=anitem._stats.lastModifiedBy;
+            }
+                                    
+            // end detailed import
+            // -------------------------------------------
+            
+            
             let result = await Item.create(anitem);
             if (anitem.folder)
                 result.setFlag('sandbox', 'folder', anitem.folder);
-            idCollection[anitem._id] = result.data._id;
+            idCollection[anitem._id] = result._id;
         }
-
+         
+        await ui.notifications.info(`Importing folders from file...`,{console:false}); 
+        await console.log('Sandbox | importTree | Importing folders phase 1')
         for (let i = 0; i < folders.length; i++) {
             let afolder = folders[i];
             let result = await Folder.create({ name: afolder.name, type: afolder.type });
-            if (afolder.parent)
-                result.realparent = afolder.parent;
-            idCollection[afolder._id] = result.data._id;
+            if (afolder.folder)
+                result.realparent = afolder.folder;
+            idCollection[afolder._id] = result._id;
         }
 
         for (let folder of game.folders.contents) {
             if (hasProperty(idCollection, folder.realparent))
-                folder.update({ "parent": idCollection[folder.realparent] });
+                folder.update({ "folder": idCollection[folder.realparent] });
         }
-
-        console.log("folders imported");
-
+        
+        await console.log('Sandbox | importTree | Folders imported')
+        await ui.notifications.info(`Folders imported from file`,{console:false}); 
+        await console.log('Sandbox | importTree | Importing items phase 2')
+        await ui.notifications.info(`Importing items from file...`,{console:false});
         for (let item of game.items.contents) {
             let finalitem = await duplicate(item);
             //console.log("importing item: " + finalitem.name);
 
-            if (item.data.type == "property") {
-                if (hasProperty(idCollection, finalitem.data.dialogID) && finalitem.data.dialogID != "")
-                    finalitem.data.dialogID = idCollection[finalitem.data.dialogID];
+            if (item.type == "property") {
+                if (hasProperty(idCollection, finalitem.dialogID) && finalitem.system.dialogID != "")
+                    finalitem.system.dialogID = idCollection[finalitem.system.dialogID];
 
-                if (hasProperty(idCollection, finalitem.data.group.id) && finalitem.data.group.id != "")
-                    finalitem.data.group.id = idCollection[finalitem.data.group.id];
+                if (hasProperty(idCollection, finalitem.system.group.id) && finalitem.system.group.id != "")
+                    finalitem.system.group.id = idCollection[finalitem.system.group.id];
             }
 
-            if (item.data.type == "panel" || item.data.type == "group") {
-                if (finalitem.data.properties.length > 0) {
-                    for (let property of finalitem.data.properties) {
+            if (item.type == "panel" || item.type == "group") {
+                if (finalitem.system.properties.length > 0) {
+                    for (let property of finalitem.system.properties) {
                         if (hasProperty(idCollection, property.id)) {
                             property.id = idCollection[property.id];
                         }
                         else {
                             let findprop = game.items.get(property.id);
                             if (findprop == null) {
-                                findprop = game.items.find(y => y.data.type == "property" && y.data.data.attKey == property.ikey);
+                                findprop = game.items.find(y => y.type == "property" && y.system.attKey == property.ikey);
                             }
                             if (findprop != null)
                                 property.id = findprop.id;
@@ -534,25 +718,25 @@ export class auxMeth {
                 }
             }
 
-            if (item.data.type == "multipanel" || item.data.type == "sheettab") {
-                if (finalitem.data.panels.length > 0) {
-                    for (let panel of finalitem.data.panels) {
+            if (item.type == "multipanel" || item.type == "sheettab") {
+                if (finalitem.system.panels.length > 0) {
+                    for (let panel of finalitem.system.panels) {
                         if (hasProperty(idCollection, panel.id))
                             panel.id = idCollection[panel.id];
                     }
                 }
             }
 
-            if (item.data.type == "cItem") {
-                if (finalitem.data.groups.length > 0) {
-                    for (let group of finalitem.data.groups) {
+            if (item.type == "cItem") {
+                if (finalitem.system.groups.length > 0) {
+                    for (let group of finalitem.system.groups) {
                         if (hasProperty(idCollection, group.id)) {
                             group.id = idCollection[group.id];
                         }
                         else {
                             let findgroup = game.items.get(group.id);
                             if (findgroup == null) {
-                                findgroup = game.items.find(y => y.data.type == "group" && y.data.data.groupKey == group.ikey);
+                                findgroup = game.items.find(y => y.type == "group" && y.system.groupKey == group.ikey);
                             }
                             if (findgroup != null)
                                 group.id = findgroup.id;
@@ -562,8 +746,8 @@ export class auxMeth {
                     }
                 }
 
-                if (item.data.data.mods.length > 0) {
-                    for (let mod of finalitem.data.mods) {
+                if (item.system.mods.length > 0) {
+                    for (let mod of finalitem.system.mods) {
                         if (mod.items.length > 0) {
                             for (let moditem of mod.items) {
                                 if (hasProperty(idCollection, moditem.id)) {
@@ -573,11 +757,11 @@ export class auxMeth {
                                 else {
                                     let findcitem = game.items.get(moditem.id);
                                     if (findcitem == null) {
-                                        findcitem = game.items.find(y => y.data.type == "cItem" && y.data.data.ciKey == moditem.id);
+                                        findcitem = game.items.find(y => y.type == "cItem" && y.system.ciKey == moditem.id);
                                     }
 
                                     if (findcitem == null) {
-                                        findcitem = game.items.find(y => y.data.type == "cItem" && y.name == moditem.name);
+                                        findcitem = game.items.find(y => y.type == "cItem" && y.name == moditem.name);
                                     }
 
                                     if (findcitem != null)
@@ -590,24 +774,26 @@ export class auxMeth {
                     }
                 }
 
-                if (item.data.data.dialogID != "")
-                    finalitem.data.dialogID = idCollection[finalitem.data.dialogID];
+                if (item.system.dialogID != "")
+                    finalitem.system.dialogID = idCollection[finalitem.system.dialogID];
             }
 
             let folderlink = idCollection[item.getFlag("sandbox", "folder")];
             if (folderlink) {
-                await item.update({ "data": finalitem.data, "folder": folderlink });
+                await item.update({ "system": finalitem.system, "folder": folderlink });
             }
             else {
-                await item.update({ "data": finalitem.data });
+                await item.update({ "system": finalitem.system });
             }
 
 
 
         }
-
-        console.log("items imported");
-
+        await ui.notifications.info(`Items imported from file`,{console:false});
+        
+        await console.log('Sandbox | importTree | Items imported')
+        await ui.notifications.info(`Importing actors from file...`,{console:false});
+        await console.log('Sandbox | importTree | Importing actors phase 2')
         for (let actor of game.actors.contents) {
             let finalactor = await duplicate(actor);
             //console.log("importing actor: " + finalactor.name);
@@ -616,8 +802,8 @@ export class auxMeth {
                     if (hasProperty(idCollection, finalactor.token.actorId))
                         finalactor.token.actorId = idCollection[finalactor.token.actorId];
 
-            if (actor.data.data.citems.length > 0)
-                for (let citem of finalactor.data.citems) {
+            if (actor.system.citems.length > 0)
+                for (let citem of finalactor.system.citems) {
                     if (hasProperty(idCollection, citem.id)) {
                         citem.id = idCollection[citem.id];
                         citem.addedBy = idCollection[citem.addedBy];
@@ -637,43 +823,47 @@ export class auxMeth {
                     }
                 }
 
-            if (actor.data.data.tabs.length > 0)
-                for (let tab of finalactor.data.tabs) {
+            if (actor.system.tabs.length > 0)
+                for (let tab of finalactor.system.tabs) {
                     if (hasProperty(idCollection, tab.id)) {
                         tab.id = idCollection[tab.id];
 
                     }
                 }
 
-            for (var key in finalactor.data.attributes) {
-                if (finalactor.data.attributes[key].id != null) {
-                    if (hasProperty(idCollection, finalactor.data.attributes[key].id))
-                        finalactor.data.attributes[key].id = idCollection[finalactor.data.attributes[key].id];
+            for (var key in finalactor.system.attributes) {
+                if (finalactor.system.attributes[key].id != null) {
+                    if (hasProperty(idCollection, finalactor.system.attributes[key].id))
+                        finalactor.system.attributes[key].id = idCollection[finalactor.system.attributes[key].id];
                 }
             }
 
             let folderlink = await idCollection[actor.getFlag("sandbox", "folder")];
-            finalactor.data.istemplate = await actor.getFlag("sandbox", "istemplate");
+            finalactor.system.istemplate = await actor.getFlag("sandbox", "istemplate");
 
             if (folderlink) {
-                await actor.update({ "data": finalactor.data, "folder": folderlink });
+                await actor.update({ "system": finalactor.system, "folder": folderlink });
             }
             else {
-                await actor.update({ "data": finalactor.data });
+                await actor.update({ "system": finalactor.system });
             }
 
 
         }
-
-        console.log("Actors & Import Finished");
+        await ui.notifications.info(`Actors imported from file`,{console:false});
+        await ui.notifications.info(`Import from file completed`,{console:false});
+        
+        await console.log('Sandbox | importTree | Import completed')
+        await sb_custom_dialog_prompt(game.i18n.localize("Information"),game.i18n.localize("SANDBOX.ImportCompletedBody"),game.i18n.localize("Ok"),'Information');
     }
+
 
     /* -------------------------------------------- */
 
     static async registerIfHelper() {
         Handlebars.registerHelper('ifCond', function (v1, v2, options) {
 
-            if (v1 == null || v2 == null)
+            if (v1 == null || v2 == null)              
                 return options.inverse(this);
 
             let regE = /^\d+$/g;
@@ -849,7 +1039,8 @@ export class auxMeth {
         return expr;
     }
 
-    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0) {
+    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0,maxuses=1) {
+        const initialexp=expr;
         var toreturn = expr;
         //console.log("autoparsing");
         //console.log(expr);
@@ -910,7 +1101,7 @@ export class auxMeth {
 
                 }
                 //console.log(regobject.expr);
-
+                //console.log('Sandbox | autoParser | recursive | initialexp:[' + initialexp +'] regobject.expr:[' + regobject.expr + ']');
                 regobject.result = await auxMeth.autoParser(regobject.expr, attributes, itemattributes, false, true);
                 //console.log(regobject.result);
 
@@ -957,9 +1148,13 @@ export class auxMeth {
             expr = expr.replace(/\#{num}/g, number);
         }
 
-        //Parses number of citems
+        //Parses uses of citems
         if (itemattributes != null && expr.includes("#{uses}")) {
             expr = expr.replace(/\#{uses}/g, uses);
+        }
+        //Parses maxuses of citems
+        if (itemattributes != null && expr.includes("#{maxuses}")) {
+            expr = expr.replace(/\#{maxuses}/g, maxuses);
         }
 
         if (itemattributes != null && expr.includes("#{name}")) {
@@ -2040,7 +2235,26 @@ export class auxMeth {
             if (exprmode)
                 toreturn = expr;
         }
-        //console.log(toreturn);
+        //console.log('Sandbox | autoParser | initialexp:[' + initialexp +'] toreturn:[' + toreturn + ']');
+        // look for number and decimals
+        
+        if(typeof toreturn=='number'){
+          const initialvalue=toreturn;
+          // check for to many decimals
+          const numberAsString = toreturn.toString();
+          let numberofdecimals=0;
+          // String Contains Decimal
+          if (numberAsString.includes('.')) {
+            numberofdecimals= numberAsString.split('.')[1].length;                                   
+          }
+
+          if (numberofdecimals>2){
+            //parseFloat(n.toFixed(4));
+            toreturn=parseFloat(toreturn.toFixed(3));
+            //console.log('Sandbox | autoParser | fixdecimals ' + initialvalue + ' -> '+ toreturn + ' | ' + typeof toreturn);
+          }
+          
+        }
         return toreturn;
     }
 
@@ -2165,21 +2379,23 @@ export class auxMeth {
             let found = false;
 
             for (let i = game.messages.size - 1; i >= 0; i--) {
+                
                 let amessage = game.messages.contents[i];
                 if (!found) {
-                    if (amessage.data.content.includes("roll-template")) {
+                    if (amessage.content.includes("roll-template") && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
                         found = true;
                         lastmessage = amessage;
+                        break;
                     }
 
                 }
-
+                
             }
 
 
             if (lastmessage == null)
                 return;
-            let msgContent = lastmessage.data.content;
+            let msgContent = lastmessage.content;
 
             tester.innerHTML = msgContent;
         }
@@ -2204,6 +2420,281 @@ export class auxMeth {
 
         hotbar[0].appendChild(rollMenu);
     }
+    
+  static sb_two_col_card(left,right,type='table'){
+      let htmltable=`
+        <div class="sb-two-col-card-wrapper" >
+      <div class="sb-two-col-card-image-in-` +type+`">`+left+`</div>  
+      <div class="sb-two-col-card-name">`+right+`</div>
+    </div>
+        `;
+      return htmltable;
+    }
+    
+   
+  static showCIitemInfo(cItem=null){      
+      if (cItem!=null){
+        let item_description=cItem.system.description;
+        let item_name=cItem.name;
+        let item_img=cItem.img;
+        let options = {
+            show:{
+              name:true,
+              image:true,
+              description:true
+            },
+            id:cItem.id,    
+            type:'Item',
+            class:'sbe-info-form-show-all',
+            reshowable:true,
+            name: item_name,
+            image: item_img,        
+            description:item_description
+          };                                                                   
+        let f=new SandboxInfoForm(options).render(true,{focus:true});
+      }
+      
+    };
+  
+  
+  static async setcItemsKey() {
+    console.log("Sandbox | setcItemsKey | Started");
+        let gamecItems = game.items.filter(y => y.type == "cItem");
+        for (let i = 0; i < gamecItems.length; i++) {
+            const mycitem = gamecItems[i];
+            if (mycitem.system.ciKey == ""){
+              console.log("Sandbox | setcItemsKey | Updating ciKey for cItem " + mycitem.name );
+              await mycitem.update({ "system.ciKey": mycitem.id });
+            }
+        }
+      console.log("Sandbox | setcItemsKey | Completed");  
+  } 
+  
+  static async setcItemsNameAttribute() {
+    console.log("Sandbox | setcItemsNameAttribute | Started");
+        let gamecItems = game.items.filter(y => y.type == "cItem");
+        for (let i = 0; i < gamecItems.length; i++) {
+            const mycitem = gamecItems[i];
+            if (mycitem.name != mycitem.system.attributes.name){
+              console.log("Sandbox | setcItemsKey | Updating attribute name for cItem " + mycitem.name );
+              await mycitem.update({ "system.attributes.name": mycitem.name });
+            }
+        }
+      console.log("Sandbox | setcItemsNameAttribute | Completed");  
+    }
+  
+  
+    static async setOriginalid() {
+      // for any actor or item that has not the flag originalId set
+      console.log("Sandbox | setOriginalid | Started");      
+      let gameActors = game.actors.filter(y =>!y.flags.hasOwnProperty('sandbox') ||  y.flags.sandbox.originalId ==null);
+      for (let i = 0; i < gameActors.length; i++) {
+        const myactor = gameActors[i];
+        console.log("Sandbox | setOriginalid | Updating originalId for actor " + myactor.name );
+        await myactor.setFlag('sandbox','originalId',myactor.id)        
+      }
+      let gameItems = game.items.filter(y =>!y.flags.hasOwnProperty('sandbox') || y.flags.sandbox.originalId ==null);
+      for (let i = 0; i < gameItems.length; i++) {
+        const myitem = gameItems[i];
+        console.log("Sandbox | setOriginalid | Updating originalId for item " + myitem.name );
+        await myitem.setFlag('sandbox','originalId',myitem.id)        
+      }
+      
+      console.log("Sandbox | setOriginalid | Completed");  
+    } 
+  
+  
+   static async checkConsistency() {
+        console.log("Sandbox | checkConsistency | Started");
+        await this.setOriginalid();
+        await this.setcItemsKey();
+        await this.setcItemsNameAttribute();
+        console.log("Sandbox | checkConsistency | Checking cItems with ITEMS mod");
+        let gamecItems = game.items.filter(y => y.type == "cItem");
+        let toupdate = false;
+        for (let i = 0; i < gamecItems.length; i++) {
+            const mycitem = gamecItems[i];
+            const mycitemmods = mycitem.system.mods;
+            for (let j = 0; j < mycitemmods.length; j++) {
+                let mymod = mycitemmods[j];
+                //setProperty(mymod, "citem", mycitem.data.id);
+                // if (!hasProperty(mymod, "index")) {
+                //     setProperty(mymod, "index", j);
+                //     toupdate = true;
+                // }
 
+                if (mymod.items.length > 0) {
+                    for (let h = 0; h < mymod.items.length; h++) {
+                        if (mymod.items[h].ciKey == null) {
+                            let toaddotem = await auxMeth.getcItem(mymod.items[h].id, mymod.items[h].ciKey);
+                            if (toaddotem) {
+                                toupdate = true;
+                                console.log("Sandbox | checkConsistency | Adding ITEM mod ciKey for "+ mycitem.name);
+                                mymod.items[h].ciKey = toaddotem.system.ciKey;
+                            }
+
+                        }
+
+                    }
+                }
+
+            }
+            if (toupdate) {
+                //console.log("updating consistency");
+                await mycitem.update({ "system": mycitem.system });
+            }
+          
+        }
+        
+        // let gameactors = game.actors;
+        // for (let i = 0; i < gameactors.entities.length; i++) {
+
+        //     const myactor = gameactors.entities[i];
+        //     const myactorcitems = myactor.data.data.citems;
+        //     //console.log("checking actor " + myactor.name);
+        //     //console.log(myactorcitems);
+        //     if (!myactor.data.data.istemplate) {
+        //         if (myactorcitems != null) {
+        //             for (let j = myactorcitems.length - 1; j >= 0; j--) {
+        //                 let mycitem = myactorcitems[j];
+        //                 //console.log(mycitem);
+        //                 if (mycitem != null) {
+        //                     //let templatecItem = game.items.get(mycitem.id);
+        //                     let templatecItem = await auxMeth.getcItem(mycitem.id, mycitem.iKey);
+        //                     //console.log(templatecItem);
+
+        //                     if (templatecItem != null) {
+        //                         let isconsistent = true;
+        //                         let mymods = mycitem.mods;
+        //                         if (mymods != null) {
+        //                             for (let r = 0; r < mymods.length; r++) {
+        //                                 if (mycitem.id != mymods[r].citem)
+        //                                     mymods[r].citem = mycitem.id;
+        //                                 if (!hasProperty(mymods[r], "index"))
+        //                                     setProperty(mymods[r], "index", 0);
+
+        //                                 if (templatecItem.data.data.mods[mymods[r].index] == null) {
+        //                                     //console.log(templatecItem.name);
+        //                                     //isconsistent = false;
+        //                                 }
+
+        //                                 else {
+        //                                     if (mymods[r].expr != templatecItem.data.data.mods[mymods[r].index].value)
+        //                                         isconsistent = false;
+        //                                 }
+
+
+        //                             }
+        //                         }
+
+        //                         //MOD change consistency checker
+        //                         if (!isconsistent) {
+        //                             console.log(templatecItem.name + " is fucked in " + myactor.name);
+        //                             let newData = await myactor.deletecItem(templatecItem.id, true);
+        //                             await this.actor.update({ "data": newData.data });
+        //                             let subitems = await myactor.addcItem(templatecItem);
+        //                             if (subitems)
+        //                                 this.updateSubItems(false, subitems);
+        //                             //await myactor.update(myactor.data);
+        //                         }
+
+        //                     }
+
+        //                     else {
+        //                         delete myactorcitems[j];
+        //                     }
+
+        //                 }
+
+        //                 else {
+        //                     //myactorcitems.split(myactorcitems[j],1);
+        //                     delete myactorcitems[j];
+        //                 }
+
+
+        //             }
+        //         }
+
+        //         try {
+        //             await myactor.update({ "data": myactor.data.data }, { stopit: true });
+        //         }
+        //         catch (err) {
+        //             ui.notifications.warn("Character " + myactor.name + " has consistency problems");
+        //         }
+        //     }
+
+
+        // }
+      console.log("Sandbox | checkConsistency | Completed");
+    }  
+    
+  static invertColor(hex, bw) {
+    if (hex.indexOf('#') === 0) {
+        hex = hex.slice(1);
+    }
+    // convert 3-digit hex to 6-digits.
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+    if (hex.length !== 6) {
+        throw new Error('Invalid HEX color.');
+    }
+    var r = parseInt(hex.slice(0, 2), 16),
+        g = parseInt(hex.slice(2, 4), 16),
+        b = parseInt(hex.slice(4, 6), 16);
+    if (bw) {
+        // https://stackoverflow.com/a/3943023/112731
+        return (r * 0.299 + g * 0.587 + b * 0.114) > 186
+            ? '#000000'
+            : '#FFFFFF';
+    }
+    // invert color components
+    r = (255 - r).toString(16);
+    g = (255 - g).toString(16);
+    b = (255 - b).toString(16);
+    // pad each with zeros and return
+    return "#" + this.padZero(r) + this.padZero(g) + this.padZero(b);
+  }
+  static padZero(str, len) {
+    len = len || 2;
+    var zeros = new Array(len).join('0');
+    return (zeros + str).slice(-len);
+  }
+  
+  
+
+  
+  
+  static async clientRefresh(options){
+    if(options.askForReload){
+        let answer = await sb_custom_dialog_confirm(game.i18n.localize("SETTINGS.ReloadPromptTitle"),game.i18n.localize("SETTINGS.ReloadPromptBody"),game.i18n.localize("Yes"),game.i18n.localize("No"))
+        if(answer){
+          // reload for settings to take effect
+          location.reload();
+        }
+      }
+    if(options.requiresHardRender || options.requiresRender){
+      // check all open windows
+      let win;
+      let settingWin=null;
+      for (let app in ui.windows){
+        // if actor or item sheet
+        if(ui.windows[app].options.baseApplication=='ActorSheet' || ui.windows[app].options.baseApplication=='ItemSheet'){
+          win=ui.windows[app];
+          if(options.requiresHardRender){
+            await win.close();        
+            await win._render(true);          
+          } else if(options.requiresRender){
+            win.render(true);
+          }                        
+        } else if(ui.windows[app].options.id=='system-settings-form'){
+          settingWin=ui.windows[app];
+        }
+      }
+      if(settingWin!=null){      
+        settingWin.bringToTop();      
+      }
+    }
+  }
 }
 
