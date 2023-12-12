@@ -402,7 +402,8 @@ THE FOLLOWING EXPRESSIONS CAN NOT BE USED INSIDE cITEM MOD VALUE fields:
 
 ![Naming sub rolls](docs/images/tuto44.jpg)
 
-- `rollp(name;dice_expression;optional_roll_IDs)`:`rollp()` functions in a very similar way to `roll()`. It was written for cases such as having simpletext properties with a value of "1d6" (a dice expression) not being able to be put into `roll(name;dice_number;sides;explodes?)` because the parameters for number and faces had to be split, and `roll()` doesn't support dice modifiers like "kh" or "cs".
+- ###### `rollp(name;dice_expression;optional_roll_IDs)`
+`rollp()` functions in a very similar way to `roll()`. It was written for cases such as having simpletext properties with a value of "1d6" (a dice expression) not being able to be put into `roll(name;dice_number;sides;explodes?)` because the parameters for number and faces had to be split, and `roll()` doesn't support dice modifiers like "kh" or "cs".
 
   The documentation for it as follows: `rollp(name;dice_expression)` or `rollp(name;dice_expression;optional_roll_IDs)` and is referenced via `?[name]` just like roll() is. BUT has a new way via `?[name.total]` which gives a final singular value. The optional_roll_IDs are separated by commas, and allows any citems with ROLL mods to affect the roll/value contained in that specific rollp() call.
 
