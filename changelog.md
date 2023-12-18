@@ -1,4 +1,24 @@
 # Sandbox Change Log
+## Version 0.14.2(2023-12-xx)
+- Added Actor Properties Manager(CTRL + Click the Info on a actor sheet title bar)
+  - Enables to remove unused properties from an actor. Useful for cleaning up actor from abandoned properties
+- Added new item type LOOKUP
+  - added roll/auto expressions for lookups
+    - lookupv(lookupValue;lookupKey;returnColumn;exactMatch=false;optionalDefault='') 
+    - lookupx(lookupValue;lookupKey;lookupColumn;returnColumn;optionalDefault='')
+    - lookupColumnCount(lookupKey)
+    - lookupRowCount(lookupKey)
+    - lookupList(lookupKey,returnColumn,strSeparator=',')
+  - feature: Add options from LOOKUP to LIST property Options
+- Improved handling of ;:, in &&
+- Performance optimisation for actor sheet with many citems in tables
+- FIX: Dropping cItems on Token Actor sheets
+- FIX: Using a list property in auto for simplenumeric 
+- FIX: im in rollp(Aloondaar)
+- FIX: coloring of criticals(all dice rolled maximum) and fumbles(all dice rolled 1) in chatmessage. 
+  For defined rolls(using roll() and rollp(), only the first defined roll in the roll expression is checked for critical/fumble)
+  For rolls in registration helpers(like `$<1;1d6> $1 `), no coloring(or DiceSoNice animation) will be done.
+- FIX: Actor sheet resize improvements
 ## Version 0.14.1(2023-11-26)
 - Added Table Filters
 - FIX: Using `~self~` in a conditional

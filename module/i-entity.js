@@ -67,6 +67,9 @@ export class gItem extends Item {
       if (this.type == "multipanel") {
         image = "systems/sandbox/styles/icons/itemtypes/sb_item_multipanel.svg";
       }
+      if (this.type == "lookup") {
+        image = "systems/sandbox/styles/icons/itemtypes/sb_item_lookup.svg";
+      }
       if (this.type == "property") {
         //image = "systems/sandbox/styles/icons/itemtypes/sb_item_property.svg";
         // since simpletext is deafult use that icon

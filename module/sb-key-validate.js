@@ -61,7 +61,7 @@ export function SandboxKeyValidate(validatingitemtype,validatingitemid,sKey,enfo
     }
     
     // now check against the rest of the items in the database
-    items = game.items.filter(y=>(y.type=="property" && y.system.attKey==sKey)||(y.type=="panel" && y.system.panelKey==sKey)||(y.type=="multipanel" && y.system.panelKey==sKey) || (y.type=="sheettab" && y.system.tabKey==sKey)||(y.type=="group" && y.system.groupKey==sKey)  );          
+    items = game.items.filter(y=>(y.type=="property" && y.system.attKey==sKey)||(y.type=="panel" && y.system.panelKey==sKey)||(y.type=="multipanel" && y.system.panelKey==sKey) || (y.type=="sheettab" && y.system.tabKey==sKey)||(y.type=="group" && y.system.groupKey==sKey) ||(y.type=="lookup" && y.system.lookupKey==sKey)  );          
     if (items.length>0){
       // found items, check each one                 
       items.forEach(function(item)  {   

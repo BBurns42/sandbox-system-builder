@@ -2,7 +2,9 @@ import { ITEMATTRIBUTE } from "./sb-itemsheet-constants.js"
 import { DropDownMenu } from "./dropdownmenu.js";
 import { SandboxExpressionEditorForm } from "./sb-expression-editor-form.js";
 import { SandboxTableFilterEditorForm } from "./sb-table-filter-editor-form.js";
+import { SandboxLookupTableEditorForm } from "./sb-lookup-table-editor-form.js";
 import { sb_string_is_valid_table_filter } from "./sb-table-filters.js";
+import { sb_string_is_valid_lookup_table } from "./sb-lookup-table.js";
 
 import * as stringCasing from './sb-strings-case.js';
 import { SETTINGATTRIBUTE } from "./sb-setting-constants.js";
@@ -45,6 +47,9 @@ export function activateHelpers(html,item){
           case "GROUP":
             sb_item_sheet_validate_input(html, ITEMATTRIBUTE[item.type.toUpperCase()].KEY, item.type, item.id);
             break;
+          case "LOOKUP":
+            sb_item_sheet_validate_input(html, ITEMATTRIBUTE[item.type.toUpperCase()].KEY, item.type, item.id);
+            break;
           case "cITEM":
             break;
           default:
@@ -67,7 +72,7 @@ export function activateHelpers(html,item){
     }
     
     // properties etc
-    if(item.type=="property" || item.type=="panel" || item.type=="multipanel" || item.type=="group" || item.type=="sheettab"){
+    if(item.type=="property" || item.type=="panel" || item.type=="multipanel" || item.type=="group" || item.type=="sheettab" || item.type=="lookup"){
       // KEY
       input=sb_item_sheet_get_input(html, 'key', item.type);
       if (input != null && input.length > 0) {  
@@ -136,6 +141,17 @@ export function activateHelpers(html,item){
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TABLEFILTER,item); 
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TABLEFILTER);  
         new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tablefilter-${item.id}`, menuItems);
+      }
+    }
+    if(item.type=="lookup"){
+      // lookup table
+      input=sb_item_sheet_get_input(html, 'lookuptable', item.type);
+      if (input != null && input.length > 0) {  
+        let menuItems=[];        
+        menuItems = sb_item_sheet_dropdown_add_lookuptable(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE,item);
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE,item); 
+        menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE);  
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-lookuptable-${item.id}`, menuItems);
       }
     }
     
@@ -220,6 +236,18 @@ export function activateHelpers(html,item){
         new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-list-${item.id}`, menuItems);
       }
     }
+    if(item.type=="property"){
+      // listauto
+      input = sb_item_sheet_get_input(html, 'listauto', item.type);
+      if (input != null && input.length > 0) {  
+        let menuItems=[];
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LISTAUTO,item);         
+        menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LISTAUTO);  
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-listauto-${item.id}`, menuItems);
+      }
+    }
+    
+    
     if(item.type=="property" || item.type=="panel"  ){
       //fontgroup
       input=sb_item_sheet_get_input(html, 'fontgroup', item.type);
@@ -373,6 +401,25 @@ function sb_item_sheet_dropdown_add_filter(html,menu,oAttribute,item){
         condition:true,
         callback: () => {
           sb_item_sheet_edit_input(html,oAttribute,item.type,item.id,item.system.datatype,true);
+        }
+      }    
+    ];
+    // add default menu items to  with supplied menu
+    returnMenu= menu.concat(menuItems);
+    return returnMenu;
+}
+
+function sb_item_sheet_dropdown_add_lookuptable(html,menu,oAttribute,item){
+  let returnMenu;
+  let menuItems=[
+      {
+        name: "Table Editor...",
+        icon: "<i class='fas fa-table fa-fw'></i>",
+        tooltip:"Open Lookup Table editor",
+        condition:true,
+        callback: () => {
+        //sb_item_sheet_edit_input(html,oAttribute,typeClass,itemid,propertydatatype='',OPTION_USE_TABLE_FILTERS=false){
+          sb_item_sheet_edit_input(html,oAttribute,item.type,item.id,'lookuptable',true);
         }
       }    
     ];
@@ -616,7 +663,15 @@ function sb_item_sheet_clear_input(html,sIdentifier,triggeronchange=true){
   let elementInput= null;
   elementInput= html.find(`${sIdentifier}`);
   if (elementInput!=null && elementInput.length>0){
-    elementInput[0].value= '';
+    switch (sIdentifier){
+      case ITEMATTRIBUTE.LOOKUP.LOOKUPTABLE.IDENTIFIER:
+        elementInput[0].value= '{"columns":["Range Low","Range High"],"rows":[]}'; 
+        break;
+      default:
+        elementInput[0].value= ''; 
+        break;
+    }
+    
     if(triggeronchange){
       // trigger onchange event
       const event = new Event('change', { bubbles: true });       
@@ -629,6 +684,7 @@ async function sb_item_sheet_edit_input(html,oAttribute,typeClass,itemid,propert
   let sExpression=sb_item_sheet_get_input(html,oAttribute.ATTRIBUTE,typeClass)[0].value;
   let itemName=sb_item_sheet_get_input(html,'name','ITEM')[0].value;
   let itemtargetelement=ITEMATTRIBUTE[typeClass.toUpperCase()][oAttribute.ATTRIBUTE.toUpperCase()].IDENTIFIER; 
+
   let options = {
       expression: sExpression,
       itemid: itemid,
@@ -653,7 +709,21 @@ async function sb_item_sheet_edit_input(html,oAttribute,typeClass,itemid,propert
     if(bOkToProceed){
       new SandboxTableFilterEditorForm(options).render(true,{focus:true}); 
     }
-  } else {
+  } else if(propertydatatype=='lookuptable' && typeClass.toLowerCase()=='lookup'){
+    let bOkToProceed=true;
+    // check if any content/filter exists
+    if (sExpression.length>0){
+      // check if valid filter
+      if (sb_string_is_valid_lookup_table(sExpression)==''){
+        // ask user open table filter editor anyway(empty)
+        bOkToProceed=await sb_custom_dialog_confirm('Warning - Invalid Lookup Table','This lookup table <br><div class="sb-code-block-container"><p class="sb-code-block-content">'+sExpression+'</p></div><br> is invalid, the lookup table editor will display it as empty.<br>Do you want to proceed?<br>' );              
+      }
+    }
+
+    if(bOkToProceed){
+      new SandboxLookupTableEditorForm(options).render(true,{focus:true}); 
+    }
+  } else{
     new SandboxExpressionEditorForm(options).render(true,{focus:true}); 
   }
 }
@@ -764,6 +834,9 @@ async function sb_item_sheet_autogenerate_input(html,oAttribute,typeClass,trigge
           break; 
         case "GROUP":
           key_prefix_setting=SETTINGATTRIBUTE.PREFIX_GROUP.ID;
+          break;   
+        case "LOOKUP":
+          key_prefix_setting=SETTINGATTRIBUTE.PREFIX_LOOKUP.ID;
           break;   
         case "cITEM":            
           break;  
@@ -939,6 +1012,9 @@ async function sb_item_sheet_autogenerate_all(item,html,typeClass){
         case "GROUP":
            sb_item_sheet_autogenerate_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].KEY,typeClass,false);
           break;   
+        case "LOOKUP":
+           sb_item_sheet_autogenerate_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].KEY,typeClass,false);
+          break; 
         case "CITEM": 
            sb_item_sheet_autogenerate_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].ROLLNAME,typeClass,false);
            sb_item_sheet_autogenerate_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].ROLLID,typeClass,false); 
@@ -964,6 +1040,7 @@ async function sb_item_sheet_clear_all(item,html,typeClass){
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].KEY.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].TAG.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].TOOLTIP.IDENTIFIER,false);
+        sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].TABLEFILTER.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].FONTGROUP.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].INPUTGROUP.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].ROLLEXP.IDENTIFIER,false);
@@ -974,6 +1051,7 @@ async function sb_item_sheet_clear_all(item,html,typeClass){
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].DEFAULT.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].CHECKGROUP.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].LIST.IDENTIFIER,false);
+        sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].LISTAUTO.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].CHECKEDPATH.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].UNCHECKEDPATH.IDENTIFIER,false);
         break;
@@ -1007,6 +1085,10 @@ async function sb_item_sheet_clear_all(item,html,typeClass){
       case "GROUP":
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].KEY.IDENTIFIER,false);
         break;   
+      case "LOOKUP":
+        sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].KEY.IDENTIFIER,false);
+        sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].LOOKUPTABLE.IDENTIFIER,false);
+        break; 
       case "CITEM": 
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].ROLLEXP.IDENTIFIER,false);
         sb_item_sheet_clear_input(html,ITEMATTRIBUTE[typeClass.toUpperCase()].ROLLNAME.IDENTIFIER,false);
@@ -1098,7 +1180,10 @@ function sb_item_sheet_validate_input(html,oAttribute,typeClass,itemid){
       break; 
     case "GROUP":
       validatingitemtype='group';
-      break;   
+      break;
+    case "LOOKUP":
+      validatingitemtype='lookup';
+      break; 
     case "cITEM":            
       break;  
     default:
@@ -1285,6 +1370,9 @@ export function getSandboxItemIconFile(itemtype,datatype='',rollable=false){
             // assemble file path
             iconfile=iconbasefilename + datatype + '.svg';        
             break;
+          case('created'):
+            iconfile=iconbasefilename + datatype + '.svg';
+            break;
           default:
             // use sb default
             iconfile=icondefaultfilename;       
@@ -1303,10 +1391,20 @@ export function getSandboxItemIconFile(itemtype,datatype='',rollable=false){
       case "group":
         iconfile="systems/sandbox/styles/icons/itemtypes/sb_item_group.svg";
         break;
+      case "lookup":
+        iconfile="systems/sandbox/styles/icons/itemtypes/sb_item_lookup.svg";
+        break;
       case "cItem":
         iconfile="systems/sandbox/styles/icons/itemtypes/sb_item_citem.svg";
         break;
+      case "missing":
+        iconfile="systems/sandbox/styles/icons/other/sb_missing.svg";        
+        break;
+      case "mystery-man":
+        iconfile="icons/svg/mystery-man.svg";        
+        break;
       default:
+        iconfile="systems/sandbox/styles/icons/other/sb_unknown.svg";        
         break;
     }
     

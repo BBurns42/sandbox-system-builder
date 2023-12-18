@@ -493,6 +493,7 @@ export function sb_settings_registration() {
       hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_MULTIPANEL.ID}.Hint`,
       category: `sandbox.settings.categories.AUTOGENERATION_PREFIXES_SUFFIXES`        
     }); 
+    
     game.settings.register("sandbox", SETTINGATTRIBUTE.PREFIX_GROUP.ID, {
       name: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_GROUP.ID}.Name`,
       default: `${SETTINGATTRIBUTE.PREFIX_GROUP.DEFAULT}`,
@@ -502,6 +503,18 @@ export function sb_settings_registration() {
       hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_GROUP.ID}.Hint`,
       category: `sandbox.settings.categories.AUTOGENERATION_PREFIXES_SUFFIXES`        
     });
+    
+    game.settings.register("sandbox", SETTINGATTRIBUTE.PREFIX_LOOKUP.ID, {
+      name: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_LOOKUP.ID}.Name`,
+      default: `${SETTINGATTRIBUTE.PREFIX_LOOKUP.DEFAULT}`,
+      type: String,
+      scope: 'world',
+      config: false,
+      hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_LOOKUP.ID}.Hint`,
+      category: `sandbox.settings.categories.AUTOGENERATION_PREFIXES_SUFFIXES`        
+    });
+    
+    
     game.settings.register("sandbox", SETTINGATTRIBUTE.PREFIX_TAB.ID, {
       name: `sandbox.settings.settings.${SETTINGATTRIBUTE.PREFIX_TAB.ID}.Name`,
       default: `${SETTINGATTRIBUTE.PREFIX_TAB.DEFAULT}`,

@@ -680,9 +680,6 @@ Hooks.once('ready', async () => {
     console.log("Sandbox | Ready | Completed");
 });
 
-
-
-
 Hooks.on("renderSidebarTab", createExportButtons);
 
 function createExportButtons(sidebar, jq) {
@@ -801,7 +798,6 @@ function createExportButtons(sidebar, jq) {
     settingstab.parentNode.insertBefore(htmlmenubar,sandboxheader.nextSibling);    
 }
 
-
 Hooks.on("sandbox.updateSystemSetting", async(systemid,options) => {
   console.log('Sandbox | updateSystemSetting:' + systemid);
   if(systemid=="sandbox"){
@@ -818,8 +814,6 @@ Hooks.on("sandbox.updateSystemSetting", async(systemid,options) => {
     auxMeth.clientRefresh(options);
   }
 });
-
-
 
 //COPIED FROM A MODULE. TO SHOW A SHIELD ON A TOKEN AND LINK THE ATTRIBUTE
 Hooks.on("hoverToken", (token, hovered) => {
@@ -861,7 +855,12 @@ Hooks.on("hoverToken", (token, hovered) => {
 
 });
 
+//Hooks.on("updateActor", async (actor, updateData, options, userId) => {
+//  console.log('updateActor',JSON.stringify(updateData));
+//});
+
 Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
+    //console.log(JSON.stringify(updateData));
     //console.log(actor);
     //console.log('preUpdateActor')
     //console.log(updateData);
@@ -1122,32 +1121,9 @@ Hooks.on("preCreateActor", (actor,data,options,userId) => {
   
 });
 
-
-
-
-
 Hooks.on("deleteActor", (actor) => {
     //console.log(actor);
 });
-
-
-
-Hooks.on("closegActorSheet", async (entity, eventData) => {
-    //console.log(entity);
-    //console.log(eventData);
-    //console.log("closing sheet");
-    let character = entity.object;
-    if (character.flags.ischeckingauto)
-        character.flags.ischeckingauto = false;
-    //entity.object.update({"token":entity.object.data.token},{diff:false});
-});
-
-
-
-
-
-
-
 
 
 
@@ -1170,7 +1146,6 @@ Hooks.on("renderSandboxInfoForm",async (app, html,data) => {
     });
   titleToTooltip(app,html)
 });
-
 
 Hooks.on("rendersItemSheet", async (app, html, data) => {
    
@@ -1282,8 +1257,6 @@ Hooks.on("renderSystemSettingsForm", async (app, html, data) => {
   titleToTooltip(app,html)
 });
 
-
-
 Hooks.on("renderSandboxExpressionEditorForm", async (app, html, data) => {
   titleToTooltip(app,html,true)
 });
@@ -1299,7 +1272,6 @@ Hooks.on("renderSandboxJSONImportForm", async (app, html, data) => {
 Hooks.on("renderSandboxToolsForm", async (app, html, data) => {
   titleToTooltip(app,html,true)
 });
-
 
 Hooks.on("rendergActorSheet", async (app, html, data) => {
     //console.log("Sandbox | rendergActorSheet");
@@ -1325,30 +1297,23 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
         app.addHeaderButtons(html);
         app.customCallOverride(html);
         sb_sheet_toggle_delete_item_visible(html);
-        await app.setSheetStyle(actor);
+        
+        await app.setSheetStyle(actor,'rendergActorSheet');
         //app.scrollBarLoad(html);
 
         actor.setInputColor();
 
-        html.find('.window-resizable-handle').mouseup(ev => {
-            ev.preventDefault();
-            app.setSheetStyle(actor);
-        });
-
-
-
+//        html.find('.window-resizable-handle').mouseup(ev => {
+//          console.log('window-resizable-handle | mouseup');
+//            ev.preventDefault();
+//            app.setSheetStyle(actor,'mouseup');
+//        });
     }
 
     app.displaceTabs2(null, html);
     await app._setScrollStates();
     
-    // add a ResizeObserver to trigger the resize of conntent
-    const myObserver = new ResizeObserver(entries => {
-      entries.forEach(entry => {
-//            console.log('width', entry.contentRect.width);
-//            console.log('height', entry.contentRect.height);
-      });
-    });
+    
     let sheetbody;
     // for some updates the return html is a form
     //debugger;
@@ -1359,13 +1324,39 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
       //sheetelementid = html[0].id;
       sheetbody=html.find('.sheet-body');
     }
+    // add a ResizeObserver to trigger the resize of conntent
+    app.resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+            //console.log('width', entry.contentRect.width);
+            //console.log('height', entry.contentRect.height);
+            //
+            app.upDateTabBodiesHeight();
+                                                        
+      });
+    });
+    
     
     if(sheetbody!=null){
       if(sheetbody.length>0){
-        myObserver.observe(sheetbody[0]);
+        app.resizeObserver.observe(sheetbody[0]);                
       }
     }
     titleToTooltip(app,html)
+});
+
+Hooks.on("closegActorSheet", async (app, html) => {
+    
+    //console.log(entity);
+    //console.log(eventData);
+    // console.log("closing sheet");
+    let character = app.object;
+    if (character.flags.ischeckingauto)
+        character.flags.ischeckingauto = false;
+    
+    app.resizeObserver.disconnect();
+    
+    
+    
 });
 
 Hooks.on("renderChatMessage", async (app, html, data) => {

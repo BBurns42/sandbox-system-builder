@@ -1,4 +1,6 @@
-## :warning: Please note that this page is under construction
+# Roll Expressions
+
+> :warning:Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
 
 Rolls can be defined for Properties and cItems, if some requirements are met:
 - Properties: a property will trigger a dice roll when its label is clicked on the character sheet, only if the property option "Rollable" is checked. When checked, a Property item will display the roll options menu (see below).

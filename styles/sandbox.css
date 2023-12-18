@@ -38,9 +38,11 @@
   /* Colors used */
   --sb-color-inputs:#191813;
   --sb-color-inputs-disabled:rgba(0,0,0,0.5);
-  --sb-color-labels:#191813;     /* var(--color-text-dark-primary) */
+  --sb-color-labels:var(--color-text-dark-primary);
   --sb-background-color-inputs:floralwhite;   /*#ebdfc5;*/
   --sb-background-color-inputs-disabled:rgba(0,0,0,0.1);  /*lightgrey;*/
+  --sb-color-tableheaders:white;
+  --sb-background-color-tableheaders:rgba(0, 0, 0, 0.5);;
 
   /* Inputs design*/
   --sb-border-radius-inputs:3px;
@@ -49,34 +51,34 @@
   --sb-border-style-inputs:solid;
  
  
-/* Panel headers*/ 
---sb-background-color-panelheaders:#4e4d49;
---sb-color-panelheaders:white;
---sb-text-shadow-panelheaders:1px 1px black;
---sb-border-bottom-panelheaders:1px solid black;
+  /* Panel headers*/ 
+  --sb-background-color-panelheaders:#4e4d49;
+  --sb-color-panelheaders:white;
+  --sb-text-shadow-panelheaders:1px 1px black;
+  --sb-border-bottom-panelheaders:1px solid black;
 
-/* Chat Message */
---sb-font-family-chat-primary:Tahoma, sans-serif;
---sb-font-family-chat-roll-result:Impact, sans-serif;
+  /* Chat Message */
+  --sb-font-family-chat-primary:Tahoma, sans-serif;
+  --sb-font-family-chat-roll-result:Impact, sans-serif;
 
-/* citem icon size*/
---sb-table-citem-icon-size:26px;
-/*item icon size(for subitems lists) */
---sb-list-item-icon-size:26px;  
---sb-icon-picker-frame-size:27px;
+  /* citem icon size*/
+  --sb-table-citem-icon-size:26px;
+  /*item icon size(for subitems lists) */
+  --sb-list-item-icon-size:26px;  
+  --sb-icon-picker-frame-size:27px;
 
-/* shadows */
---sb-text-shadow-primary:0 0 8px var(--color-shadow-primary);
---sb-filter-drop-shadow-primary: drop-shadow(0 0 4px var(--color-shadow-primary));
---sb-box-shadow-inputs:0 0 5px var(--color-shadow-primary);
-/* other */
---sb-checkbox-size:20px;
+  /* shadows */
+  --sb-text-shadow-primary:0 0 8px var(--color-shadow-primary);
+  --sb-filter-drop-shadow-primary: drop-shadow(0 0 4px var(--color-shadow-primary));
+  --sb-box-shadow-inputs:0 0 5px var(--color-shadow-primary);
+  /* other */
+  --sb-checkbox-size:20px;
 
-/* sb tooltip */
---sb-background-color-tooltip:var(--sb-color-inputs);
---sb-color-tooltip:var(--sb-background-color-inputs);
---sb-font-size-tooltip:--sb-font-size-primary;
---sb-font-family-tooltip:var(--sb-font-family-primary);
+  /* sb tooltip */
+  --sb-background-color-tooltip:var(--sb-color-inputs);
+  --sb-color-tooltip:var(--sb-background-color-inputs);
+  --sb-font-size-tooltip:--sb-font-size-primary;
+  --sb-font-family-tooltip:var(--sb-font-family-primary);
 
 }
 /*
@@ -1394,8 +1396,8 @@ Fonts faces
 }
 
 .sandbox.sheet thead{
-/*    background-color: #7d7b73;*/
-    color:white;
+    background-color: var(--sb-background-color-tableheaders);
+    color:var(--sb-color-tableheaders);
     padding: 1px 5px;
     font-family: var(--sb-font-family-tableheaders);
     font-size: var(--sb-font-size-tableheaders);
@@ -3217,3 +3219,173 @@ box-shadow: 0 0 8px var(--color-shadow-primary)!important;
 .chat-message .roll-secrets-visibility{
   padding-right:5px;
 }
+
+
+input.sb-lookup-table-editor-header-cell-input,
+input.sb-lookup-table-editor-value-cell,
+input.sb-lookup-table-editor-data-input-cell,
+select.sb-table-filter-editor-logic,
+select.sb-table-filter-editor-type,
+select.sb-table-filter-editor-key,
+select.sb-table-filter-editor-operator,
+select.sb-table-filter-editor-value,
+input.sb-table-filter-editor-value,
+input.sb-table-filter-editor-key
+{
+  background-color:var(--sb-background-color-inputs);
+  color: var(--sb-color-inputs);
+}
+
+.sb-table-filter-editor-table-tbody-td-manipulator{
+  white-space:nowrap;
+}
+
+.sb-lookup-table-editor-warning{
+  background-color: rgba(214, 150, 0, 0.8) !important;
+}
+
+.sb-lookup-table-editor-data-table tbody {
+  display: block;
+  max-height: 600px;
+  overflow-y: scroll;
+}
+
+.sb-lookup-table-editor-data-table thead, 
+.sb-lookup-table-editor-data-table tfoot,
+.sb-lookup-table-editor-data-table tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+.sb-lookup-table-editor-data-table thead,
+.sb-lookup-table-editor-data-table tfoot{
+  width: calc( 100%  );
+}
+
+td.sb-lookup-table-editor-value-cell,
+td.sb-lookup-table-editor-header-value-cell{
+  width:12%
+}
+input.sb-lookup-table-editor-header-cell-input{
+  width: calc(100% - 8px);	
+}
+
+
+
+td.sb-actor-properties-manager-manipulator-cell{
+  text-align: right;
+  padding-right: 6px;
+  width:30px;  
+}
+td.sb-lookup-table-editor-manipulator-cell{
+  text-align: right;
+  padding-right: 6px;
+  width:80px;  
+  white-space:nowrap;
+}
+
+th.sb-lookup-table-editor-manipulator-cell{
+  text-align: right;
+  padding-right: 12px;
+  width:80px;
+}
+
+td.sb-lookup-table-editor-bottom-right-cell{
+	
+    width: 38px;
+}
+
+td.sb-lookup-table-editor-footer-cell{
+  text-align: center;
+}
+
+td.sb-lookup-table-editor-footer-toolbar{
+	width:23%;
+}
+
+.sb-code-block-container{
+  background-color:black;
+  color:white;
+  padding: 0 1em;
+  overflow: scroll;
+  height:400px;
+}
+
+.sb-code-block-content{
+  color:#eee;
+  font-family:monospace;
+}
+
+
+/*Actor Properties Manager*/
+div.sb-actor-properties-manager-form{
+  overflow: hidden !important;
+}
+div.sb-table-scrollable-container{
+  overflow: hidden;
+  height: calc(100% - 90px);	
+}
+table.sb-table-scrollable-table {
+  width: 100%;  	
+  height: calc(100% - 150px);
+}
+thead.sb-table-scrollable-table-thead,
+tbody.sb-table-scrollable-table-tbody tr {
+  display: table;
+  width: 100%;
+  table-layout: fixed;
+}
+tbody.sb-table-scrollable-table-tbody {
+  display: block;
+  overflow-y: auto;
+  table-layout: fixed;
+  max-height: 100vh;
+  height: calc(100vh - 250px);
+}
+
+th.sb-table-scrollable-table-thead-th{
+  text-align: left;	
+}
+
+th.sb-table-scrollable-table-thead-th-icon,
+td.sb-table-scrollable-table-tbody-td-icon{
+  width:25px;	
+}
+
+table.sb-table-scrollable-table td:first-child {
+    
+}
+
+
+td.sb-table-scrollable-table-tbody-td-text{
+  word-break: break-word;
+  padding-left:2px;
+  
+}
+td.sb-table-scrollable-table-tbody-td-manipulator{
+  text-align: right;
+  padding-right: 6px;
+  width:30px;
+}
+th.sb-table-scrollable-table-thead-th-manipulator{
+  width:30px;
+}
+
+tr.sb-table-scrollable-table-tbody-tr-error{
+  background-color:red !important;	
+}
+
+
+i.sb-actor-properties-manager-token-warning{
+	color:black;
+	font-size:16px;
+}
+
+th.sb-table-scrollable-table-thead-th-key,
+td.sb-table-scrollable-table-tbody-td-key{
+  width:25%;
+}
+
+
+
+

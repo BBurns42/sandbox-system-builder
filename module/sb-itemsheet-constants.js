@@ -9,6 +9,7 @@
     PANEL:ITEM_SHEET_DEFAULT_HEIGHT + 95,
     MULTIPANEL:ITEM_SHEET_DEFAULT_HEIGHT,
     GROUP:ITEM_SHEET_DEFAULT_HEIGHT,
+    LOOKUP:ITEM_SHEET_DEFAULT_HEIGHT,
     SHEETTAB:ITEM_SHEET_DEFAULT_HEIGHT,
     CITEM:ITEM_SHEET_DEFAULT_HEIGHT
   }; 
@@ -49,6 +50,10 @@
       DETAILS:'details',
       PROPERTIES:'properties'
     },
+    LOOKUP:{
+      DESCRIPTION:'description',
+      DETAILS:'details'
+    },
     SHEETTAB:{
       DESCRIPTION:'description',
       DETAILS:'details',
@@ -71,6 +76,7 @@
     PANEL:'PANEL',
     TAB:'TAB',
     GROUP:'GROUP',
+    LOOKUP:'LOOKUP',
     CITEM:'CITEM'
   };
   
@@ -87,7 +93,7 @@
       DEFAULT:               {ATTRIBUTE:'default',           IDENTIFIER:'input[name="system.defvalue"]',       CAPTION:'Default Value'      ,LINEBREAKER:''    ,DEFAULT:''},
       TAG:                   {ATTRIBUTE:'tag',               IDENTIFIER:'input[name="system.tag"]',            CAPTION:'Tag'                ,LINEBREAKER:''    ,DEFAULT:''}, 
       TOOLTIP:               {ATTRIBUTE:'tooltip',           IDENTIFIER:'textarea[name="system.tooltip"]',     CAPTION:'Tooltip'            ,LINEBREAKER:'\n'    ,DEFAULT:''},
-      TABLEFILTER:           {ATTRIBUTE:'tablefilter',       IDENTIFIER:'textarea[name="system.tableoptions.filter"]',     CAPTION:'Table filter'       ,LINEBREAKER:'\n'    ,DEFAULT:''},
+      TABLEFILTER:           {ATTRIBUTE:'tablefilter',       IDENTIFIER:'textarea[name="system.tableoptions.filter"]',     CAPTION:'Table Filter'       ,LINEBREAKER:'\n'    ,DEFAULT:''},
       
       ISHIDDEN:              {ATTRIBUTE:'ishidden',          IDENTIFIER:'input[name="system.ishidden"]',       CAPTION:'Hidden'             ,LINEBREAKER:''    ,DEFAULT:'false'},
       EDITABLE:              {ATTRIBUTE:'editable',          IDENTIFIER:'input[name="system.editable"]',       CAPTION:'Editable'           ,LINEBREAKER:''    ,DEFAULT:'true'}, 
@@ -121,6 +127,7 @@
             
       RADIOTYPE:             {ATTRIBUTE:'radiotype',         IDENTIFIER:'select[name="system.radiotype"]',     CAPTION:'Radio Type'         ,LINEBREAKER:''    ,DEFAULT:'Circle'},
       LIST:                  {ATTRIBUTE:'list',              IDENTIFIER:'input[name="system.listoptions"]',    CAPTION:'Options (a,b,c)'    ,LINEBREAKER:','    ,DEFAULT:''},
+      LISTAUTO:              {ATTRIBUTE:'listauto',          IDENTIFIER:'input[name="system.listoptionsAuto"]',CAPTION:'Options Auto'       ,LINEBREAKER:'  '    ,DEFAULT:''},
       
       GROUP:                 {ATTRIBUTE:'group',             IDENTIFIER:'input[name="system.group.name"]',     CAPTION:'Group'              ,LINEBREAKER:''    ,DEFAULT:''},
       HASHEADER:             {ATTRIBUTE:'hasheader',         IDENTIFIER:'input[name="system.hasheader"]',      CAPTION:'Has Header'         ,LINEBREAKER:''    ,DEFAULT:'true'},
@@ -133,7 +140,7 @@
       SHOWUSES:              {ATTRIBUTE:'showuses',          IDENTIFIER:'input[name="system.hasuses"]',        CAPTION:'Show Uses'          ,LINEBREAKER:''    ,DEFAULT:'true'},
       SHOWACTIVATION:        {ATTRIBUTE:'showactivation',    IDENTIFIER:'input[name="system.hasactivation"]',  CAPTION:'Show Activation'    ,LINEBREAKER:''    ,DEFAULT:'false'},
       SHOWTOTALS:            {ATTRIBUTE:'showtotals',        IDENTIFIER:'input[name="system.hastotals"]',      CAPTION:'Show Totals'        ,LINEBREAKER:''    ,DEFAULT:'false'},
-      SHOWICONS:             {ATTRIBUTE:'tableoptions.showicons',        IDENTIFIER:'input[name="system.tableoptions.showicons"]',      CAPTION:'Show Totals'        ,LINEBREAKER:''    ,DEFAULT:'false'},
+      SHOWICONS:             {ATTRIBUTE:'tableoptions.showicons',        IDENTIFIER:'input[name="system.tableoptions.showicons"]',      CAPTION:'Show Totals'        ,LINEBREAKER:''    ,DEFAULT:'false'}
       
     },    
     
@@ -181,12 +188,17 @@
       KEY:                   {ATTRIBUTE:'key',               IDENTIFIER:'input[name="system.groupKey"]',       CAPTION:'Group Key'          ,LINEBREAKER:''    ,DEFAULT:''},
       ISUNIQUE:              {ATTRIBUTE:'isunique',          IDENTIFIER:'input[name="system.isUnique"]',       CAPTION:'Is Unique'          ,LINEBREAKER:''    ,DEFAULT:'false'}     
     },
+    LOOKUP:{
+      KEY:                   {ATTRIBUTE:'key',               IDENTIFIER:'input[name="system.lookupKey"]',       CAPTION:'Lookup Key'        ,LINEBREAKER:''    ,DEFAULT:''},
+      LOOKUPTABLE:           {ATTRIBUTE:'lookuptable',       IDENTIFIER:'textarea[name="lookupTable"]',           CAPTION:'Lookup Table'      ,LINEBREAKER:'\n'    ,DEFAULT:''}
+      
+    },
     
     CITEM:{
       ROLLEXP:               {ATTRIBUTE:'rollexp',           IDENTIFIER:'input[name="system.roll"]',           CAPTION:'Roll Formula'       ,LINEBREAKER:'  '  ,DEFAULT:''}, 
       ROLLNAME:              {ATTRIBUTE:'rollname',          IDENTIFIER:'input[name="system.rollname"]',       CAPTION:'Roll Name'          ,LINEBREAKER:'  '  ,DEFAULT:''}, 
       ROLLID:                {ATTRIBUTE:'rollid',            IDENTIFIER:'input[name="system.rollid"]',         CAPTION:'Roll ID'            ,LINEBREAKER:''    ,DEFAULT:''},
-      ICON:                  {ATTRIBUTE:'icon',              IDENTIFIER:'input[name="system.icon"]',         CAPTION:'Icon'            ,LINEBREAKER:' '    ,DEFAULT:''},
+      ICON:                  {ATTRIBUTE:'icon',              IDENTIFIER:'input[name="system.icon"]',           CAPTION:'Icon'               ,LINEBREAKER:' '    ,DEFAULT:''},
       ICONPATH:              {ATTRIBUTE:'tokeniconpath',     IDENTIFIER:'input[name="system.tokeniconpath"]',  CAPTION:'Icon Path'          ,LINEBREAKER:''    ,DEFAULT:''} 
     }
   };

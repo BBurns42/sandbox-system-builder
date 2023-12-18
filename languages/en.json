@@ -4,6 +4,7 @@
   "ConfirmDelete":"Confirm delete",
   "FILES.TitleTextextended": "File Browser",
   "FILES.TitleJson": "Select JSON file",
+  "FILES.TitleCsv": "Select CSV file",
   
   "SANDBOX.RollExpressionNoTargetsSelected":"No targets selected",
   "SANDBOX.GMAuthorityRequiredTitle":"Insufficient permission",
@@ -16,6 +17,9 @@
   "SANDBOX.ItemTypeSheetTab":"Sheettab",
   "SANDBOX.ItemTypecItem":"cItem",
   "SANDBOX.cItemModifikation":"Modification",
+  "SANDBOX.TokenActorPropertiesInfo":"Token actors inherit all properties from its source actor, to remove a inherited property, it must be removed from the source actor. A token actor can have properties not found in its source actor and they can be removed.",
+  "SANDBOX.ConfirmRemoveActorProperty_Title":"Remove property from {actortype}actor?",
+  "SANDBOX.ConfirmRemoveActorProperty_Body":"Remove property <strong>{propertykey}</strong> from {actortype}actor <strong>{actorname}</strong>?<br>This can not be undone.",
   
   "SANDBOX.ChatMessageSecretReveal":"Reveal secrets",
   "SANDBOX.ChatMessageSecretHide":"Hide secrets",
@@ -180,6 +184,10 @@
         },
         "PREFIX_GROUP": {
           "Name": "Prefix for group key",
+          "Hint": "Used for autogenerating key"
+        },        
+        "PREFIX_LOOKUP": {
+          "Name": "Prefix for lookup key",
           "Hint": "Used for autogenerating key"
         },
         "PREFIX_TAB": {

@@ -13,6 +13,7 @@ export const SETTINGATTRIBUTE={
   PREFIX_PANEL:                                    {ID:'PREFIX_PANEL'                                       ,DEFAULT:'PANEL'}, 
   PREFIX_MULTIPANEL:                               {ID:'PREFIX_MULTIPANEL'                                  ,DEFAULT:'MULTIPANEL'},
   PREFIX_GROUP:                                    {ID:'PREFIX_GROUP'                                       ,DEFAULT:'GROUP'},
+  PREFIX_LOOKUP:                                   {ID:'PREFIX_LOOKUP'                                      ,DEFAULT:'LOOKUP'},
   PREFIX_TAB:                                      {ID:'PREFIX_TAB'                                         ,DEFAULT:'TAB'},
   SUFFIX_FONTGROUP:                                {ID:'SUFFIX_FONTGROUP'                                   ,DEFAULT:'FONTGROUP'},
   SUFFIX_INPUTGROUP:                               {ID:'SUFFIX_INPUTGROUP'                                  ,DEFAULT:'INPUTGROUP'},
