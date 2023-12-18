@@ -2,7 +2,8 @@
 
 The List property generates a dropdown list with options for the user to select from.
 
-![](resources\property_list_basic.png)
+![](resources/property_list_basic.png)
+
 
 ## Specific Attributes
 
