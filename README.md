@@ -20,7 +20,7 @@ Sandbox lets you build any TTRPG system, including sheets and game data, without
 
 [Documentation](docs/help/start.md)
 
-#### :warning:Documentation update in progress
+#### Documentation update in progress
 
 These pages are under construction, if needed, please refer to the previous [README_PREVIOUS.MD](README_PREVIOUS.MD)
 
