@@ -1,25 +1,26 @@
 # Properties
 
-> :warning:Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
+> Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
 
 Properties are items that define how the information of an actor will be stored. They basically generate the input fields inside the actor panels. 
 
-## Common attributes of all properties
+![Property Example](resources/property_simpletext_basic.png)
+
+## Common attributes of properties
+
+Most properties have a common set of attributes
 
 ### Key
 
-As with any Sandbox element, a property also needs to have a unique key. This is a mandatory field, and does not accepts spaces
-
-### Default Value
-
-This is the initial value that the property will have in the actor.
+Required field.
+See [Keys in Sandbox](sandbox_keys.md)
 
 ### Data Type
 
 Available data types are 
 
-- Simple Text
-- Simple Numeric
+- [SimpleText](property_simpletext.md)
+- SimpleNumeric
 - Checkbox
 - Textarea
 - [List](property_list.md)
@@ -27,3 +28,77 @@ Available data types are
 - Badge
 - Table
 - Button
+
+### Hidden
+
+Hides the property on the sheet
+
+### Tag/Title
+
+The text to display as a label on the sheet
+
+### Rollable
+
+Enable Rolls for this property.  For more information, see [Rollable Properties](properties_rollable.md)
+
+### Default Value
+
+This is the initial value that the property will have in the actor. A empty field for numerical properties means 0.
+
+### Editable
+
+Makes a property read only for players
+
+### Has Label?
+
+If enabled, a label are displayed next to the input on the sheet, else only the input will be shown.
+
+### Label Size
+
+The width of the label for this property.
+
+### Label Format
+
+The format of the displayed label.
+
+- Normal
+
+- Bold
+
+- Small
+
+- Die
+
+  Will display a D20 icon
+
+- Icon
+
+  Enables Icon Picker to select a custom icon for display as label
+
+  ![](./resources/icon_picker_dialog.png)
+
+### Font Group
+
+What CSS class will be added to the label element. See [CSS and styling](css_and_styling.md) 
+
+### Input Group
+
+What CSS class will be added to the input element. See [CSS and styling](css_and_styling.md) 
+
+### Input Size
+
+The width of the input.
+
+### Tooltip
+
+Text to display as tooltip for the property
+
+### Auto
+
+A valid Common Expression, see [Expressions](sandbox_expressions.md)
+
+## Item Helpers
+
+Next to most attributes are a down arrow that drops down that attributes Item Helpers.
+
+What Item Helpers that are available depends the attribute.

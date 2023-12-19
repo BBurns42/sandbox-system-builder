@@ -2344,11 +2344,12 @@ export class gActor extends Actor {
                                 propauto = await propauto.replace(/\#{uses}/g, citemIDs[n].uses);
                                 propauto = await propauto.replace(/\#{maxuses}/g, citemIDs[n].maxuses);
                                 
-                                propauto = await game.system.api._extractAPIFunctions(propauto,attributes, citmAttr, false,false,citmNum);
-                                
-                                
-                                
                                 let rawvalue = await auxMeth.autoParser(propauto, attributes, citmAttr, false, false, citmNum);
+                                rawvalue = await game.system.api._extractAPIFunctions(rawvalue,attributes, citmAttr, false,false,citmNum);
+                                
+                                
+                                
+                                
 
                                 if (isNaN(rawvalue) && propdata.system.datatype != "simpletext") {
                                     //console.log(rawvalue);
@@ -2709,10 +2710,23 @@ export class gActor extends Actor {
                     }
                 }
                 
-                rawexp = await game.system.api._extractAPIFunctions(rawexp,attributes, null, exprmode);                                
+                // patch to allow lookup functions return empty string
+                let rawexpOrgLength=rawexp.length;
+                let allowEmpty=false;
+                if(rawexpOrgLength>0){
+                  rawexp = await game.system.api._extractAPIFunctions(rawexp,attributes, null, exprmode);                                
+                  // check for zero length
+                  if (rawexp.length==0){
+                    if(rawexpOrgLength>0){
+                      allowEmpty=true;
+                    }
+                  }
+                }
                 
-
-                if (rawexp !== "") {
+                
+                
+                if (rawexp!=null && (rawexp !== "" || allowEmpty)) {
+                //if (rawexp !== "" ) {
                     //console.log(rawexp);
                     //console.log(exprmode);
                     let newvalue = actorAtt.value;
@@ -3287,40 +3301,39 @@ export class gActor extends Actor {
 
         //Check roll mode
         let rollmode = this.system.rollmode;
+        rollname = rollname.replace(/\#{actor}/g, this.name);
+        rollname = rollname.replace(/\#{actorname}/g, this.name);
+        rollname = rollname.replace(/\@{actor}/g, this.name);
+        rollname = rollname.replace(/\@{actorname}/g, this.name);
+        // parse target(s) name
+        if (rollname.includes("#{targetname}")) {
+            let targets = game.user.targets.ids;
+            if (targets.length > 0) {
+                let targetnames = '';
+                let targettoken = null;
+                for (let i = 0; i < targets.length; i++) {
+                    targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
+                    if (targettoken != null) {
+                        if (targetnames.length == 0) {
+                            targetnames = targettoken.name;
+                        } else {
+                            targetnames = targetnames + '&#44 ' + targettoken.name;
+                        }
+                    }
+
+                }
+                //console.warn(targetnames);
+                rollname = await rollname.replace(/\#{targetname}/g, targetnames);
+            } else {
+                rollname = await rollname.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+            }
+        }
+        
         if (citemattributes != null) {
-            rollname = rollname.replace(/\#{actor}/g, this.name);
-            rollname = rollname.replace(/\#{actorname}/g, this.name);
-            rollname = rollname.replace(/\@{actor}/g, this.name);
-            rollname = rollname.replace(/\@{actorname}/g, this.name);
             rollname = rollname.replace(/\#{name}/g, citemattributes.name);
             rollname = rollname.replace(/\#{active}/g, isactive);
             rollname = rollname.replace(/\#{uses}/g, ciuses);
             rollname = rollname.replace(/\#{maxuses}/g, cimaxuses);
-            // parse target(s) name
-            if (rollname.includes("#{targetname}")) {
-                let targets = game.user.targets.ids;
-                if (targets.length > 0) {
-                    let targetnames = '';
-                    let targettoken = null;
-                    for (let i = 0; i < targets.length; i++) {
-                        targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
-                        if (targettoken != null) {
-                            if (targetnames.length == 0) {
-                                targetnames = targettoken.name;
-                            } else {
-                                targetnames = targetnames + '&#44 ' + targettoken.name;
-                            }
-                        }
-
-                    }
-                    //console.warn(targetnames);
-                    rollname = await rollname.replace(/\#{targetname}/g, targetnames);
-                } else {
-                    rollname = await rollname.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
-                }
-            }
-
-
         }
 
 
@@ -3330,11 +3343,12 @@ export class gActor extends Actor {
 
         //Parse roll difficulty
         rollexp = rollexp.replace(/\#{diff}/g, diff);
+        rollexp = await rollexp.replace(/\#{actor}/g, this.name);
+        rollexp = await rollexp.replace(/\#{actorname}/g, this.name);
+        rollexp = await rollexp.replace(/\@{actor}/g, this.name);
+        rollexp = await rollexp.replace(/\@{actorname}/g, this.name);
         if (citemattributes != null) {
-            rollexp = await rollexp.replace(/\#{actor}/g, this.name);
-            rollexp = await rollexp.replace(/\#{actorname}/g, this.name);
-            rollexp = await rollexp.replace(/\@{actor}/g, this.name);
-            rollexp = await rollexp.replace(/\@{actorname}/g, this.name);
+            
             rollexp = await rollexp.replace(/\#{name}/g, citemattributes.name);
             rollexp = await rollexp.replace(/\#{active}/g, isactive);
             rollexp = await rollexp.replace(/\#{uses}/g, ciuses);

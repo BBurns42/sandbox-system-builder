@@ -4,7 +4,6 @@ The List property generates a dropdown list with options for the user to select 
 
 ![](resources/property_list_basic.png)
 
-
 ## Specific Attributes
 
 ### Options
@@ -35,9 +34,10 @@ Good example  with empty string at top of list
 ### Add options from Auto
 
 Enable to add additional options from an Expression. 
-The Expression must return a comma(or pipe '|') separated string.
 
 ### Options Auto
+
+The Expression must return a comma(or pipe '|') separated string. See [Lookups](lookups.md)
 
 ### Add options from Lookup
 

@@ -110,11 +110,13 @@ function _parseArgs(str,separator=';',startBracket='(',endBracket=')') {
 }
 async function _extractAPIFunctions(expr, actorattributes, citemattributes, exprmode = false, noreg = false, number = 1, uses = 0, maxuses = 1) {
   let returnValue=expr;
-  returnValue = await _extractAPIFunction('lookupV', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
-  returnValue = await _extractAPIFunction('lookupX', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
-  returnValue = await _extractAPIFunction('lookupColumnCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
-  returnValue = await _extractAPIFunction('lookupRowCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
-  returnValue = await _extractAPIFunction('lookupList', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+  if(returnValue.length>0){
+    returnValue = await _extractAPIFunction('lookupV', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupX', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupColumnCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupRowCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupList', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+  }
   return returnValue;
 }
 async function _extractAPIFunction(functionName, expr, actorattributes, citemattributes, exprmode = false, noreg = false, number = 1, uses = 0, maxuses = 1) {

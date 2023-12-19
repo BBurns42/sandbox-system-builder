@@ -38,7 +38,7 @@ export class gActorSheet extends ActorSheet {
         data.enrichedBiography = await TextEditor.enrichHTML(this.actor.system.biography, {secrets:secrets, entities:true,async: true});
         const flags = actor.flags;
 
-        //console.log(data);
+        //console.log('getData',data);
 
         return data;
     }
@@ -5382,6 +5382,7 @@ ${dialogPanel.system.title}
                 }
                 if(addList.length>0){
                   let value=this.actor.system.attributes[propertyKey].value;
+                  
                   listElements[i]=auxMeth.addOptionsToSelectFromList(listElements[i],addList,value,'|',true);
                 }
                 
@@ -5856,7 +5857,9 @@ ${dialogPanel.system.title}
               // check the actual value
               if(listElement.value!=expandedData.system.attributes[actorProperty].value){
                 //console.log("Not correct value",listElement);
-                formData[`system.attributes.${actorProperty}.value`]=listElement.value;
+                let correctedData=await listElement.value;
+                if(correctedData!=null)
+                formData[`system.attributes.${actorProperty}.value`]=correctedData;
               }
             }
           }          

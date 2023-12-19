@@ -105,7 +105,7 @@ export class SandboxActorPropertiesManagerForm extends FormApplication {
     let tblManipulator='';
     let tblMarkRowRed='';
     let tblValue='';
-    
+    let tblAttributes='';
     let templateActor=await game.actors.find(y => y.system.istemplate && y.system.gtemplate == actor.system.gtemplate);
     for (let i = 0; i < sortedKeys.length; i++) {
       propertyKey=await sortedKeys[i];
@@ -122,12 +122,30 @@ export class SandboxActorPropertiesManagerForm extends FormApplication {
       tblKey=propertyKey;
       tblMarkRowRed='';
       tblValue='';
+      tblAttributes='';
       if(property!=null){
         tblIcon=`<img class="sb-item-list-icon" src="${property.img}"/>`;        
         tblName=property.name;
         tblDatatype=property.system.datatype;
         tblCreatedByName=actor.system.gtemplate;
-        
+        if(property.system.auto!=''){
+          let sErr='';
+          switch(tblDatatype){
+            case 'table':
+            case 'textarea': 
+            case 'label':
+            case 'button':
+            case 'list':
+              sErr='<i class="fas fa-triangle-exclamation" data-tooltip="This datatype should not have a Auto"></i>'
+              break;
+            default:
+              break;
+          }
+          tblAttributes +=`<i class="fas fa-code " data-tooltip="${property.system.auto}"></i>${sErr} `
+        }
+        if(property.system.listoptions!=''){
+          tblAttributes +=`<i class="fas fa-list" data-tooltip="${property.system.listoptions}"></i> `
+        }
         
         if(templateActor!=null){
           tblCreatedByIcon= `<img class="sb-item-list-icon" src="${templateActor.img}"/>`; 
@@ -189,6 +207,7 @@ export class SandboxActorPropertiesManagerForm extends FormApplication {
                   <td class="sb-table-scrollable-table-tbody-td-text sb-table-scrollable-table-tbody-td-key">${tblKey}</td>
                   <td class="sb-table-scrollable-table-tbody-td-text">${tblName}</td>
                   <td class="sb-table-scrollable-table-tbody-td-text">${tblDatatype}</td>
+                  <td class="sb-table-scrollable-table-tbody-td-text">${tblAttributes}</td>
                   <td class="sb-table-scrollable-table-tbody-td-text">${tblValue}</td>      
                   <td class="sb-table-scrollable-table-tbody-td-icon">${tblCreatedByIcon}</td>
                   <td class="sb-table-scrollable-table-tbody-td-text">${tblCreatedByName}</td>

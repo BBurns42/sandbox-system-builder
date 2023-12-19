@@ -3279,9 +3279,10 @@ td.sb-actor-properties-manager-manipulator-cell{
 }
 td.sb-lookup-table-editor-manipulator-cell{
   text-align: right;
-  padding-right: 6px;
-  width:80px;  
-  white-space:nowrap;
+  padding-right: 4px;
+  width: 80px;
+  white-space: nowrap;
+  letter-spacing: 3px;
 }
 
 th.sb-lookup-table-editor-manipulator-cell{
@@ -3386,6 +3387,10 @@ td.sb-table-scrollable-table-tbody-td-key{
   width:25%;
 }
 
+
+.sb-color-error{
+  color:red !important;	
+}
 
 
 

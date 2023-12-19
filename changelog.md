@@ -19,6 +19,7 @@
   For defined rolls(using roll() and rollp(), only the first defined roll in the roll expression is checked for critical/fumble)
   For rolls in registration helpers(like `$<1;1d6> $1 `), no coloring(or DiceSoNice animation) will be done.
 - FIX: Actor sheet resize improvements
+- FIX: Able too use #{targetname} in Roll Name
 ## Version 0.14.1(2023-11-26)
 - Added Table Filters
 - FIX: Using `~self~` in a conditional

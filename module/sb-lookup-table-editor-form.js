@@ -456,24 +456,60 @@ export class SandboxLookupTableEditorForm extends FormApplication {
     // add cells for delete row
     let tdManipulator=document.createElement('td');
     tdManipulator.classList.add("sb-lookup-table-editor-manipulator-cell");
+    //
+    let iMoveRowUp=document.createElement('i');    
+    iMoveRowUp.setAttribute("data-tooltip", "Move up");
+    iMoveRowUp.classList.add("sb-btn");
+    iMoveRowUp.classList.add("sb-lookup-table-editor-move-row-up");
+    iMoveRowUp.classList.add("fas");
+    iMoveRowUp.classList.add("fa-arrow-alt-circle-up");
+    tdManipulator.appendChild(iMoveRowUp);
+    //
+    let iMoveRowDown=document.createElement('i');    
+    iMoveRowDown.setAttribute("data-tooltip", "Move down");
+    iMoveRowDown.classList.add("sb-btn");
+    iMoveRowDown.classList.add("sb-lookup-table-editor-move-row-down");
+    iMoveRowDown.classList.add("fas");
+    iMoveRowDown.classList.add("fa-arrow-alt-circle-down");
+    tdManipulator.appendChild(iMoveRowDown);
+    //
     let iDeleteRow=document.createElement('i');    
     iDeleteRow.setAttribute("data-tooltip", "Delete row");
     iDeleteRow.classList.add("sb-btn");
     iDeleteRow.classList.add("sb-lookup-table-editor-delete-row");
     iDeleteRow.classList.add("fas");
     iDeleteRow.classList.add("fa-trash");
-
-
     tdManipulator.appendChild(iDeleteRow);
 
     row.appendChild(tdManipulator);
+    // event listeners
     tdManipulator.getElementsByClassName('sb-lookup-table-editor-delete-row')[0].addEventListener('click',async(event_delete)=>{              
       let thisrow=event_delete.target.parentNode.parentNode;
       let thisrowindex=thisrow.rowIndex;
       let tbody=event_delete.target.parentNode.parentNode.parentNode;      
       tbody.deleteRow(thisrowindex-1);      
     });
-    
+    tdManipulator.getElementsByClassName('sb-lookup-table-editor-move-row-up')[0].addEventListener('click',async(event)=>{              
+      let thisrow=event.target.parentNode.parentNode;
+      let thisrowindex=thisrow.rowIndex;
+      if (thisrowindex>1){
+        // not the first row move it     
+        let tbody=event.target.parentNode.parentNode.parentNode;
+        let previousrow=tbody.rows[thisrowindex -2];
+        tbody.insertBefore(thisrow,previousrow);
+      }     
+    });
+    tdManipulator.getElementsByClassName('sb-lookup-table-editor-move-row-down')[0].addEventListener('click',async(event)=>{              
+     let thisrow=event.target.parentNode.parentNode;
+     let thisrowindex=thisrow.rowIndex;
+     let numberofrows=event.target.parentNode.parentNode.parentNode.rows.length;    
+     if (thisrowindex<numberofrows){
+       // not the last row move it      
+       let tbody=event.target.parentNode.parentNode.parentNode;
+       let nextrow=tbody.rows[thisrowindex + 1];
+       tbody.insertBefore(thisrow,nextrow);
+     }  
+    });
     
   }
   
@@ -660,10 +696,7 @@ function _buildRow(row){
         break;
     }   
   }
-  returnvalue+=`<td class="sb-lookup-table-editor-manipulator-cell">
-    <i class="sb-btn sb-lookup-table-editor-move-row-up fas fa-arrow-alt-circle-up" data-tooltip="Move up" ></i>
-    <i class="sb-btn sb-lookup-table-editor-move-row-down fas fa-arrow-alt-circle-down" data-tooltip="Move down" ></i>
-    <i class="sb-btn sb-lookup-table-editor-delete-row fas fa-trash" data-tooltip="Delete row"></i></td>`;
+  returnvalue+=`<td class="sb-lookup-table-editor-manipulator-cell"><i class="sb-btn sb-lookup-table-editor-move-row-up fas fa-arrow-alt-circle-up" data-tooltip="Move up" ></i><i class="sb-btn sb-lookup-table-editor-move-row-down fas fa-arrow-alt-circle-down" data-tooltip="Move down" ></i><i class="sb-btn sb-lookup-table-editor-delete-row fas fa-trash" data-tooltip="Delete row"></i></td>`;
   returnvalue+='</tr>';
   return returnvalue;
 }

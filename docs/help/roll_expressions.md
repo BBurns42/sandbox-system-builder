@@ -1,6 +1,6 @@
 # Roll Expressions
 
-> :warning:Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
+> Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
 
 Rolls can be defined for Properties and cItems, if some requirements are met:
 - Properties: a property will trigger a dice roll when its label is clicked on the character sheet, only if the property option "Rollable" is checked. When checked, a Property item will display the roll options menu (see below).
@@ -11,7 +11,25 @@ Rolls can be defined for Properties and cItems, if some requirements are met:
 Both Properties and cItems have a section where you can configure how the roll will be triggered. This menu looks like this:
 
 
-## Roll expressions flags
+
+## Roll Expression Structure
+
+All rolls need to follow this structure
+
+Minimum required is a number.
+
+
+
+## Roll Expression Functions
+
+All Common Expressions Functions can be used in a Roll.
+
+These functions below are only valid for rolls.
+
+
+
+
+## Roll Expressions flags
 Flags can be added at the end of a roll expression, changing basic functionality of the roll.
 All flags are used with surrounding tildes `~flag~`
 | Flag                  | Description                                                  |

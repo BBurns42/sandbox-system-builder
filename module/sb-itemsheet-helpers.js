@@ -1297,7 +1297,7 @@ function sb_item_sheet_validate_key(validatingitemtype,itemName, validatingitemi
 }
   
 async function sb_item_sheet_autogenerate_icon(html,item,usedefault=false){     
-     
+  let icondefaultfilename='systems/sandbox/docs/icons/sh_prop_icon.png';  
   // get item id
 //  let sheetelementid;
 //  // for some updates the return html is a form

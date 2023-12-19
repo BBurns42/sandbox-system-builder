@@ -18,10 +18,10 @@ function getColumnIndex(lookup,strColumnName){
   return returnValue;
 }
 
-// lookupV(lookupValue;lookupKey;returnColumn;exactMatch=false;optionalDefault='') 
+// lookupV(lookupValue;lookupKey;returnColumn;exactMatch=false;defaultReturn='') 
 // returns empty string if error or not found
-export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=false,optionalDefault=''){  
-  let returnvalue=optionalDefault;  
+export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=false,defaultReturn=''){  
+  let returnvalue=defaultReturn;  
   let lookup = await auxMeth.getTElement(null, "lookup", lookupKey);
  
   // basic checks
@@ -52,13 +52,13 @@ export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=fals
     }
   }  
   if(!exactMatch){
-    if(lookupValue<(lookup.system.lookupTable.rows[0][0])){
+    if(Number(lookupValue)<Number(lookup.system.lookupTable.rows[0][0])){
       returnvalue=lookup.system.lookupTable.rows[0][returnColumn];
       return returnvalue;
     }
   }
   if(!exactMatch){
-    if(lookupValue>(lookup.system.lookupTable.rows[lookup.system.lookupTable.rows.length-1][1])){
+    if(Number(lookupValue)>Number(lookup.system.lookupTable.rows[lookup.system.lookupTable.rows.length-1][1])){
       returnvalue=lookup.system.lookupTable.rows[lookup.system.lookupTable.rows.length-1][returnColumn];
       return returnvalue;
     }
@@ -66,9 +66,9 @@ export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=fals
   return returnvalue;
 }
 
-//lookupX(lookupValue;lookupKey;lookupColumn;returnColumn;optionalDefault='') // always exact match
-export async function lookupX(lookupValue,lookupKey,lookupColumn,returnColumn,optionalDefault=''){
-  let returnvalue=optionalDefault;
+//lookupX(lookupValue;lookupKey;lookupColumn;returnColumn;defaultReturn='') // always exact match
+export async function lookupX(lookupValue,lookupKey,lookupColumn,returnColumn,defaultReturn=''){
+  let returnvalue=defaultReturn;
   let lookup = await auxMeth.getTElement(null, "lookup", lookupKey);
   // basic checks
   if(!sb_lookupTable_passes_basic_check(lookupKey,lookup)){
