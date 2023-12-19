@@ -1112,45 +1112,13 @@ ${dialogPanel.system.title}
     }
 
     async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses=1, rollcitemID, targets, dialogProps = null, useData = null) {
-
-        rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
-
-        rollname = await auxMeth.parseDialogProps(rollname, dialogProps);
-
         let tokenid;
-
-        //console.log(rollexp);
-
         let finalroll;
-
-        //PARSE actor name
-        rollexp = await rollexp.replace(/\#{actor}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\@{actor}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\#{actorname}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\@{actorname}/g, this.actor.name);
-        // parse target(s) name
-        if(rollexp.includes("#{targetname}")){
-          if(targets.length>0){
-            let targetnames='';
-            
-            for (let i = 0; i < targets.length; i++) {
-              tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
-              if(tokenid!=null){
-                if(targetnames.length==0){
-                  targetnames=tokenid.name;
-                } else{
-                  targetnames=targetnames + '&#44 ' + tokenid.name;
-                }
-              }
-              
-            }
-            console.warn(targetnames);
-            rollexp = await rollexp.replace(/\#{targetname}/g, targetnames);
-          } else {  
-            rollexp = await rollexp.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
-          }
-        }
-
+        rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
+        rollexp = await auxMeth.basicParser(rollexp,this.actor);
+        rollname = await auxMeth.parseDialogProps(rollname, dialogProps);
+        rollname = await auxMeth.basicParser(rollname,this.actor);       
+        //console.log(rollexp);        
         if (targets.length > 0 && ((rollexp.includes("#{target|") || rollexp.includes("add(")) || rollexp.includes("set("))) {
             for (let i = 0; i < targets.length; i++) {
                 tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
@@ -4248,7 +4216,8 @@ ${dialogPanel.system.title}
                                                 let addList='';
                                                 let rawlist = propdata.listoptions;
                                                 if(rawlist.length>0){                                                  
-                                                  addList +=rawlist;
+                                                   
+                                                  addList=rawlist.replaceAll(',','|');
                                                 }
                                                 // check for listauto
                                                 if(propdata.listoptionsAutoUse){
@@ -4372,7 +4341,9 @@ ${dialogPanel.system.title}
 //                                                 isfirstFree = false;
 //                                            }
                                             if (!isFree) {
-                                                new_cell.addEventListener("change", (event) => this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value));
+                                                new_cell.addEventListener("change", (event) => 
+                                                  this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value)
+                                                );
                                             }
                                             else {
                                                 let ischeck = false;

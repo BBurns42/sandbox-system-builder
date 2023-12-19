@@ -3285,11 +3285,7 @@ export class gActor extends Actor {
         let ToGM = false;
         let rolltotal = 0;
         let conditionalText = "";
-        let diff = await game.settings.get("sandbox", "diff");
-        if (diff == null)
-            diff = 0;
-        if (isNaN(diff))
-            diff = 0;
+        
         //console.log(diff);
         let rollformula = rollexp;
 
@@ -3301,33 +3297,8 @@ export class gActor extends Actor {
 
         //Check roll mode
         let rollmode = this.system.rollmode;
-        rollname = rollname.replace(/\#{actor}/g, this.name);
-        rollname = rollname.replace(/\#{actorname}/g, this.name);
-        rollname = rollname.replace(/\@{actor}/g, this.name);
-        rollname = rollname.replace(/\@{actorname}/g, this.name);
-        // parse target(s) name
-        if (rollname.includes("#{targetname}")) {
-            let targets = game.user.targets.ids;
-            if (targets.length > 0) {
-                let targetnames = '';
-                let targettoken = null;
-                for (let i = 0; i < targets.length; i++) {
-                    targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
-                    if (targettoken != null) {
-                        if (targetnames.length == 0) {
-                            targetnames = targettoken.name;
-                        } else {
-                            targetnames = targetnames + '&#44 ' + targettoken.name;
-                        }
-                    }
+        
 
-                }
-                //console.warn(targetnames);
-                rollname = await rollname.replace(/\#{targetname}/g, targetnames);
-            } else {
-                rollname = await rollname.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
-            }
-        }
         
         if (citemattributes != null) {
             rollname = rollname.replace(/\#{name}/g, citemattributes.name);
@@ -3337,18 +3308,13 @@ export class gActor extends Actor {
         }
 
 
-        //Parse roll difficulty in name, and general atts
-        rollname = rollname.replace(/\#{diff}/g, diff);
+        //Parse basics
+        rollname = await auxMeth.basicParser(rollname,this);
         rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number);
 
-        //Parse roll difficulty
-        rollexp = rollexp.replace(/\#{diff}/g, diff);
-        rollexp = await rollexp.replace(/\#{actor}/g, this.name);
-        rollexp = await rollexp.replace(/\#{actorname}/g, this.name);
-        rollexp = await rollexp.replace(/\@{actor}/g, this.name);
-        rollexp = await rollexp.replace(/\@{actorname}/g, this.name);
-        if (citemattributes != null) {
-            
+        rollexp = await auxMeth.basicParser(rollexp,this);
+        
+        if (citemattributes != null) {            
             rollexp = await rollexp.replace(/\#{name}/g, citemattributes.name);
             rollexp = await rollexp.replace(/\#{active}/g, isactive);
             rollexp = await rollexp.replace(/\#{uses}/g, ciuses);

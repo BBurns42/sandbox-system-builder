@@ -1074,6 +1074,58 @@ export class auxMeth {
 
         return expr;
     }
+    static async basicParser(expr,actor=null,actorcitem=null){
+      let returnValue=expr;
+      // parses basic things
+      if(expr.length==0) return returnValue;
+      if(expr.includes("#{diff}")){
+        let diff = await game.settings.get("sandbox", "diff");
+        if (diff == null)
+            diff = 0;
+        if (isNaN(diff))
+            diff = 0;
+        returnValue = returnValue.replace(/\#{diff}/g, diff);
+      }
+      if(actor=!null){
+        returnValue = returnValue.replace(/\#{actor}/g, actor.name);
+        returnValue = returnValue.replace(/\#{actorname}/g, actor.name);
+        returnValue = returnValue.replace(/\@{actor}/g, actor.name);
+        returnValue = returnValue.replace(/\@{actorname}/g, actor.name);
+      }
+      if(actorcitem!=null){
+        // for future when i rewritten other functions to pass actor,actorcitem
+      }
+      if(returnValue.includes("#{targetname}")){
+        let firstTarget=game.user.targets.first();
+        if(firstTarget!=null){
+          returnValue = await returnValue.replace(/\#{targetname}/g, firstTarget.document.name);
+        } else{
+          returnValue = await returnValue.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+        }
+      }
+      // parse target(s) name
+      if (returnValue.includes("#{targetlist}")) {
+        let targets = game.user.targets.ids;
+        if (targets.length > 0) {
+          let targetnames = '';
+          let targettoken = null;
+          for (let i = 0; i < targets.length; i++) {
+            targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
+            if (targettoken != null) {
+              if (targetnames.length == 0) {
+                targetnames = targettoken.name;
+              } else {
+                targetnames = targetnames + '&#44 ' + targettoken.name;
+              }
+            }
+          }          
+          returnValue = await returnValue.replace(/\#{targetlist}/g, targetnames);
+        } else {
+          returnValue = await returnValue.replace(/\#{targetlist}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+        }
+      }
+      return returnValue;
+    }
 
     static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) {
         const initialexp = expr;
@@ -2826,7 +2878,7 @@ export class auxMeth {
           }
         }
         // if not found use the first entry
-        if(selectedValue!=null){
+        if(selectedValue==null){
           selectedValue==optionsArray[0];
         }
       }
