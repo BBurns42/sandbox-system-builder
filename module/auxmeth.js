@@ -1880,9 +1880,16 @@ export class auxMeth {
                                 let sumExpr = blocks[n];
                                 //console.log(sumExpr);
                                 if (isNaN(blocks[n])) {
+                                  try{
                                     sumExpr = eval(sumExpr);
+                                  }
+                                  catch{
+                                    nonumber = true;
+                                  }
                                 }
-                                finalvalue += parseInt(sumExpr);
+                                if(!nonumber){
+                                  finalvalue += parseInt(sumExpr);
+                                }
                             }
                             else {
                                 //console.log("nonumber");

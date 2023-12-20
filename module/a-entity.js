@@ -2346,7 +2346,7 @@ export class gActor extends Actor {
                                 
                                 let rawvalue = await auxMeth.autoParser(propauto, attributes, citmAttr, false, false, citmNum);
                                 rawvalue = await game.system.api._extractAPIFunctions(rawvalue,attributes, citmAttr, false,false,citmNum);
-                                
+                                rawvalue = await auxMeth.autoParser(rawvalue, attributes, citmAttr, false, false, citmNum);
                                 
                                 
                                 
