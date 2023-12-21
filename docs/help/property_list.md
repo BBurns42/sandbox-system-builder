@@ -51,7 +51,13 @@ Lists all currently available Lookup items
 
 Lists all columns in currently selected Lookup item
 
+## A note on options
 
+The LIST dropdown is built by the following order
 
+1. Add options from string in the Options field
+2. Add options from Expression in Options Auto
+3. Add options from the lookup in Options Lookup
 
+Meaning each step add options to the final dropdown, and any combination of these works.
 

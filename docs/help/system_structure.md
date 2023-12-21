@@ -1,5 +1,7 @@
 ## System Structure
 
+> These pages are under construction, if needed, please refer to the previous [README](readme_previous.md)
+
 Every system in Sandbox depends on two things:
 
 - A group of Template Actors
@@ -16,6 +18,8 @@ A combination of templates and cItems is the basis of any Sandbox system. When p
 - A Folder for cItems within the Items Directory.
 
 A suggestion for folder structure can look like this:
+
+![](resources/folder_structure_suggestion.png)
 
 
 

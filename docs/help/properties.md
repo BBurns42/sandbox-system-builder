@@ -1,6 +1,6 @@
 # Properties
 
-> Page under construction, please refer to the previous [README_PREVIOUS.MD](../../README_PREVIOUS.MD)
+> These pages are under construction, if needed, please refer to the previous [README](readme_previous.md)
 
 Properties are items that define how the information of an actor will be stored. They basically generate the input fields inside the actor panels. 
 
