@@ -4,15 +4,29 @@
 
 ## Sections
 
-1. [System Structure](system_structure.md)
-2. [Template Actors](template_actors.md)
-3. [Tabs](tabs.md)
-4. [Panels](panels.md)
-5. [Properties](properties.md)
-6. [Groups](groups.md)
-7. [cItems](citems.md)
-8. [Lookups](lookups.md)
-9. [Roll Expressions](roll_expressions.md)
-10. [CSS and Styling](css_and_styling.md)
-11. [How To's](how_tos.md)
+1. [Sandbox Settings](sandbox_settings.md)
+
+2. [System Structure](system_structure.md)
+
+3. [Template Actors](template_actors.md)
+
+4. [Sheettabs](sheettabs.md)
+
+5. [Panels](panels.md)
+
+6. [Properties](properties.md)
+
+7. [Groups](groups.md)
+
+8. [cItems](citems.md)
+
+9. [Lookups](lookups.md)
+
+10. [Roll Expressions](roll_expressions.md)
+
+11. [CSS and Styling](css_and_styling.md)
+
+12. [How To's](how_tos.md)
+
+    
 
