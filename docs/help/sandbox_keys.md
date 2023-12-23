@@ -28,3 +28,22 @@ See [Sandbox Settings](sandbox_settings.md) for more information
 ## Key recommendations
 
 For ease of standard, it is recommended to use only A-Z(upper-case),0-9,_(underscore)
+
+## Reserved Keys
+
+Sandbox exposes some special properties by reserved keys, avoid using these keys for your own properties.
+
+- `#{diff}` - returns current Difficulty Class, see [Sandbox User Interface](sandbox_user_interface.md)
+- `@{name}` - returns current actor name
+- `#{targetname}` - returns the name of the first targeted token
+- `#{targetlist}` - returns a comma separated string of all targeted tokens name
+
+### cItem Reserved keys
+
+These are only valid within a cItem
+
+- `#{name}` - the name of the cItem
+- `#{num}` -  returns the current number of units of the cItems that this actor has.
+- `#{active}` - the activation status of the ACTIVE citem
+- `#{uses}` - the current available uses of a CONSUMABLE cItem
+- `#{maxuses}` - maximum number of uses for a CONSUMABLE cItem

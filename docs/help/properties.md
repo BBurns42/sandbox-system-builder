@@ -20,14 +20,15 @@ See [Keys in Sandbox](sandbox_keys.md)
 Available data types are 
 
 - [SimpleText](property_simpletext.md)
-- SimpleNumeric
-- Checkbox
-- Textarea
+- [SimpleNumeric](property_simplenumeric.md)
+- [Checkbox](property_checkbox.md)
+- [Radio](property_radio.md)
+- [Textarea](property_textarea.md)
 - [List](property_list.md)
-- Label
-- Badge
-- Table
-- Button
+- [Label](property_label.md)
+- [Badge](property_badge.md)
+- [Table](property_table.md)
+- [Button](property_button.md)
 
 ### Hidden
 
@@ -96,6 +97,8 @@ Text to display as tooltip for the property
 ### Auto
 
 A valid Common Expression, see [Expressions](sandbox_expressions.md)
+
+A property with an Auto will rendered as read-only.
 
 ## Item Helpers
 

@@ -8,7 +8,11 @@
 
 2. [System Structure](system_structure.md)
 
-3. [Template Actors](template_actors.md)
+3. Template Actors
+
+   1. [Basics](template_actors.md)
+
+   2. [Building Template Actors](template_actors_building.md)
 
 4. [Sheettabs](sheettabs.md)
 

@@ -2334,11 +2334,8 @@ export class gActor extends Actor {
                             let propKey = propdata.system.attKey;
                             let propauto = propdata.system.auto;
 
-                            if (propauto != "") {
-                                propauto = await propauto.replace(/\#{actor}/g, this.name);
-                                propauto = await propauto.replace(/\#{actorname}/g, this.name);
-                                propauto = await propauto.replace(/\@{actor}/g, this.name);
-                                propauto = await propauto.replace(/\@{actorname}/g, this.name);
+                            if (propauto != "") {                                
+                                propauto = await propauto.replace(/\@{name}/g, this.name);
                                 propauto = await propauto.replace(/\#{name}/g, citemIDs[n].name);
                                 propauto = await propauto.replace(/\#{active}/g, citemIDs[n].isactive);
                                 propauto = await propauto.replace(/\#{uses}/g, citemIDs[n].uses);
@@ -2346,7 +2343,8 @@ export class gActor extends Actor {
                                 
                                 let rawvalue = await auxMeth.autoParser(propauto, attributes, citmAttr, false, false, citmNum);
                                 rawvalue = await game.system.api._extractAPIFunctions(rawvalue,attributes, citmAttr, false,false,citmNum);
-                                rawvalue = await auxMeth.autoParser(rawvalue, attributes, citmAttr, false, false, citmNum);
+                                rawvalue = await game.system.api.mathParser(rawvalue); 
+                                
                                 
                                 
                                 

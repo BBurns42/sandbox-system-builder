@@ -6,7 +6,7 @@
   "FILES.TitleJson": "Select JSON file",
   "FILES.TitleCsv": "Select CSV file",
   
-  "SANDBOX.RollExpressionNoTargetsSelected":"No targets selected",
+  "SANDBOX.RollExpressionNoTargetsSelected":"No target(s) selected",
   "SANDBOX.GMAuthorityRequiredTitle":"Insufficient permission",
   "SANDBOX.GMAuthorityRequiredBody":"This action require GM permissions to perform",
   

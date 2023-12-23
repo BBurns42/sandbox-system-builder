@@ -12,6 +12,7 @@ import { lookupList } from "./sb-lookup-table.js";
  * Extend the basic ActorSheet with some very simple modifications
  * @extends {ActorSheet}
  */
+
 export class gActorSheet extends ActorSheet {
 
     /** @override */
@@ -4016,18 +4017,17 @@ ${dialogPanel.system.title}
                                                 if (propdata.datatype == "simplenumeric")
                                                     justexpr = false;
                                                 //
-                                                if (checknonumsum) {
-                                                    constantvalue = await constantvalue.replace(/\#{actor}/g, this.actor.name);
-                                                    constantvalue = await constantvalue.replace(/\#{actorname}/g, this.actor.name);
-                                                    constantvalue = await constantvalue.replace(/\@{actor}/g, this.actor.name);
-                                                    constantvalue = await constantvalue.replace(/\@{actorname}/g, this.actor.name);
+                                                if (checknonumsum) {                                                    
+                                                    constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
                                                     constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
                                                     constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
                                                     constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
                                                     constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
                                                     constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
                                                     constantvalue = await game.system.api._extractAPIFunctions(constantvalue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
-                                                    constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                    constantvalue = await game.system.api.mathParser(constantvalue);
+                                                    //constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                    
                                                 }
                                             }
                                             else {

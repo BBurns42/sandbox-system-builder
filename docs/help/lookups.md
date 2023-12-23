@@ -18,8 +18,6 @@ Edit this with the Table Editor(use the Item Helper)
 
 ## Lookup Table Editor
 
-
-
 ![Lookup Table Editor](resources/lookup_table_editor_basic.png)
 
 ### Functions

@@ -1086,11 +1086,8 @@ export class auxMeth {
             diff = 0;
         returnValue = returnValue.replace(/\#{diff}/g, diff);
       }
-      if(actor=!null){
-        returnValue = returnValue.replace(/\#{actor}/g, actor.name);
-        returnValue = returnValue.replace(/\#{actorname}/g, actor.name);
-        returnValue = returnValue.replace(/\@{actor}/g, actor.name);
-        returnValue = returnValue.replace(/\@{actorname}/g, actor.name);
+      if(actor=!null){        
+        returnValue = returnValue.replace(/\@{name}/g, actor.name);
       }
       if(actorcitem!=null){
         // for future when i rewritten other functions to pass actor,actorcitem
@@ -1126,6 +1123,9 @@ export class auxMeth {
       }
       return returnValue;
     }
+    
+    
+    
 
     static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) {
         const initialexp = expr;
@@ -1407,7 +1407,7 @@ export class auxMeth {
         //NEW SMART PARSING
         let sums_are_num = false;
         let safety_break = 0;
-
+        let useMathParser=false;
         while (!sums_are_num) {
             //console.log(expr);
             sums_are_num = true;
@@ -1415,7 +1415,7 @@ export class auxMeth {
                 break;
 
             //console.log(expr);
-
+if(!useMathParser){
             //PARSE CEIL
             let ceilmatch = /\bceil\(/g;
             var ceilResultArray;
@@ -1456,9 +1456,9 @@ export class auxMeth {
 
                 }
             }
-
+            }
             //console.log(expr);
-
+if(!useMathParser){
             //PARSE FLOOR
             let floormatch = /\bfloor\(/g;
             var floorResultArray;
@@ -1500,6 +1500,7 @@ export class auxMeth {
 
                 }
             }
+        }
 
             //console.log(expr);
 
@@ -1845,6 +1846,7 @@ export class auxMeth {
             //console.log(expr);
 
             //SUM
+        if(!useMathParser){
             //var sumResult = expr.match(/(?<=\bsum\b\().*?(?=\))/g);
             let summatch = /\bsum\(/g;
             var sumResultResultArray;
@@ -1915,8 +1917,7 @@ export class auxMeth {
 
                 }
             }
-
-            //console.log(expr);
+        } 
 
             //PARSE SCALED AUTO VALUES
             //var scaleresult = expr.match(/(?<=\%\[).*?(?=\])/g);
@@ -2354,29 +2355,7 @@ export class auxMeth {
             }
 
         }
-        if (typeof toreturn == 'string') {
-//          let getLookupV = toreturn.match(/(?<=\blookupv\b\().*?(?=\))/g);
-//          if (getLookupV != null) {
-//              for (let i = 0; i < getLookupV.length; i++) {  
-//                //console.log(getLookupV[i]);
-//                let tochange = "lookupv(" + getLookupV[i] + ")";
-//                let replaceValue=await auxMeth.useAPIFunction('lookupv',getLookupV[i]);                                                                                
-//                toreturn = await toreturn.replace(tochange, replaceValue);                
-//              }
-//            //console.warn('autoParser ['+initialexp+'] returns:[' + (typeof toreturn) +']' + toreturn);      
-//          }
-//          let getLookupX = toreturn.match(/(?<=\blookupx\b\().*?(?=\))/g);
-//          if (getLookupX != null) {
-//              for (let i = 0; i < getLookupX.length; i++) {  
-//                //console.log(getLookupX[i]);
-//                let tochange = "lookupv(" + getLookupX[i] + ")";
-//                let replaceValue=await auxMeth.useAPIFunction('lookupx',getLookupX[i]);                                                                                
-//                toreturn = await toreturn.replace(tochange, replaceValue);                
-//              }
-//            //console.warn('autoParser ['+initialexp+'] returns:[' + (typeof toreturn) +']' + toreturn);      
-//          }
-          
-        }
+
         
         
         return toreturn;

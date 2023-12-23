@@ -65,8 +65,9 @@ export class SandboxAPI {
         lookupList,
         _extractAPIFunction,
         _extractAPIFunctions,
-        _ActorProperty_RemoveProperty
-        
+        _ActorProperty_RemoveProperty,
+        mathParser,
+        sum,floor,ceil
       };           
     
   }
@@ -89,9 +90,101 @@ function _APIFunctionRequiredArguments(functionName){
       case 'lookupList':
         returnValue=2;
         break;
+      case 'sum':
+      case 'floor':
+      case 'ceil':
+        returnValue=1;
+        break;
     }
   return returnValue;
 }
+
+async function sum(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = eval(expr);
+    //console.log('sum(' + expr +') = ' + returnValue );
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function floor(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = Math.floor(eval(expr));    
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function ceil(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = Math.ceil(eval(expr));    
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function mathParser(expr){
+      let returnValue=expr;
+      if (typeof (expr) != "string") return expr;
+      if (expr.length == 0) return expr;
+      returnValue = await mathParserFn(returnValue,'floor');
+      returnValue = await mathParserFn(returnValue,'ceil');
+      returnValue = await mathParserFn(returnValue,'sum');
+      
+      return returnValue;
+    }
+    
+async function mathParserFn(expr,functionName){
+      let returnValue=expr;
+      if (typeof (expr) != "string") return expr;
+      if (expr.length == 0) return expr;
+          // finds functions, with three levels of nested ()
+      let strSeparator=';';
+      let expArray=null;
+      switch(functionName){
+        case 'sum':
+          expArray=expr.match(/sum\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+        case 'floor':
+          expArray=expr.match(/floor\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+        case 'ceil':
+          expArray=expr.match(/ceil\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+      }
+      if (expArray != null) {
+        for (let i = 0; i < expArray.length; i++) {
+          let tochange = expArray[i];
+          // lookupV(@{TXT_STR_TOTAL};D_D_STRENGTH;4)
+          // get rid of surrounding ()
+          let checkthis=tochange.substr(functionName.length + 1,tochange.length - functionName.length - 2);
+          // @{TXT_STR_TOTAL};D_D_STRENGTH;4                
+          //console.log('extractAPIFunction tochange',tochange);
+          let blocks = _parseArgs(checkthis,strSeparator);                
+          let args = [];
+          for (let a = 0; a < blocks.length; a++) {          
+            let argument = blocks[a];
+            // check if any API are in blocks
+            argument = await mathParser(argument);          
+            args.push(argument);
+          }
+          let replaceValue=await _APIFunctionRun(functionName,args) ;                        
+          returnValue = await returnValue.replace(tochange, replaceValue);
+        }
+      }
+      
+      return returnValue;
+    }
+
+
+
 
 // splits string on separator but not if separator are inside a ()
 function _parseArgs(str,separator=';',startBracket='(',endBracket=')') {
@@ -108,6 +201,9 @@ function _parseArgs(str,separator=';',startBracket='(',endBracket=')') {
   push();
   return result;
 }
+
+
+
 async function _extractAPIFunctions(expr, actorattributes, citemattributes, exprmode = false, noreg = false, number = 1, uses = 0, maxuses = 1) {
   let returnValue=expr;
   if(returnValue.length>0){
