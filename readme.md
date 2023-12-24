@@ -41,6 +41,6 @@ Do you have questions? Join the Discord server and head to SANDBOX ENGLISH
 
 - Do not insert data in the Template actor. Template Actors are not for sheet building, just create regular actors for that!
 - After rebuilding a sheet, any previous character will require pressing the reload template button, left of the template selector, in order to display the new changes
-  ![](docs\help\resources\actor_sheet_header.jpg)
+  ![](docs/help/resources/actor_sheet_header.jpg)
 - Never forget to include a key to a Sandbox element, or it won't let you drag it anywhere. Also, make sure keys are unique and do not contain spaces!
 - Whenever you change a template, your existing actors won't register the changes correctly. This is intentional, until sandbox is more stable so any mistakes in the template don't destroy your world. You just need to reload the template as mentioned above
