@@ -1,5 +1,7 @@
 # Sandbox User Interface
 
+This chapter describes various aspects of using a Sandbox world
+
 ## Sheets Title Bar
 
 Sandbox adds three clickable captions to all items and actor sheets
@@ -8,7 +10,25 @@ Sandbox adds three clickable captions to all items and actor sheets
 
 ### Icons(Show/Hide Delete/Add)
 
+Shows/hides all delete icons on sheets, it also shows/hides the Add new row icon for free tables.
+
 ### Show(Info to others)
+
+This tool makes it easy to show other selected players/GMs an item/actor without needing giving ownership to that item/actor. 
+
+![](./resources/show_to_others_basic.png)
+
+#### Popup
+
+![](./resources/show_to_others_popup.png)
+
+#### Chat
+
+![](./resources/show_to_others_chat.png)
+
+#### Chat(compact)
+
+![](./resources/show_to_others_chat_compact.png)
 
 ### Info
 
@@ -30,6 +50,8 @@ The Actor Properties manager is a useful tool to remove obsolete properties and 
 If enabled in Settings, this will display a box with a Difficulty Class number, usable in expressions as #{diff}
 
 ![](./resources/difficulty_class_input.png)
+
+If defined in Settings, the DC will have a dropdown with defined Difficulty Classes.
 
 ## Last Roll
 

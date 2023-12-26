@@ -24,89 +24,101 @@ export function sb_settings_menus() {
 }
 
 export function sb_settings_registration() {
-     game.settings.register("sandbox", "showADV", {
-        name: "Show Roll with Advantage option",
-        hint: "If checked, 1d20,ADV,DIS options will be displayed under the Actor's name",
+     game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_SHOWADV.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWADV.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWADV.ID}.Hint`,
         scope: "world",
         config: false,
-        default: true,
+        default: `${SETTINGATTRIBUTE.OPTION_SHOWADV.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresrender:true
     });
-    game.settings.register("sandbox", "showSimpleRoller", {
-        name: "Show d20 Roll icon option",
-        hint: "If checked a d20 icon will be displayed under the Actor's name",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_SHOWSIMPLEROLLER.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWSIMPLEROLLER.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWSIMPLEROLLER.ID}.Hint`,
         scope: "world",
         config: false,
-        default: true,
+        default: `${SETTINGATTRIBUTE.OPTION_SHOWSIMPLEROLLER.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresrender:true
     });
-    game.settings.register("sandbox", "consistencycheck", {
-        name: "Check cItem Consistency",
-        hint: "If checked, when rebuilding template, every cItem will be evaluated for consistency. WARNING: May take several minutes in big systems",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_CONSISTENCYCHECK.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_CONSISTENCYCHECK.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_CONSISTENCYCHECK.ID}.Hint`,
         scope: "world",
         config: false,
-        default: false,
+        default: `${SETTINGATTRIBUTE.OPTION_CONSISTENCYCHECK.DEFAULT}`,
         type: Boolean,
         hidden: true
     });
-    game.settings.register("sandbox", "showDC", {
-        name: "Show DC window",
-        hint: "If checked a DC box will appear at the bottom of the screen",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_SHOWDC.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWDC.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWDC.ID}.Hint`,
         scope: "world",
         config: false,
-        default: true,
+        default: `${SETTINGATTRIBUTE.OPTION_SHOWDC.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresreload:true
     });
-    game.settings.register("sandbox", "showLastRoll", {
-        name: "Show Last Roll window",
-        hint: "If checked a box displaying the results of the last Roll will appear at the bottom of the screen",
+    
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_USEDCLIST.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_USEDCLIST.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_USEDCLIST.ID}.Hint`,
         scope: "world",
         config: false,
-        default: true,
+        default: `${SETTINGATTRIBUTE.OPTION_USEDCLIST.DEFAULT}`,
+        type: String,
+        category:`sandbox.settings.categories.SHOW_OPTIONS`,
+        requiresreload:true
+    });
+    
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_SHOWLASTROLL.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWLASTROLL.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWLASTROLL.ID}.Hint`,
+        scope: "world",
+        config: false,
+        default: `${SETTINGATTRIBUTE.OPTION_SHOWLASTROLL.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresreload:true
     });
-    game.settings.register("sandbox", "diff", {
-        name: "GM difficulty",
-        hint: "This is linked to the DC Box at the bottom of the screen",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_DIFF.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_DIFF.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_DIFF.ID}.Hint`,
         scope: "world",
         config: false,
-        default: 0,
+        default: `${SETTINGATTRIBUTE.OPTION_DIFF.DEFAULT}`,
         type: Number,
         hidden: true
     });
-    game.settings.register("sandbox", "rollmod", {
-        name: "Show Roll Modifier",
-        hint: "This number will be added to the total of all rolls",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_ROLLMOD.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_ROLLMOD.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_ROLLMOD.ID}.Hint`,
         scope: "world",
         config: false,
-        default: false,
+        default: `${SETTINGATTRIBUTE.OPTION_ROLLMOD.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresrender:true        
     });
-    game.settings.register("sandbox", "tokenOptions", {
-        name: "Token Options",
-        hint: "You can specify bar1 under token on the template Token tab",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID}.Hint`,
         scope: "world",
         config: false,
-        default: 0,
+        default: `${SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.DEFAULT}`,
         type: Boolean,
         category:`sandbox.settings.categories.GENERAL_OPTIONS`
     });
-    game.settings.register("sandbox", "customStyle", {
-        name: "CSS Style file",
-        hint: "You can specify a custom styling file. If default wanted, leave blank",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_CUSTOMSTYLE.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_CUSTOMSTYLE.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_CUSTOMSTYLE.ID}.Hint`,
         scope: "world",
         config: false,
-        default: "",
+        default: `${SETTINGATTRIBUTE.OPTION_CUSTOMSTYLE.DEFAULT}`,
         type: String,
         filePicker: 'filepickertype',
         fileType:"textextended",
@@ -114,33 +126,34 @@ export function sb_settings_registration() {
         disableresetdefault:true,
         requiresreload:true
     });
-    game.settings.register("sandbox", "initKey", {
-        name: "Initiative Attribute Key",
-        hint: "After editing, please refresh instance",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_INITKEY.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_INITKEY.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_INITKEY.ID}.Hint`,
         scope: "world",
         config: false,
-        default: "",
+        default: `${SETTINGATTRIBUTE.OPTION_INITKEY.DEFAULT}`,
         type: String,
         category:`sandbox.settings.categories.GENERAL_OPTIONS`,
-        disableresetdefault:true
+        disableresetdefault:true,
+        requiresreload:true
     });
             
     
-    game.settings.register("sandbox", "auxsettext1", {
-        name: "Auxiliary settings text 1",
-        hint: "After editing, please refresh instance",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_AUXSETTEXT1.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_AUXSETTEXT1.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_AUXSETTEXT1.ID}.Hint`,
         scope: "world",
         config: false,
-        default: null,
+        default: `${SETTINGATTRIBUTE.OPTION_AUXSETTEXT1.DEFAULT}`,
         type: String,
         hidden: true
     });
-    game.settings.register("sandbox", "idDict", {
-        name: "Dictionary IDs for importing cItems",
-        hint: "As cItems dont have word keys, this ensures faster lokup",
+    game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_IDDICT.ID, {
+        name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_IDDICT.ID}.Name`,
+        hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_IDDICT.ID}.Hint`,
         scope: "world",
         config: false,
-        default: null,
+        default: `${SETTINGATTRIBUTE.OPTION_IDDICT.DEFAULT}`,
         type: String,
         hidden: true,
         disableresetdefault:true

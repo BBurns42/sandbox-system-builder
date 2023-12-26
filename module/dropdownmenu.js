@@ -70,7 +70,7 @@ export class DropDownMenu {
    * @param {DropDownMenuCallback} [options.onOpen]      A function to call when the drop down menu is opened.
    * @param {DropDownMenuCallback} [options.onClose]     A function to call when the drop down menu is closed.
    */
-  constructor(element, selector, menuItems, {eventName="click", onOpen, onClose}={}) {
+  constructor(element, selector, menuItems, {eventName="click", onOpen, onClose,customClass=''}={}) {
 
     /**
      * The target HTMLElement being selected
@@ -107,6 +107,8 @@ export class DropDownMenu {
      * @type {Function}
      */
     this.onClose = onClose;
+    
+    this.customClass=customClass;
 
     /**
      * Track which direction the menu is expanded in
@@ -163,7 +165,7 @@ export class DropDownMenu {
        * @param {jQuery} html                     The HTML element to which the drop down options are attached
        * @param {DropDownMenuEntry[]} entryOptions The drop down menu entries
        */
-      console.log('dropdown cretae')
+      console.log('dropdown create')
       Hooks.call(`get${cls.name}${hookName}`, html, menuItems);
     }
 
@@ -242,8 +244,8 @@ export class DropDownMenu {
    */
   render(target) {
     const existing = $("#dropdown-menu"); 
-    let html = existing.length ? existing : $('<nav id="dropdown-menu"></nav>');
-    let ol = $('<ol class="dropdown-items"></ol>');
+    let html = existing.length ? existing : $(`<nav id="dropdown-menu" class="${this.customClass}"></nav>`);
+    let ol = $(`<ol class="dropdown-items ${this.customClass}"></ol>`);
     html.html(ol);
 
     // Build menu items
@@ -263,7 +265,7 @@ export class DropDownMenu {
       if (item.tooltip!=null){
         tooltip=item.tooltip;
       }      
-      let li = $(`<li class="dropdown-item" data-tooltip="${tooltip}">${item.icon}${name}</li>`);
+      let li = $(`<li class="dropdown-item ${this.customClass}" data-tooltip="${tooltip}">${item.icon}${name}</li>`);
       li.children("i").addClass("fa-fw");
       ol.append(li);
 

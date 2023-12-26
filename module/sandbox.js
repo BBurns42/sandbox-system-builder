@@ -179,6 +179,7 @@ Hooks.once("init", async function () {
     
     // DropDown menu listeners
     DropDownMenu.eventListeners();
+    ContextMenu.eventListeners()
     
     console.log(`Sandbox | Initializing System`);
 
@@ -545,6 +546,8 @@ Hooks.once('ready', async () => {
     game.user.setFlag('world','updateItemMapsDisabled',false);
     game.user.setFlag('world','reloadAfterTemplateRebuildDisabled',false);
     
+    
+    
     Hooks.on("hotbarDrop", (bar, data, slot) => createSandboxMacro(data, slot)); // ALONDAAR
 
     //Custom styling
@@ -588,7 +591,52 @@ Hooks.once('ready', async () => {
 
         let header = document.createElement("DIV");
         header.className = "dc-header";
-        header.textContent = "DC";
+        //header.textContent = "DC";
+        let incDC = document.createElement("I");
+        incDC.setAttribute( "class", "sb-dc-btn sb-dc-increase fas fa-square-plus" );
+        incDC.setAttribute( "data-tooltip", "Decrease Difficulty Class(CTRL+CLICK to change by 10)" );        
+        incDC.setAttribute( "data-tooltip-direction", "UP" );
+        incDC.addEventListener("click", async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          let change=1;
+          if (event.ctrlKey) {
+            change=10
+          }
+          sInput.value = Number(sInput.value) + change
+          await game.settings.set("sandbox", "diff", Number(sInput.value));
+        });
+        
+        
+        let decDC = document.createElement("I");
+        decDC.setAttribute( "class", "sb-dc-btn sb-dc-decrease fas fa-square-minus" );
+        decDC.setAttribute( "data-tooltip", "Increase Difficulty Class(CTRL+CLICK to change by 10)" );
+        decDC.setAttribute( "data-tooltip-direction", "UP" );
+        decDC.addEventListener("click", async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          let change=1;
+          if (event.ctrlKey) {
+            change=10
+          }
+          sInput.value = Number(sInput.value) - change
+          await game.settings.set("sandbox", "diff", Number(sInput.value));
+        });
+        
+        
+        
+        let spanDC = document.createElement("SPAN");
+        spanDC.innerHTML='DC';
+        spanDC.setAttribute( "class", "dc-header" );
+        ;
+        
+        
+        
+        
+        header.appendChild(decDC);
+        header.appendChild(spanDC);
+        header.appendChild(incDC);
+        
 
         let form = document.createElement("FORM");
         let sInput = document.createElement("INPUT");
@@ -644,12 +692,46 @@ Hooks.once('ready', async () => {
         });
 
         form.appendChild(sInput);
+         
+        
+        
+        
+        
         backgr.appendChild(header);
 
         backgr.appendChild(form);
 
         if (game.settings.get("sandbox", "showDC")) {
-            await hotbar.appendChild(backgr);
+          await hotbar.appendChild(backgr);
+          let sDCs=game.settings.get("sandbox", "useDCList");
+          let aDCs=sDCs.split(";");
+          let menuItems=[];
+          for (let i = 0; i < aDCs.length; i++) {
+            let entry=aDCs[i].split(":");
+            if(entry.length==2){
+              let entryMenu=
+                {
+                name:entry[0],
+                icon:'',
+                condition:true,
+                callback: async(event) => {
+                  //console.log(entry[0], entry[1]);
+                  sInput.value = Number(entry[1]);
+                  await game.settings.set("sandbox", "diff", Number(sInput.value));
+                }
+              };
+              menuItems.push(entryMenu);  
+            }
+          }
+          if(menuItems.length>0){
+            let selectorDC = document.createElement("I");
+            selectorDC.setAttribute( "id", "sb-dc-selector" )
+            selectorDC.setAttribute( "class", "sb-dc-btn fas fa-caret-down" );
+            selectorDC.setAttribute( "data-tooltip", "System defined Difficulty Classes" );
+            selectorDC.setAttribute( "data-tooltip-direction", "UP" );
+            spanDC.appendChild(selectorDC);
+            new DropDownMenu($(".dcroll-bar"), `#sb-dc-selector`, menuItems,{customClass:'sb-context'});
+          }
         }
 
 
@@ -679,6 +761,8 @@ Hooks.once('ready', async () => {
     }
     console.log("Sandbox | Ready | Completed");
 });
+
+
 
 Hooks.on("renderSidebarTab", createExportButtons);
 

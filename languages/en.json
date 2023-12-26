@@ -229,44 +229,44 @@
         
         "OPTION_CONFIRM_BATCH_OVERWRITE": {
           "Name": "Confirm batch overwrite",
-          "Hint": "Ask user for confirmation before applying batch overwrite(Autogenerate All,Clear All)"
+          "Hint": "If checked, ask user for confirmation before applying batch overwrite(Autogenerate All,Clear All)"
         }, 
         "OPTION_CONFIRM_ATTRIBUTE_OVERWRITE": {
           "Name": "Confirm attribute overwrite",
-          "Hint": "Ask user for confirmation before applying attribute overwrite(Autogenerate)"
+          "Hint": "If checked, ask user for confirmation before applying attribute overwrite(Autogenerate)"
         }, 
         "OPTION_AUTOGENERATE_PROPERTY_ICON": {
           "Name": "Change property icon automatically",
-          "Hint": "When enabled, changes to a property's datatype will automatically change the propertys icon"
+          "Hint": "If checked, changes to a property's datatype will automatically change the propertys icon"
         }, 
         
         
         "OPTION_SHOW_ITEM_HELPERS": {
           "Name": "Show item helpers",
-          "Hint": "Show item helper menus on item sheets.<br><i>Applies for GMs only.</i>"
+          "Hint": "If checked, show item helper menus on item sheets.<br><i>Applies for GMs only.</i>"
         }, 
         
         "OPTION_ACTIVATE_ITEM_DELETE_PROTECTION": {
           "Name": "Activate item deletion protection",
-          "Hint": "When activated, delete icons will be hidden as default, a checkbox for toggling the visibility of the delete icon is added to sheets window title."
+          "Hint": "If checked, delete/add icons will be hidden as default, a checkbox for toggling the visibility of the delete icon is added to sheets window title."
         }, 
         
         "OPTION_USE_DATATYPE_PREFIX": {
           "Name": "Use property data type for prefix",
-          "Hint": "When autogenerating a property key, use the propertys data type for prefix"
+          "Hint": "If checked, when autogenerating a property key, use the propertys data type for prefix"
         },
         
         
         "OPTION_USE_PREFIX_SUFFIX": {
           "Name": "Use prefix/suffix for autogenerating",
-          "Hint": "When autogenerating a field, add prefix and suffix"
+          "Hint": "If checked, when autogenerating a field, add prefix and suffix"
         },
         
         
         
         "OPTION_TRANSLITERATE_NON_LATIN": {
           "Name": "Transliterate non-latin characters",
-          "Hint": "When autogenerating key, any non-latin characters are transliterated into latin equivalents.<br>When <b>Enforced key validation mode</b> is checked, transliteration will be executed regardless of this setting.<br><b>Please note that using non-latin characters as key might not work in roll expressions</b>"
+          "Hint": "If checked, when autogenerating key, any non-latin characters are transliterated into latin equivalents.<br>When <b>Enforced key validation mode</b> is checked, transliteration will be executed regardless of this setting.<br><b>Please note that using non-latin characters as key might not work in roll expressions</b>"
         },
         
         
@@ -278,30 +278,82 @@
         
         "OPTION_ADAPT_ITEM_SHEET_POSITION": {
           "Name": "Adapt item sheet size/position",
-          "Hint": "When checked, the starting size and position are adapted to item content.<br><i>Applies for GMs only.</i>"
+          "Hint": "If checked, the starting size and position are adapted to item content.<br><i>Applies for GMs only.</i>"
         },
                 
         "OPTION_DISPLAY_ID_IN_SHEET_CAPTION": {
           "Name": "Display ID in sheet caption",
-          "Hint": "When checked, the item/actors ID will be displayed as a tooltip icon in the sheets window title.<br> Clicking this icon will output the item/actor data in the console. Useful for debugging problems.<br><i>Applies for GMs only.</i>"
+          "Hint": "If checked, the item/actors ID will be displayed as a tooltip icon in the sheets window title.<br> Clicking this icon will output the item/actor data in the console. Useful for debugging problems.<br>For actors, CTRL+CLICK for showing Actor Properties Manager<br><i>Applies for GMs only.</i>"
         },
                 
         "OPTION_DISPLAY_SHOW_TO_OTHERS_IN_SHEET_CAPTION": {
           "Name": "Display Show To Others in sheet caption",
-          "Hint": "When checked, the a clickable icon will be shown in the sheets window title."
+          "Hint": "If checked, the a clickable icon will be shown in the sheets window title."
         },
         
         "OPTION_USE_CITEM_INFO_FORM_FOR_GMS": {
           "Name": "Show GMs cItem description only",
-          "Hint": "When checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for GMs only.</i>"
+          "Hint": "If checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for GMs only.</i>"
         },
         
         "OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS": {
           "Name": "Show players cItem description only",
-          "Hint": "When checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for players only.</i>"
+          "Hint": "If checked, clicking a cItem link in a table or chat, only the data on the cItem Info-tab will be showed. No permissions on the cItems is needed.<br><i>Applies for players only.</i>"
         },
                 
-       
+        
+        "showADV": {
+          "Name": "Show Roll with Advantage option",
+          "Hint": "If checked, 1d20,ADV,DIS options will be displayed under the Actor's name"
+        },
+        "showSimpleRoller": {
+          "Name": "Show d20 Roll icon option",
+          "Hint": "If checked a d20 icon will be displayed under the Actor's name"
+        },
+        "consistencycheck": {
+          "Name": "Check cItem Consistency",
+          "Hint": "If checked, when rebuilding template, every cItem will be evaluated for consistency. WARNING: May take several minutes in big systems"
+        },
+        "showDC": {
+          "Name": "Show Difficulty Class window",
+          "Hint": "If checked a DC box will appear at the bottom of the screen"
+        },
+        "useDCList": {
+          "Name": "System Difficulty Classes",
+          "Hint": "List of Difficulty Classes defined for this system.<br>This will add a dropdown to the DC window for quick selection.<br>Format: <i>Class1:Value1;Class2:Value2...</i><br>Leave blank for none.<br>Example <i>Easy:1;Normal:2;Hard:3</i>"
+        },
+        "showLastRoll": {
+          "Name": "Show Last Roll window",
+          "Hint": "If checked a box displaying the results of the last Roll will appear at the bottom of the screen"
+        },
+        "diff": {
+          "Name": "GM difficulty",
+          "Hint": "This is linked to the DC Box at the bottom of the screen"
+        },
+        "rollmod": {
+          "Name": "Show Roll Modifier",
+          "Hint": "If checked, a input is displayed on actor sheets. This number will be added to the total of all rolls"
+        },
+        "tokenOptions": {
+          "Name": "Token Options",
+          "Hint": "If checked, you can specify bar1 under token on the template Token tab"
+        },
+        "customStyle": {
+          "Name": "CSS Style file",
+          "Hint": "Custom styling file(CSS) to load.<br>Leave blank for none."
+        },
+        "initKey": {
+          "Name": "Initiative Property Key",
+          "Hint": "The key of the property that contains the roll expression to use for initiative in the Combat Tracker"
+        },
+        "auxsettext1": {
+          "Name": "Auxiliary settings text 1",
+          "Hint": "After editing, please refresh instance"
+        },
+        "idDict": {
+          "Name": "Dictionary IDs for importing cItems",
+          "Hint": "As cItems dont have word keys, this ensures faster lokup"
+        },
         
         
         "SETTING_CITEM_ICON_SIZE": {
@@ -311,12 +363,12 @@
         
         "OPTION_DISPLAY_SUBITEMS_ICONS": {
           "Name": "Enable show subitem icons",
-          "Hint": "When checked, the icon for subitems will be displayed in subitem tables(properties in panel, panels in tabs, citems in cItem tab etc)"
+          "Hint": "If checked, the icon for subitems will be displayed in subitem tables(properties in panel, panels in tabs, citems in cItem tab etc)"
         },
         
         "OPTION_SHEET_RESIZABLE_CONTENT": {
           "Name": "Enable resizable panels",
-          "Hint": "When checked, panel/multipanels/columns wil be resized relatively instead of a fixed width<br>Enabling this in a world with existing actors might require a re-disposition of panels."
+          "Hint": "If checked, panel/multipanels/columns wil be resized relatively instead of a fixed width<br>Enabling this in a world with existing actors might require a re-disposition of panels."
         },
         
         "WORLD_LAST_CORE_VERSION_USED": {

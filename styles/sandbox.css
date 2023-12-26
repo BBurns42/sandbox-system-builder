@@ -2157,6 +2157,31 @@ Fonts faces
     user-select: all;
 
 }
+.sb-dc-btn{margin:3px;}
+.sb-dc-btn:hover{
+  cursor: pointer;
+  text-shadow: var(--sb-text-shadow-primary);
+}
+.sb-dc-increase{float:right;}
+.sb-dc-decrease{float:left;}
+
+span.dc-header{border:0px;}
+
+#dropdown-menu.sb-context {
+    width: max-content;
+    height: max-content;
+    min-width: 104px;
+    max-width: 360px;
+    position: absolute;
+    left: 24;
+    background: #23221d;
+    border: 1px solid var(--color-border-dark);
+    border-radius: 5px;
+    color: var(--color-text-light-1);
+    z-index: calc(var(--z-index-app) + 1);
+    text-align:left;
+}
+
 
 .dcroll-bar{
     z-index: 70;

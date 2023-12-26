@@ -42,7 +42,21 @@ export const SETTINGATTRIBUTE={
   OPTION_SHEET_RESIZABLE_CONTENT:                  {ID:'OPTION_SHEET_RESIZABLE_CONTENT'                     ,DEFAULT:''},
   
   WORLD_LAST_CORE_VERSION_USED:                    {ID:'WORLD_LAST_CORE_VERSION_USED'                       ,DEFAULT:''},
-  WORLD_LAST_SYSTEM_VERSION_USED:                  {ID:'WORLD_LAST_SYSTEM_VERSION_USED'                     ,DEFAULT:''}  
+  WORLD_LAST_SYSTEM_VERSION_USED:                  {ID:'WORLD_LAST_SYSTEM_VERSION_USED'                     ,DEFAULT:''},
+  
+  OPTION_SHOWADV:                            {ID:'showADV'                      ,DEFAULT:true},
+  OPTION_SHOWSIMPLEROLLER:                   {ID:'showSimpleRoller'             ,DEFAULT:true},
+  OPTION_CONSISTENCYCHECK:                   {ID:'consistencycheck'             ,DEFAULT:false},
+  OPTION_SHOWDC:                             {ID:'showDC'                       ,DEFAULT:true},
+  OPTION_USEDCLIST:                          {ID:'useDCList'                    ,DEFAULT:''},
+  OPTION_SHOWLASTROLL:                       {ID:'showLastRoll'                 ,DEFAULT:false},
+  OPTION_DIFF:                               {ID:'diff'                         ,DEFAULT:0},
+  OPTION_ROLLMOD:                            {ID:'rollmod'                      ,DEFAULT:false},
+  OPTION_TOKENOPTIONS:                       {ID:'tokenOptions'                 ,DEFAULT:false},
+  OPTION_CUSTOMSTYLE:                        {ID:'customStyle'                  ,DEFAULT:''},
+  OPTION_INITKEY:                            {ID:'initKey'                      ,DEFAULT:''},
+  OPTION_AUXSETTEXT1:                        {ID:'auxsettext1'                  ,DEFAULT:null},
+  OPTION_IDDICT:                             {ID:'idDict'                       ,DEFAULT:null}
 };
 
 export function sb_item_sheet_get_game_setting(moduleID,settingName){

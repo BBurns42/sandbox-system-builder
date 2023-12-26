@@ -23,6 +23,9 @@
 - CHANGE: #{targetname} now returns only the first selected targets name
 - Added: #{targetlist} returns a comma separated list with all targets names
 - CHANGE: #{actor},#{actorname},@{actor},@{actorname} is replaced by @{name}
+- Added increase/decrease buttons for Difficulty Class
+- Added setting "System defined Difficulty Classes"
+- Added dropdown for DC with System defined Difficulty Classes
 
 ## Version 0.14.1(2023-11-26)
 - Added Table Filters
