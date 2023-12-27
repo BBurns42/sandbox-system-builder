@@ -2151,7 +2151,7 @@ Fonts faces
     border: 2px solid black;
     border-radius: 4px;
     height:100px;
-    width:100%;
+    width:115px;
     margin-top:-46px;
     margin-right:10px;
     user-select: all;
@@ -2195,7 +2195,7 @@ span.dc-header{border:0px;}
 
 .dc-input input{
     height:60px;
-    width:100px;
+    width:100%;
     border:none;
     color:black;
     font-family: var(--sb-font-family-chat-roll-result);
