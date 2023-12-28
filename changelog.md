@@ -26,6 +26,9 @@
 - Added increase/decrease buttons for Difficulty Class
 - Added setting "System defined Difficulty Classes"
 - Added dropdown for DC with System defined Difficulty Classes
+- FIX: Doubleclick on radio option reverted to circle
+- FIX: Enabling delete icon in tables for citems not added by Active/Passive/Template 
+- FIX: Bug in IF parsing
 
 ## Version 0.14.1(2023-11-26)
 - Added Table Filters
