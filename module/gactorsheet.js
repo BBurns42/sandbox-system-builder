@@ -4372,10 +4372,15 @@ ${dialogPanel.system.title}
 
                             let wraptransferCell = document.createElement('i');
                             
-                            
+                            let isTransferable=true;
+                              if(ciObject.hasOwnProperty('addedBy')){
+                                if(ciObject.addedType=='PAS' || ciObject.addedType=='ACT' || ciObject.addedType=='TEMPLATE'){
+                                  isTransferable=false;
+                                }
+                              }
                             
                             //wraptransferCell.className += " " + inputgroup;
-                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                            if(isTransferable){ 
                               //wraptransferCell.className = "ci-transfer";
                               wraptransferCell.className = "fas fa-sack sb-citem-removable";
                               wraptransferCell.title = "Drag item";
@@ -4385,7 +4390,7 @@ ${dialogPanel.system.title}
                               wraptransferCell.title = "This item cannot transferred";
                             }
                             transferCell.appendChild(wraptransferCell);
-                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                            if(isTransferable){ 
                               let tokenID;
                               if (this.token != null)
                                   tokenID = this.token.id;
@@ -4408,11 +4413,19 @@ ${dialogPanel.system.title}
 
                             if (!isFree) {
                               let wrapdeleteBton = document.createElement('i');
-                              if(!ciObject.hasOwnProperty('addedBy')){                                                                  
+                              let isDeletable=true;
+                              if(ciObject.hasOwnProperty('addedBy')){
+                                if(ciObject.addedType=='PAS' || ciObject.addedType=='ACT' || ciObject.addedType=='TEMPLATE'){
+                                  isDeletable=false;
+                                }
+                              }
+                              
+                              
+                              if(isDeletable){                                                                  
                                 wrapdeleteBton.className = "fas fa-times-circle";
                                 wrapdeleteBton.addEventListener('click', this.deleteCItem.bind(this, ciObject.id, false), false);                                                               
                               } else {
-                                // added by item momd, nondeleteable
+                                // added by item mod, nondeleteable
                                 wrapdeleteBton.className = "fas fa-times-circle sb-citem-non-removable";
                                 wrapdeleteCell.title = "This item can not be removed";
                                 
@@ -5523,15 +5536,11 @@ ${dialogPanel.system.title}
         //await this.actor.actorUpdater();
         //await this.actor.update({"data.attributes":attributes}, {diff: false});
         if (clickValue > 0) {
-            target.className = "fas fa-circle";
-            //target.style = "font-size:14px;";
-            if (radiotype == "S") {
-                //target.style = "font-size:16px;";
-                target.className = "fas fa-square";
-            }
-        }
+            target.className = "fas " + radiotype;
+        } 
+          
 
-        //await this.scrollbarSet();
+       
 
     }
     async displaceTabs2(next = null, newhtml) {

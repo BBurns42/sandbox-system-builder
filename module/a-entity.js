@@ -502,7 +502,7 @@ export class gActor extends Actor {
         return super.update(newdata, options);
     }
 
-    async addcItem(ciTem, addedBy = null, data = null, number = null, uses = null) {
+    async addcItem(ciTem, addedBy = null, data = null, number = null, uses = null,addedType='USER') {
         //console.log("adding citems");
         //console.log(ciTem);
 
@@ -658,6 +658,7 @@ export class gActor extends Actor {
 
             if (addedBy) {
                 newItem[itemKey].addedBy = addedBy;
+                newItem[itemKey].addedType = addedType;
             }
         }
 
@@ -1042,7 +1043,7 @@ export class gActor extends Actor {
                                 ui.notifications.error(errmsg);
                                 result.iterate = false;
                             } else {
-                                citemIDs = await this.addcItem(toadd, mod.citem, data);
+                                citemIDs = await this.addcItem(toadd, mod.citem, data,null,null,_citem.usetype);
                                 result.iterate = true;
                                 if (typeof citemIDs == 'undefined') {
                                     console.warn('Sandbox | execITEMmods | Citems not found after addcItem');
@@ -1261,7 +1262,7 @@ export class gActor extends Actor {
                     let citeminActor = await citemIDs.find(y => y.id == mycitemId || y.ciKey == mycitemiKey);
 
                     if (!citeminActor && mycitem != null) {
-                        citems = await this.addcItem(mycitem, 'Actor Template ' + _template.name, actorData);
+                        citems = await this.addcItem(mycitem, 'Actor Template ' + _template.name, actorData,null,null,'TEMPLATE');
                     }
                 }
             }
