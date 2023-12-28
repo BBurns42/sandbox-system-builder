@@ -6,6 +6,7 @@ import { sb_custom_dialog_prompt,
 import  { getSandboxItemIconFile } from "./sb-itemsheet-helpers.js";
 import  { SandboxJSONImportForm } from "./sb-json-import-form.js";
 import { GameFolderPicker } from "./game-folder-picker-form.js";
+import { lookupV,lookupX,lookupColumnCount,lookupRowCount,lookupList } from "./sb-lookup-table.js";
 // Usage: 
 //    let api=game.system.api;
 //    api.BuildActorTemplates();   
@@ -57,13 +58,326 @@ export class SandboxAPI {
         GameFolderPicker,
         importJSON,
         _deleteAll,
-        
+        lookupV,
+        lookupX,
+        lookupRowCount,
+        lookupColumnCount,
+        lookupList,
+        _extractAPIFunction,
+        _extractAPIFunctions,
+        _ActorProperty_RemoveProperty,
+        mathParser,
+        sum,floor,ceil
       };           
     
   }
 }
+function _APIFunctionRequiredArguments(functionName){
+  let returnValue=0;
+  switch (functionName){
+      case 'lookupV':
+        returnValue=3;
+        break;
+      case 'lookupX':
+        returnValue=4;
+        break;  
+      case 'lookupColumnCount':
+        returnValue=1;
+        break;
+      case 'lookupRowCount':
+        returnValue=1;
+        break; 
+      case 'lookupList':
+        returnValue=2;
+        break;
+      case 'sum':
+      case 'floor':
+      case 'ceil':
+        returnValue=1;
+        break;
+    }
+  return returnValue;
+}
+
+async function sum(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = eval(expr);
+    //console.log('sum(' + expr +') = ' + returnValue );
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function floor(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = Math.floor(eval(expr));    
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function ceil(expr) {
+  let returnValue=expr;
+  try {
+    returnValue = Math.ceil(eval(expr));    
+  } catch {
+    // not a valid expression
+  }  
+  return returnValue;
+}
+
+async function mathParser(expr){
+      let returnValue=expr;
+      if (typeof (expr) != "string") return expr;
+      if (expr.length == 0) return expr;
+      returnValue = await mathParserFn(returnValue,'floor');
+      returnValue = await mathParserFn(returnValue,'ceil');
+      returnValue = await mathParserFn(returnValue,'sum');
+      
+      return returnValue;
+    }
+    
+async function mathParserFn(expr,functionName){
+      let returnValue=expr;
+      if (typeof (expr) != "string") return expr;
+      if (expr.length == 0) return expr;
+          // finds functions, with three levels of nested ()
+      let strSeparator=';';
+      let expArray=null;
+      switch(functionName){
+        case 'sum':
+          expArray=expr.match(/sum\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+        case 'floor':
+          expArray=expr.match(/floor\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+        case 'ceil':
+          expArray=expr.match(/ceil\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+          break;
+      }
+      if (expArray != null) {
+        for (let i = 0; i < expArray.length; i++) {
+          let tochange = expArray[i];
+          // lookupV(@{TXT_STR_TOTAL};D_D_STRENGTH;4)
+          // get rid of surrounding ()
+          let checkthis=tochange.substr(functionName.length + 1,tochange.length - functionName.length - 2);
+          // @{TXT_STR_TOTAL};D_D_STRENGTH;4                
+          //console.log('extractAPIFunction tochange',tochange);
+          let blocks = _parseArgs(checkthis,strSeparator);                
+          let args = [];
+          for (let a = 0; a < blocks.length; a++) {          
+            let argument = blocks[a];
+            // check if any API are in blocks
+            argument = await mathParser(argument);          
+            args.push(argument);
+          }
+          let replaceValue=await _APIFunctionRun(functionName,args) ;                        
+          returnValue = await returnValue.replace(tochange, replaceValue);
+        }
+      }
+      
+      return returnValue;
+    }
 
 
+
+
+// splits string on separator but not if separator are inside a ()
+function _parseArgs(str,separator=';',startBracket='(',endBracket=')') {
+  let result = [], item = '', depth = 0;
+  function push() { if (item) result.push(item); item = ''; }
+  for (let i = 0, c; c = str[i], i < str.length; i++) {
+    if (!depth && c === separator) push();
+    else {
+      item += c;
+      if (c === startBracket) depth++;
+      if (c === endBracket) depth--;
+    }
+  }
+  push();
+  return result;
+}
+
+
+
+async function _extractAPIFunctions(expr, actorattributes, citemattributes, exprmode = false, noreg = false, number = 1, uses = 0, maxuses = 1) {
+  let returnValue=expr;
+  if(returnValue.length>0){
+    returnValue = await _extractAPIFunction('lookupV', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupX', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupColumnCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupRowCount', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+    returnValue = await _extractAPIFunction('lookupList', returnValue, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+  }
+  return returnValue;
+}
+async function _extractAPIFunction(functionName, expr, actorattributes, citemattributes, exprmode = false, noreg = false, number = 1, uses = 0, maxuses = 1) {
+    
+    if(expr=='') return expr
+    let returnValue=expr;
+    //console.log('extractAPIFunction expr:',expr);
+    let expArray=null;
+    //let regExpStr=`(?<=\\b${functionName}\\b\\().*?(?=\\))`;
+    //let getLookupX = rawexp.match(/(?<=\blookupx\b\().*?(?=\))/g);
+    //let regExpStr=`${functionName}\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)`;
+    //let re = new RegExp(regExpStr, 'g');
+    //expArray = returnValue.match(re);
+        
+    // finds functions, with three levels of nested ()
+    switch(functionName){
+      case 'lookupV':
+        expArray=expr.match(/lookupV\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+        break;
+      case 'lookupX':
+        expArray=expr.match(/lookupX\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+        break;
+      case 'lookupColumnCount':
+        expArray=expr.match(/lookupColumnCount\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+        break;
+      case 'lookupRowCount':
+        expArray=expr.match(/lookupRowCount\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+        break;
+      case 'lookupList':
+        expArray=expr.match(/lookupList\([^)(]*(?:\([^)(]*(?:\([^)(]*(?:\([^)(]*\)[^)(]*)*\)[^)(]*)*\)[^)(]*)*\)/g);
+        break;
+    }
+                
+    if (expArray != null) {
+      for (let i = 0; i < expArray.length; i++) {
+        let tochange = expArray[i];
+        // lookupV(@{TXT_STR_TOTAL};D_D_STRENGTH;4)
+        // get rid of surrounding ()
+        let checkthis=tochange.substr(functionName.length + 1,tochange.length - functionName.length - 2);
+        // @{TXT_STR_TOTAL};D_D_STRENGTH;4                
+        //console.log('extractAPIFunction tochange',tochange);
+        let blocks = _parseArgs(checkthis);                
+        let args = [];
+        for (let a = 0; a < blocks.length; a++) {          
+          let argument = blocks[a];
+          // check if any API are in blocks
+          argument = await _extractAPIFunctions(argument, actorattributes, citemattributes, exprmode , noreg , number , uses , maxuses);
+          argument = await auxMeth.autoParser(argument, actorattributes, citemattributes, exprmode, noreg, number,uses,maxuses);
+          args.push(argument);
+        }
+        let replaceValue=await _APIFunctionRun(functionName,args) ;                        
+        returnValue = await returnValue.replace(tochange, replaceValue);
+        }
+    }           
+    return returnValue;
+  }
+
+async function _APIFunctionRun(functionName,args,isAsync=true){
+  let returnValue=null;
+  // get the number of required arguments for function
+  let requiredArgumentsCount=_APIFunctionRequiredArguments(functionName);
+
+  if(args.length<requiredArgumentsCount){
+    ui.notifications.warn("Function ["+ functionName +"] requires minimum " + requiredArgumentsCount +" arguments");
+    return returnValue;
+  }
+  if(isAsync){
+    switch (args.length) {
+      case 0:
+        returnValue = await game.system.api[functionName]();
+        break;
+      case 1:
+        returnValue = await game.system.api[functionName](args[0]);
+        break;
+      case 2:
+        returnValue = await game.system.api[functionName](args[0], args[1]);
+        break;
+      case 3:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2]);
+        break;
+      case 4:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3]);
+        break;
+      case 5:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4]);
+        break;
+      case 6:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5]);
+        break;
+      case 7:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6]);
+        break; 
+      case 8:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7]);
+        break;
+      case 9:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8]);
+        break;
+      case 10:
+        returnValue = await game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8],args[9]);
+        break;
+      default:
+        ui.notifications.error("Out of depth in  function _APIFunctionRun for function ["+ functionName +"] requires minimum " + requiredArgumentsCount +" arguments");
+        break;
+    }
+  } else{
+      switch (args.length) {
+      case 0:
+        returnValue = game.system.api[functionName]();
+        break;
+      case 1:
+        returnValue = game.system.api[functionName](args[0]);
+        break;
+      case 2:
+        returnValue = game.system.api[functionName](args[0], args[1]);
+        break;
+      case 3:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2]);
+        break;
+      case 4:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3]);
+        break;
+      case 5:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4]);
+        break;
+      case 6:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5]);
+        break;
+      case 7:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6]);
+        break; 
+      case 8:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7]);
+        break;
+      case 9:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8]);
+        break;
+      case 10:
+        returnValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8],args[9]);
+        break;
+      default:
+        ui.notifications.error("Out of depth in  function _APIFunctionRun for function ["+ functionName +"] requires minimum " + requiredArgumentsCount +" arguments");
+        break;
+    }
+  }
+  return returnValue;  
+    
+}
+
+
+
+
+async function _ActorProperty_RemoveProperty(actor,propertyKey,actortype=''){
+  if(actor!=null){
+    let prompttitle =game.i18n.format("SANDBOX.ConfirmRemoveActorProperty_Title",{actortype:actortype});
+    let promptbody  =game.i18n.format("SANDBOX.ConfirmRemoveActorProperty_Body",{propertykey:propertyKey,actorname:actor.name,actortype:actortype});
+    if(actor.system.attributes.hasOwnProperty(propertyKey)){
+      let answer=await sb_custom_dialog_confirm(prompttitle,promptbody,game.i18n.localize("Yes"),game.i18n.localize("No"));  
+      if (answer){          
+        await actor.update({ [`system.attributes.-=${propertyKey}`]: null });
+        console.log(`_ActorProperty_RemoveProperty | Removed actor property ${propertyKey}`);
+      }
+    }
+  }
+}
 
 async function _deleteAll(){ 
   // check for gm
@@ -131,6 +445,7 @@ async function replaceAllMissingItemImages(itemtype){
   await replaceMissingItemImages("multipanel");
   await replaceMissingItemImages("sheettab");
   await replaceMissingItemImages("group");  
+  await replaceMissingItemImages("lookup"); 
   await replaceMissingItemImages("cItem");
 }
 
@@ -1603,6 +1918,7 @@ async function getGameWorldInfo(){
   let compendiummultipanelcount=0;
   let compendiumsheettabcount=0;
   let compendiumgroupcount=0;
+  let compendiumlookupcount=0;
   
   let count=0;
 
@@ -1616,6 +1932,7 @@ async function getGameWorldInfo(){
         compendiummultipanelcount += await packContents.filter(y =>y.type=='multipanel').length;
         compendiumsheettabcount   += await packContents.filter(y =>y.type=='sheettab').length;
         compendiumgroupcount      += await packContents.filter(y =>y.type=='group').length;                        
+        compendiumlookupcount      += await packContents.filter(y =>y.type=='lookup').length;
       } else if(pack.documentName == "Actor"){
         const packContents = await pack.getDocuments();
         compendiumactortotalcount +=packContents.length;;
@@ -1635,7 +1952,8 @@ async function getGameWorldInfo(){
         panels:game.items.filter(y=> y.type=='panel').length,
         multipanels:game.items.filter(y=> y.type=='multipanel').length,
         sheettabs:game.items.filter(y=> y.type=='sheettab').length,
-        groups:game.items.filter(y=> y.type=='group').length
+        groups:game.items.filter(y=> y.type=='group').length,
+        lookups:game.items.filter(y=> y.type=='lookup').length
       },
       actors:{
         total:game.actors.size,
@@ -1652,13 +1970,17 @@ async function getGameWorldInfo(){
         panels:compendiumpanelcount,
         multipanels:compendiummultipanelcount,
         sheettabs:compendiumsheettabcount,
-        groups:compendiumgroupcount     
+        groups:compendiumgroupcount,
+        lookups:compendiumlookupcount
       },
       actors:{
         total:compendiumactortotalcount,
         actors:compendiumactorcount,
         actortemplates:compendiumactortemplatecount
       }
+    },
+    folders:{
+      total:game.folders.size
     }
   };
   return gameworldinfo;

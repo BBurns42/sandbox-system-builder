@@ -9,7 +9,21 @@ import { SETTINGATTRIBUTE }           from "./sb-setting-constants.js";
 import { sb_item_sheet_get_game_setting } from "./sb-setting-constants.js";
 import { sb_custom_dialog_confirm,
           confirmRemoveSubItem} from "./sb-custom-dialogs.js";
+import { sb_lookupTable_to_string, sb_string_to_lookupTable,lookupColumns } from "./sb-lookup-table.js";
+import  { 
+          ITEM_SHEET_HEIGHT,
+          ITEM_SHEET_PROPERTY_HEIGHT,
+          ITEM_SHEET_DEFAULT_WIDTH,
+          ITEM_SHEET_TABS,
+          TYPECLASS
+        } from "./sb-itemsheet-constants.js";
+import { lookupList } from "./sb-lookup-table.js";
+
 export class sItemSheet extends ItemSheet {
+
+    constructor(...args) {
+      super(...args);                  
+    }
 
     /** @override */
     static get defaultOptions() {
@@ -29,6 +43,7 @@ export class sItemSheet extends ItemSheet {
         const path = "systems/sandbox/templates/";
         return `${path}/${this.item.type}.html`;
     }
+    
 
 
     /** @override */
@@ -104,11 +119,46 @@ export class sItemSheet extends ItemSheet {
               break;
           }
         }
+        // for list only
+        let lookupOptions=[];
+        let lookupOptionsColumns=[];
+        if (this.item.type == "property" &&  this.item.system.datatype == "list"){
+          if(this.item.system.listoptionsLookupUse){
+            let firstLookup=this.item.system.listoptionsLookupKey;
+            const lookups=game.items.filter(y => y.type == "lookup");
+            if(lookups!=null){
+              lookups.forEach((el) => {
+                if(el.system.lookupKey!=''){
+                  if(firstLookup=='') firstLookup=el.system.lookupKey
+                  let  lookup={'value':'','name':''};
+                  lookup.value=el.system.lookupKey;                
+                  lookup.name=el.name;
+                  lookupOptions.push(lookup); 
+                }
+              });
+            }
+            
+            let lookupCols=game.items.find(y => y.type == "lookup" && y.system.lookupKey==firstLookup);
+            if(lookupCols!=null){
+              for (let col = 0; col < lookupCols.system.lookupTable.columns.length; col++) { 
+                let  column={'value':'','name':''};
+                column.value=col;                
+                column.name=lookupCols.system.lookupTable.columns[col];                            
+                lookupOptionsColumns.push(column);
+              }
+            }
+          }
+        }
+        data.lookupOptions=lookupOptions;
+        data.lookupOptionsColumns=lookupOptionsColumns;
         
         
+        // specials for lookup
+        if(this.item.type == "lookup"){          
+          data.lookupTable=sb_lookupTable_to_string(data.item.system.lookupTable);                    
+        }
         
-        //BEHOLD THE BEST DEBUGGER LINE ON SANDBOX!
-        //console.warn(data);
+        
 
         return data;
 
@@ -131,6 +181,8 @@ export class sItemSheet extends ItemSheet {
 
         //Drag end event 
         this.form.ondrop = ev => this._onDrop(ev);
+
+        
 
         // Checks if the attribute of the cItem is variable, or it's value stays constant on each cItem
         html.find('.check-isconstant').click(ev => {
@@ -324,8 +376,7 @@ export class sItemSheet extends ItemSheet {
             
         });
         
-          
-
+        
         
         activateHelpers(html, this.item);
 
@@ -418,6 +469,8 @@ export class sItemSheet extends ItemSheet {
         });
         
     }
+    
+    
 
     async listMacros() {
         let macros = this._element[0].getElementsByClassName("macroselector");
@@ -907,19 +960,45 @@ export class sItemSheet extends ItemSheet {
                                     input = document.createElement("SELECT");
                                     input.className = "input-med";
                                     input.setAttribute("name", property.attKey);
-                                    var rawlist = property.listoptions;
-                                    var listobjects = rawlist.split(',');
+                                    // add options to list
+                                    let addList='';
+                                    let rawlist = property.listoptions;
 
-                                    for (var n = 0; n < listobjects.length; n++) {
-                                        let n_option = document.createElement("OPTION");
-                                        n_option.setAttribute("value", listobjects[n]);
-                                        n_option.textContent = listobjects[n];
-                                        if (listobjects[n] == attribute.value)
-                                            n_option.setAttribute("selected", 'selected');
-
-                                        input.appendChild(n_option);
+                                    if(rawlist.length>0){                                                  
+                                      addList +=rawlist;
                                     }
-
+                                    // check for listauto
+                                    if(property.listoptionsAutoUse){
+                                      let autoList=property.listoptionsAuto;
+                                      autoList = await auxMeth.autoParser(autoList, null, attributes, false); 
+                                      autoList=autoList.replaceAll(',','|');
+                                      autoList = await game.system.api._extractAPIFunctions(autoList,null, attributes, false); 
+                                      
+                                      
+                                      if(autoList.length>0){                                                                      
+                                        if(addList.length>0){
+                                          addList +='|' + autoList; 
+                                        } else{
+                                          addList +=autoList; 
+                                        }                                                    
+                                      } 
+                                    }
+                                    // check if to use lookup
+                                    if(property.listoptionsLookupUse){
+                                      let lookupKey=property.listoptionsLookupKey;
+                                      let returnColumn=property.listoptionsLookupColumn;
+                                      let lookups=await lookupList(lookupKey,returnColumn,'|');
+                                      if(lookups.length>0){
+                                        if(addList.length>0){
+                                          addList +='|' + lookups; 
+                                        } else{
+                                          addList +=lookups; 
+                                        }
+                                      }                  
+                                    }
+                                    if(addList.length>0){
+                                      input=auxMeth.addOptionsToSelectFromList(input,addList,attribute.value,'|',true)
+                                    }
                                 }
 
                                 input.className += " att-input";
@@ -1043,6 +1122,7 @@ export class sItemSheet extends ItemSheet {
     }
 
     async updateFormInput(name, value, propId, propKey) {
+      //console.log('sItemSheet | updateFormInput');
         //console.log(value);
         let setvalue;
 
@@ -1213,8 +1293,17 @@ export class sItemSheet extends ItemSheet {
 
     /** @override */
     async _updateObject(event, formData) {
-
+      //console.log('sItemSheet | _updateObject')
+      if(this.item.type == "lookup"){
+        const data = foundry.utils.expandObject(formData);
+        // convert lookup table json string to object
+        data.system.lookupTable=sb_string_to_lookupTable(data.lookupTable);
+        //                              
+        return this.object.update(data);
+        
+        
+      } else {
         super._updateObject(event, formData);
-
+      }
     }
 }

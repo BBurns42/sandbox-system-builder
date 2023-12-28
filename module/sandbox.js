@@ -179,6 +179,7 @@ Hooks.once("init", async function () {
     
     // DropDown menu listeners
     DropDownMenu.eventListeners();
+    ContextMenu.eventListeners()
     
     console.log(`Sandbox | Initializing System`);
 
@@ -545,6 +546,8 @@ Hooks.once('ready', async () => {
     game.user.setFlag('world','updateItemMapsDisabled',false);
     game.user.setFlag('world','reloadAfterTemplateRebuildDisabled',false);
     
+    
+    
     Hooks.on("hotbarDrop", (bar, data, slot) => createSandboxMacro(data, slot)); // ALONDAAR
 
     //Custom styling
@@ -588,7 +591,52 @@ Hooks.once('ready', async () => {
 
         let header = document.createElement("DIV");
         header.className = "dc-header";
-        header.textContent = "DC";
+        //header.textContent = "DC";
+        let incDC = document.createElement("I");
+        incDC.setAttribute( "class", "sb-dc-btn sb-dc-increase fas fa-square-plus" );
+        incDC.setAttribute( "data-tooltip", "Decrease Difficulty Class(CTRL+CLICK to change by 10)" );        
+        incDC.setAttribute( "data-tooltip-direction", "UP" );
+        incDC.addEventListener("click", async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          let change=1;
+          if (event.ctrlKey) {
+            change=10
+          }
+          sInput.value = Number(sInput.value) + change
+          await game.settings.set("sandbox", "diff", Number(sInput.value));
+        });
+        
+        
+        let decDC = document.createElement("I");
+        decDC.setAttribute( "class", "sb-dc-btn sb-dc-decrease fas fa-square-minus" );
+        decDC.setAttribute( "data-tooltip", "Increase Difficulty Class(CTRL+CLICK to change by 10)" );
+        decDC.setAttribute( "data-tooltip-direction", "UP" );
+        decDC.addEventListener("click", async (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          let change=1;
+          if (event.ctrlKey) {
+            change=10
+          }
+          sInput.value = Number(sInput.value) - change
+          await game.settings.set("sandbox", "diff", Number(sInput.value));
+        });
+        
+        
+        
+        let spanDC = document.createElement("SPAN");
+        spanDC.innerHTML='DC';
+        spanDC.setAttribute( "class", "dc-header" );
+        ;
+        
+        
+        
+        
+        header.appendChild(decDC);
+        header.appendChild(spanDC);
+        header.appendChild(incDC);
+        
 
         let form = document.createElement("FORM");
         let sInput = document.createElement("INPUT");
@@ -644,12 +692,46 @@ Hooks.once('ready', async () => {
         });
 
         form.appendChild(sInput);
+         
+        
+        
+        
+        
         backgr.appendChild(header);
 
         backgr.appendChild(form);
 
         if (game.settings.get("sandbox", "showDC")) {
-            await hotbar.appendChild(backgr);
+          await hotbar.appendChild(backgr);
+          let sDCs=game.settings.get("sandbox", "useDCList");
+          let aDCs=sDCs.split(";");
+          let menuItems=[];
+          for (let i = 0; i < aDCs.length; i++) {
+            let entry=aDCs[i].split(":");
+            if(entry.length==2){
+              let entryMenu=
+                {
+                name:entry[0],
+                icon:'',
+                condition:true,
+                callback: async(event) => {
+                  //console.log(entry[0], entry[1]);
+                  sInput.value = Number(entry[1]);
+                  await game.settings.set("sandbox", "diff", Number(sInput.value));
+                }
+              };
+              menuItems.push(entryMenu);  
+            }
+          }
+          if(menuItems.length>0){
+            let selectorDC = document.createElement("I");
+            selectorDC.setAttribute( "id", "sb-dc-selector" )
+            selectorDC.setAttribute( "class", "sb-dc-btn fas fa-caret-down" );
+            selectorDC.setAttribute( "data-tooltip", "System defined Difficulty Classes" );
+            selectorDC.setAttribute( "data-tooltip-direction", "UP" );
+            spanDC.appendChild(selectorDC);
+            new DropDownMenu($(".dcroll-bar"), `#sb-dc-selector`, menuItems,{customClass:'sb-context'});
+          }
         }
 
 
@@ -679,7 +761,6 @@ Hooks.once('ready', async () => {
     }
     console.log("Sandbox | Ready | Completed");
 });
-
 
 
 
@@ -801,7 +882,6 @@ function createExportButtons(sidebar, jq) {
     settingstab.parentNode.insertBefore(htmlmenubar,sandboxheader.nextSibling);    
 }
 
-
 Hooks.on("sandbox.updateSystemSetting", async(systemid,options) => {
   console.log('Sandbox | updateSystemSetting:' + systemid);
   if(systemid=="sandbox"){
@@ -818,8 +898,6 @@ Hooks.on("sandbox.updateSystemSetting", async(systemid,options) => {
     auxMeth.clientRefresh(options);
   }
 });
-
-
 
 //COPIED FROM A MODULE. TO SHOW A SHIELD ON A TOKEN AND LINK THE ATTRIBUTE
 Hooks.on("hoverToken", (token, hovered) => {
@@ -861,7 +939,12 @@ Hooks.on("hoverToken", (token, hovered) => {
 
 });
 
+//Hooks.on("updateActor", async (actor, updateData, options, userId) => {
+//  console.log('updateActor',JSON.stringify(updateData));
+//});
+
 Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
+    //console.log(JSON.stringify(updateData));
     //console.log(actor);
     //console.log('preUpdateActor')
     //console.log(updateData);
@@ -1122,32 +1205,9 @@ Hooks.on("preCreateActor", (actor,data,options,userId) => {
   
 });
 
-
-
-
-
 Hooks.on("deleteActor", (actor) => {
     //console.log(actor);
 });
-
-
-
-Hooks.on("closegActorSheet", async (entity, eventData) => {
-    //console.log(entity);
-    //console.log(eventData);
-    //console.log("closing sheet");
-    let character = entity.object;
-    if (character.flags.ischeckingauto)
-        character.flags.ischeckingauto = false;
-    //entity.object.update({"token":entity.object.data.token},{diff:false});
-});
-
-
-
-
-
-
-
 
 
 
@@ -1170,7 +1230,6 @@ Hooks.on("renderSandboxInfoForm",async (app, html,data) => {
     });
   titleToTooltip(app,html)
 });
-
 
 Hooks.on("rendersItemSheet", async (app, html, data) => {
    
@@ -1282,8 +1341,6 @@ Hooks.on("renderSystemSettingsForm", async (app, html, data) => {
   titleToTooltip(app,html)
 });
 
-
-
 Hooks.on("renderSandboxExpressionEditorForm", async (app, html, data) => {
   titleToTooltip(app,html,true)
 });
@@ -1299,7 +1356,6 @@ Hooks.on("renderSandboxJSONImportForm", async (app, html, data) => {
 Hooks.on("renderSandboxToolsForm", async (app, html, data) => {
   titleToTooltip(app,html,true)
 });
-
 
 Hooks.on("rendergActorSheet", async (app, html, data) => {
     //console.log("Sandbox | rendergActorSheet");
@@ -1325,30 +1381,23 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
         app.addHeaderButtons(html);
         app.customCallOverride(html);
         sb_sheet_toggle_delete_item_visible(html);
-        await app.setSheetStyle(actor);
+        
+        await app.setSheetStyle(actor,'rendergActorSheet');
         //app.scrollBarLoad(html);
 
         actor.setInputColor();
 
-        html.find('.window-resizable-handle').mouseup(ev => {
-            ev.preventDefault();
-            app.setSheetStyle(actor);
-        });
-
-
-
+//        html.find('.window-resizable-handle').mouseup(ev => {
+//          console.log('window-resizable-handle | mouseup');
+//            ev.preventDefault();
+//            app.setSheetStyle(actor,'mouseup');
+//        });
     }
 
     app.displaceTabs2(null, html);
     await app._setScrollStates();
     
-    // add a ResizeObserver to trigger the resize of conntent
-    const myObserver = new ResizeObserver(entries => {
-      entries.forEach(entry => {
-//            console.log('width', entry.contentRect.width);
-//            console.log('height', entry.contentRect.height);
-      });
-    });
+    
     let sheetbody;
     // for some updates the return html is a form
     //debugger;
@@ -1359,13 +1408,39 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
       //sheetelementid = html[0].id;
       sheetbody=html.find('.sheet-body');
     }
+    // add a ResizeObserver to trigger the resize of conntent
+    app.resizeObserver = new ResizeObserver(entries => {
+      entries.forEach(entry => {
+            //console.log('width', entry.contentRect.width);
+            //console.log('height', entry.contentRect.height);
+            //
+            app.upDateTabBodiesHeight();
+                                                        
+      });
+    });
+    
     
     if(sheetbody!=null){
       if(sheetbody.length>0){
-        myObserver.observe(sheetbody[0]);
+        app.resizeObserver.observe(sheetbody[0]);                
       }
     }
     titleToTooltip(app,html)
+});
+
+Hooks.on("closegActorSheet", async (app, html) => {
+    
+    //console.log(entity);
+    //console.log(eventData);
+    // console.log("closing sheet");
+    let character = app.object;
+    if (character.flags.ischeckingauto)
+        character.flags.ischeckingauto = false;
+    
+    app.resizeObserver.disconnect();
+    
+    
+    
 });
 
 Hooks.on("renderChatMessage", async (app, html, data) => {

@@ -190,7 +190,7 @@ So time to get back to our previously created Sword cItem. Now, drag the groups 
 I know what you are thinking... and you guessed right. This way, you can create whole rulesets and compendiums. Imagine you create the "Dwarf" cItem with the "Race" group, and when you drag it onto an Actor, it automatically adds it the "Darkvision" trait cItem and increases its Constitution attribute by 2... imagine... is that possible in Sandbox? Of course. But let's continue with something else first... cItems are only displayed on Tables inside an Actor sheet, let's learn about them.
 
 ## 5.Tables
-I forgot to tell you someghing important, the only Property element different than the rest is Table. In fact, it shouldn't be a Property, but hey I realised that very late and didn't know where to put it. But let's leave it there just in case. 
+I forgot to tell you something important, the only Property element different than the rest is Table. In fact, it shouldn't be a Property, but hey I realized that very late and didn't know where to put it. But let's leave it there just in case. 
 
 So a table will display all cItems inside an Actor of a specific group. The table will display each property of the group as a column (if said property is not Hidden). So let's create then an Inventory table in our example character sheet. We already have an Object group created so this table will display all cItems of the group Object contained in the Actor. Let's create it:
 
@@ -202,7 +202,7 @@ So when you choose table as the Data Type, everything changes on the property me
 - Has Header?: The table will display a Header with the names of the columns
 - Height: The maximum height of the table. Free works fine XD
 - Item Names: if unchecked the table will hide the first column, which is the name of the cItems. Why would this be useful? Simple, imagine you want custom elements in your table, and you want to name them on the fly, and when they are whosn on the table. Simply add a "Name" property to the cItem's group and make it variable, so you can rename the item whenever you want. However, this is a fake name property, the cItem will always have it's original name. This is specially useful when you want to create custom attacks for example. Let's say you create Attack 1, Attack 2, Attack 3, and you create fake "name" properties for them. So on an NPC1 you can rename Attack 1 to "Sword" and on NPC2 you can name it "Dagger".
-- Show Units?: If haveing more than a cItem of the same type is important for the table you want, mark this. When checked, a new column will appear "Num", that registers the number of specific cItems you have. As we are preparing an Inventory, this options seems important, so check it.
+- Show Units?: If having more than a cItem of the same type is important for the table you want, mark this. When checked, a new column will appear "Num", that registers the number of specific cItems you have. As we are preparing an Inventory, this options seems important, so check it.
 - Has Activation?: if checked, two new columns will appear. One, the "Activation Button" column, this means that if a cItem is consumable or can be activated (later explained), it will show here. As an example for this, imagine you have a Healing Potion, that you have just dragged onto the Inventory. The Healing Potion has been set as a Consumable cItem, so a button appears on the activation button column, and when you press it, it rolls the HP recovered for example. The other column that is added to the table is the "Uses", so if a consumable cItem has limited number of uses, it will show here. In the example of the Healing Potion, if we set the cItem max uses as 1, it will show here. Let's check this one for our example.
 
 That sounded complicated, but is easier than it looks! Your table property should look this way:
@@ -237,7 +237,7 @@ TRICK 2: if your group has a textarea property (you know, those huge areas that 
 
 ![Textareas and tables](docs/images/tuto29.jpg)
 
-TRICK 3: if you want a rollable button in a row, just create a label property, with the Label Format property set as Die. Then of course, set your roll with the Rollable checkbox options of the Property (explained in section 7), and voila:
+TRICK 3: if you want a rollable button in a row, just create a labrollpel property, with the Label Format property set as Die. Then of course, set your roll with the Rollable checkbox options of the Property (explained in section 7), and voila:
 
 ![Rolls and Tables](docs/images/tuto30.jpg)
 
@@ -267,7 +267,7 @@ Now, let's go through the options we have for the Execution Types:
 - Permanent: If checked, the MOD effects will stay even if the cItem or MODs have been deleted/deactivated. When would this be useful? Let's go back to the Healing Potion example. If you don't select the Permanent check, the HP the Actor would gain after activating it would dissapear as soon as we delete the Healing Potion from the inventory. If we check it, the gained HP would stay even if the Healing Potion is removed from the inventory.
 - ICON: Is the icon that will be displayed on the Activation column of tables (see previous section);
 - Uses: Max number of uses of the consumable. It is shown in a table if its Item Number property is activated. The GM can manually edit it on the table. If you set it as 0, then the max uses ar infinite.
-- Rechargable: Every time the activation button is clicked for a Consumable cItem, the number of uses is reduced by 1. When it reaches 0, the cItem is deleted from the Actor. If you check rechargable, this won't happen. When is this useful? Well, imagine that your system has rechargable magical items, let's say rings or wands with a number of charges of spells. But once spent, you can still recharge them. This would serve for that.
+- Rechargeable: Every time the activation button is clicked for a Consumable cItem, the number of uses is reduced by 1. When it reaches 0, the cItem is deleted from the Actor. If you check rechargable, this won't happen. When is this useful? Well, imagine that your system has rechargable magical items, let's say rings or wands with a number of charges of spells. But once spent, you can still recharge them. This would serve for that.
 - Roll Options: When the cItem is activated a roll is executed if this info is filled. Will be explained in the next section.
 
 Wow, that was intense. Why did a do this? To give you all the options you need to build your favourite ttrpg system in Foundry, without coding. So you can build it in a lazy Sunday afternoon. But we haven't finished. Now comes the cool part, MODs.
@@ -297,7 +297,7 @@ Let's look at each MOD Type in detail:
 
 -CREATE: This one is temporary, I am not sure is entirely required. It will create a hidden property in the Actor, with the default value specified.
 
--ROLL: Every roll can have one or more Roll IDs. A Roll ID is a word, a key (no spaces then), and you can define it within the roll expression or by using the roll options input field called Roll ID. With this MOD you modify every Roll with a specific Roll ID with a value. When to use this? For example, again D&D, you would have a cItem called Rage, with the group Trait, and within this you could add a ROLL MOD that would add the Rage Damage value to every roll with a Roll ID of "melee_attack" or whatever you want to ID the melee attacks rolls in your system. For example, on Savage world you could create a cItem called Wild Attack, with the group Combat Option, and as MOD a ROLL that would add +2 to rolls with the ID "fighting" and "damge" or whatever you want to call them. So before setting ROLL MODs make sure you have an idea of the roll IDs you need on your system. In general, before start MODding, have a think of the structure.
+-ROLL: Every roll can have one or more Roll IDs. A Roll ID is a word, a key (no spaces then), and you can define it within the roll expression or by using the roll options input field called Roll ID. With this MOD you modify every Roll with a specific Roll ID with a value. When to use this? For example, again D&D, you would have a cItem called Rage, with the group Trait, and within this you could add a ROLL MOD that would add the Rage Damage value to every roll with a Roll ID of "melee_attack" or whatever you want to ID the melee attacks rolls in your system. For example, on Savage world you could create a cItem called Wild Attack, with the group Combat Option, and as MOD a ROLL that would add +2 to rolls with the ID "fighting" and "damage" or whatever you want to call them. So before setting ROLL MODs make sure you have an idea of the roll IDs you need on your system. In general, before start MODding, have a think of the structure.
 
 - LIST: This cItem can add or remove list options. To do that, simply choose between INCLUDE or REMOVE. Then in the Attribute Key field type in the key of the List property you want modified. Finally, in the VALUE field and separated by commas type in the values you want included or removed.
 
@@ -318,7 +318,7 @@ Ok, let's get to it. Rolls can be defined at Property menus (Details tab, checki
 
 The fields mean the following:
 - Roll Name: What title will the roll template display. For example "Strength check", or "Death Save", etc.
-- Roll ID: this is the main roll ID, an identifier or Key that the roll will belong to. It doesnt have to be unique, so if your system has a lot of skills and this is a roll fo one of them, you just can use "skill" as roll ID.
+- Roll ID: this is the main roll ID, an identifier or Key that the roll will belong to. It does not have to be unique, so if your system has a lot of skills and this is a roll for one of them, you just can use "skill" as roll ID.
 - Roll Expression: the roll itself, like 1d6 or 1d20 + 5, etc.
 - Has Dialog and Dialog Panel: Keep on reading, and I might explain it MUAHAHAHAHA!
 
@@ -351,17 +351,26 @@ The roll functions are the following:
 ![Referring cItem attribute](docs/images/tuto40.jpg)
 
 - `if[expression:compared_value,return_iftrue,return_iffalse]`: very useful expression especially for text attributes. Let's say you have a system in which you want to check if the attribute called "ismagical" of a specific cItem is true, and in case it is you want to return 2 to the roll chat. So the expression you need is `[#{ismagical}:true,2,0]`
+  If can accept nested expressions, a maximum of 8. Below are the expressions:
 
-If can accept nested expressions, a maximum of 8. Below are the expressions:
-+ Single IF with no ANDs no ORs --> `if[Field:condition,true_value, false_value]`
-+ Single IF with ORs only --> `if[FIELD1:COND1 OR FIELD2:COND2 OR....FIELDn:CONDn,true_value, false_value]` 
-+ Single IF with ANDs only --> `if[FIELD1:COND1 AND FIELD2:COND2 AND....FIELDn:CONDn,true_value, false_value]`
-+ Single IF with ANDs and ORs (it always execute first ANDs) --> `if[FIELD1:COND1 AND FIELD2:COND2 OR....FIELDn:CONDn,true_value, false_value]` 
-+ Nested IFs with or without ANDs and ORs (it works with the same logic as before)
-Example without ANDs and ORs `if[F:C,true_value,ELSE if[F:C, true_value, ELSE if[F:C,true_value,false_Value]]]`.....
-Example with ANDs and ORs `if[F1:C1 OR F2:C2 AND F3:C3,true_value,ELSE if[F:C, true_value,ELSE if[F:C AND F4:C4,true_value,false_Value]]]`
+  + Single IF with no ANDs no ORs --> `if[Field:condition,true_value, false_value]`
 
-IMPORTANT: IF can only accept 8 ELSE expressions!
+  + Single IF with ORs only --> `if[FIELD1:COND1 OR FIELD2:COND2 OR....FIELDn:CONDn,true_value, false_value]` 
+
+  + Single IF with ANDs only --> `if[FIELD1:COND1 AND FIELD2:COND2 AND....FIELDn:CONDn,true_value, false_value]`
+
+  + Single IF with ANDs and ORs (it always execute first ANDs) --> `if[FIELD1:COND1 AND FIELD2:COND2 OR....FIELDn:CONDn,true_value, false_value]` 
+
+  + Nested IFs with or without ANDs and ORs (it works with the same logic as before)
+    Example without ANDs and ORs `if[F:C,true_value,ELSE if[F:C, true_value, ELSE if[F:C,true_value,false_Value]]]`.....
+    Example with ANDs and ORs 
+
+    ```
+    if[F1:C1 OR F2:C2 AND F3:C3,true_value,ELSE if[F:C, true_value,ELSE if[F:C AND F4:C4,true_value,false_Value]]]
+    ```
+
+    IMPORTANT: IF can only accept 8 ELSE expressions!
+
 
 - `--cItem_attribute_name--`: This function returns the value of a cItem attribute if you pase the attribute's Key to it. Lets imagine we set Torch (the cItem created earlier as an example) as a CONSUMABLE MOD and fill the Roll Options fields. If we set its roll expression as `1d6 + --weight--` it will roll to chat 1d6 plus the value of its Weight attribute (remember we defined it as part of the Group object).
 - `__Actor_attribute_name__`: This function with double underscore(`__`) returns the value of an Actor attribute if you pass the attribute's Key to it. Imagine you have a list type Property of Key "selectedskill" on your character sheet, and this list has as options all the available skills in the system (i.e: climb, deception, swim, etc). You want to make this property rollable, and when clicked you want the sheet to roll 1d6+the value of the selected skill. You need then to reference the skills (which are attributes), so you can do this with `1d6 + __@{selectedskill}__` . How does this work? When you select, let's say the "climb" option, this function will return `__climb__`, that is equivalent to `@{climb}`. By the way, no spaces, I just included them to avoid bold formatting here...
@@ -383,21 +392,34 @@ IMPORTANT: IF can only accept 8 ELSE expressions!
 - `maxdie(XdY)`: returns the max result in a simple roll expression, For example, `maxdie(1d6)` returns 6.
 
 THE FOLLOWING EXPRESSIONS CAN NOT BE USED INSIDE cITEM MOD VALUE fields:
-- `#{target|target_attribute_key}`: Returns the value of an attribute of the target actor on the map. Useful for calculating AC and such. Example: `1d20 + @{weapon_skill} &&total;0:FAILURE;#{target|ac}:YOU HIT!&&`
+- `#{actorname}` : Returns current actor name
+
+- `@{actorname}`: Returns current actor name
+
+- `#{targetname}` : Returns current target name
+
+- `#{target|target_attribute_key}`: Returns the value of an attribute of the target actor on the map. Useful for calculating AC and such. Example: 
+
+    ```
+    1d20 + @{weapon_skill} &&total;0:FAILURE;#{target|ac}:YOU HIT!&&
+    ```
+
 - `#{diff}`: There is a DC box on the bottom of your active scene, to the right of the macro bar. DC stands for difficulty class. If your system/game requires the GM to set a difficulty, this is the place to write it down. Then, the rolls can reference this difficulty by using `#{diff}`.
+
 - `&&value_to_compare;value_1:text_1,value_N,text_N&&`: Conditional text. So imagine you want to return a sentence to the chat, along with your roll. You want to return "SUCESS" if the result of your roll is over 8, "FAILURE" if the result of the roll is under 7, and "PARTIAL SUCCESS" on every other result. This function allows you to return that sentence/word below the roll result. So you can do this with the following formula `&&total;0:FAILURE,7:PARTIAL SUCCESS,9:SUCCESS&&`. The first argument of the expression is the value you are analyzing, and if you write "total" it will take into account the total of the roll. You can include a property instead of that, or another roll expression with a numeric outcome.
-- `~Roll_ID~`: adds a Roll ID to the roll. Remember that we have a MOD type called ROLL? And this one adds values to rolls of a specific Roll ID? So this function lets you add ROll IDs to rolls. As many as you like. So let's say we just defined a roll for an attack with Roll Name:"Attack", Roll ID: "attack", and Roll Expression: `1d20+@{strength}`. However, we want more definition for it, and for that we want to incorporate some more Roll IDs, in case we need to modify the roll through a MOD. Let's say we want to add the Ids "melee_attack" and "slashing", then we would have to change the Roll Expression to `1d20+@{strength} ~melee_attack~ ~slashing~`
-- `~ADV~`or `~DIS~`: fives advantage or disadvantage to the roll
-- `~init~`: sends the result of the roll to the initiative on the combat tracker.
-- `~gm~`: roll is whispered to GM.
-- `~blind~`: roll is blind GM Roll.
-- `~self~`: roll is only to self.
-- `~secretconditional~`: expression flag for hiding conditional text for non-Gms
-    Example: `0 &&total;0:Everything are secret&& ~secretconditional~`
+    Also, if you want to hide parts of the conditional text for non-GMs, you can use the CSS-class `secret`
 
-![Rolling to initiative](docs/images/tuto42a.jpg)
+    ```
+    0 &&total;0:Some things are <div class="secret"> secret</div> some are <div class="secret"> not</div> &&
+    ```
 
-- `roll(Name;dice;faces;explodes)`: If you want to have a roll separated from your roll expression with a name, and displayed by its own, you use this formula. For example, imagine that for a system we are designing we need to roll 1d6 in every skill check, and this die is called the "Anger Die". You could set it up like this. For example `roll(Anger;1;6;false)` registers a roll named Anger, of 1 dice of 6 faces and doesnt explode; This expression substitutes `!(Roll Name;Roll Expression)`, that is removed from the system. Also ¬¬ expression doesn't work anymore. The last argument, "explodes", can be either false, true, or add. If it is add, the succesive exploded dice will be added instead of displayed as independent dice. For example, `roll(Anger;1;4;true)` might return 4,4,3 while `roll(Anger;1;4;add)` might return 11.
+    This will enable the Reveal/Hide icon on the chat message
+
+    ![Referring cItem attribute](docs/images/chat_secrets.jpg)
+
+    ### 
+
+- `roll(Name;dice;faces;explodes)`: If you want to have a roll separated from your roll expression with a name, and displayed by its own, you use this formula. For example, imagine that for a system we are designing we need to roll 1d6 in every skill check, and this die is called the "Anger Die". You could set it up like this. For example `roll(Anger;1;6;false)` registers a roll named Anger, of 1 dice of 6 faces and doesnt explode; This expression substitutes `!(Roll Name;Roll Expression)`, that is removed from the system. Also ¬¬ expression doesn't work anymore. The last argument, "explodes", can be either false, true, or add. If it is add, the successive exploded dice will be added instead of displayed as independent dice. For example, `roll(Anger;1;4;true)` might return 4,4,3 while `roll(Anger;1;4;add)` might return 11.
 - `?[Roll Name]`: returns the reference of a registered roll, as many times as you want. You need to use this with one of the following.
 
 ![Naming sub rolls](docs/images/tuto44.jpg)
@@ -410,17 +432,71 @@ THE FOLLOWING EXPRESSIONS CAN NOT BE USED INSIDE cITEM MOD VALUE fields:
 
   `xa` is another one, "Explode Add" which only matter for Sandbox purposes, it turns an exploding dice into 1 value "internally" (pretty advanced, because you have to keep track of this yourself basically, and know exactly how it works) but `rollp(name;2d6xa)` rolls 2d6 ... 6,3 (explodes) -> 6,3,4 ---> which "internally" turns into 10,3 when referencing ?[name]
 
-  Now, for some more context and examples. rollp loosely stands for "rollParsed" because it has the ability to fully parse a roll expression. I will try to keep the example as simple as possible. The primary benefit of rollp() is being quite a bit easier to use than roll() and accepting any kind of Foundry support dice modifiers and expressions (as well as Sandbox ones!). Another cool benefit is being able to saved "parsed" variables. the `$<#;..>` syntax does this, but does not "parse" its contents, only find-and replace. `rollp(dice;1d6+1d4+2)` will return the dice-result-array for the 1d6 AND 1d4 with `?[dice]`! `?[dice]` might be `3,4` and `?[dice.total]` would be `9`, (3+4+2)
+  Now, for some more context and examples. rollp loosely stands for "rollParsed" because it has the ability to fully parse a roll expression. I will try to keep the example as simple as possible. The primary benefit of rollp() is being quite a bit easier to use than roll() and accepting any kind of Foundry support dice modifiers and expressions (as well as Sandbox ones!). Another cool benefit is being able to saved "parsed" variables. the `$<#;..>` syntax does this, but does not "parse" its contents, only find-and replace. `rollp(dice;1d6+1d4+2)` will return the dice-result-array for the 1d6 AND 1d4 with `?[dice]`! `?[dice]` might be `3,4` and `?[dice.total]` would be `9`, `(3+4+2)`
 
   You can also nest things, please keep in mind this is a "made up" example, and you can achieve similar without using rollp(), but just to demonstrate: `rollp(dicePool;5d6) rollp(parsePool;{?[dicePool]}dh2) rollp(final;{?[parsePool]}kh2) ?[final.total]` Roll 5d6, drop the highest 2, then keep the highest 2 of the remaining pool. At least I think this should work 🤠 it does allow for more complicated formulas, but there are still limitations and restrictions to it.
 
-- `$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expresion after the semicolon as $1. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
+- `$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expression after the semicolon as $1. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
 
 
-- `add(property_key;value)`: this expression will only work with a targeted token. It will add "value" to the current value of the specified property (key only, no @). For example, `roll(Damage_Roll;2;10;false) sum(?[Damage_Roll]) add(HP;-sum(?[Damage_Roll]))`. This example expression will substract 2d10 from the property `@{HP}` of the targeted token.
-- `set(property_key;value)`: as add() property, but will set the value to it.
+- `add(property_key;value)`: this expression will only work with a targeted token. It will add "value" to the current value of the specified property (key only, no @). For example, `roll(Damage_Roll;2;10;false) sum(?[Damage_Roll]) add(HP;-sum(?[Damage_Roll]))`. This example expression will subtract 2d10 from the property `@{HP}` of the targeted token.
 
-SOME EXAMPLES OF ROLLS:
+- `addself(property_key;value)`: like `add()` but works on the actor itself
+  Example.
+
+  ```
+  rollp(dice;1d3)
+  ?[dice.total]
+  %[?[dice.total],0:0,
+   1:addself(NUM_DEXTERITY;1),
+   2:addself(NUM_STRENGTH;1),
+   3:addself(NUM_DEXTERITY;10) addself(NUM_STRENGTH;10) ]
+  &&?[dice.total];0:N/A,1:Adding 1 to Dexterity,2:Adding 1 to Strength,3:Adding 10 to both&&
+  ```
+
+- `set(property_key;value)`: as `add()` property, but will set the value to it.
+
+- `setself(property_key;value)`: as `set()` property, but will set the value to it.
+  Example
+
+  ```
+  .rollp(dice;1d2)
+  ?[dice.total]
+  %[?[dice.total],0:0,1:setself(NUM_DEXTERITY;1),2:setself(NUM_STRENGTH;1)]
+  &&?[dice.total];0:N/A,1:Setting Dexterity to 1,2:Setting Strength to 1&&
+  ```
+
+- `table(name;exp)`: rolls on a rollable table. 
+
+  It has optional parameters, `table(name;exp)` where exp can be your own result or a different dice (if that table normally rolls a 1d10 by default, you can roll 1d6, or put just 7; for example)
+  To roll without any chat message use`0 table(roll_table) ~nochat~`
+  
+  ### Roll expressions flags
+  
+  Flags can be added at the end of a roll expression, changing basic functionality of the roll.
+  All flags are used with surrounding tildes `~flag~`
+  
+  | Flag                  | Description                                                  |
+  | --------------------- | ------------------------------------------------------------ |
+  | `~gm~`                | Changes the Roll Mode to Private GM                          |
+  | `~blind~`             | Changes the Roll Mode to Blind GM                            |
+  | `~self~`              | Changes the Roll Mode to Self Roll                           |
+  | `~init~`              | Sends the result of the roll to the initiative on the combat tracker |
+  | `~nochat~`            | No chat message is created                                   |
+  | `~noresult~`          | No result is shown in the created chat message               |
+  | `~secretconditional~` | All text in conditional(`&&...&&`) will be marked as `secret`<br />expression flag for hiding conditional text for non-Gms<br/>Example: `0 &&total;0:Everything are secret&& ~secretconditional~` |
+  | `~ADV~`               | Gives advantage to the roll                                  |
+  | `~DIS~`               | Gives disadvantage to the roll                               |
+  | `~Roll_ID~`           | Adds a custom Roll ID to the roll. Remember that we have a MOD type called ROLL? And this one adds values to rolls of a specific Roll ID? So this function lets you add ROll IDs to rolls. As many as you like. So let's say we just defined a roll for an attack with Roll Name:"Attack", Roll ID: "attack", and Roll Expression: `1d20+@{strength}`. However, we want more definition for it, and for that we want to incorporate some more Roll IDs, in case we need to modify the roll through a MOD. Let's say we want to add the Ids "melee_attack" and "slashing", then we would have to change the Roll Expression to `1d20+@{strength} ~melee_attack~ ~slashing~` |
+  
+  
+  
+  ![Rolling to initiative](docs/images/tuto42a.jpg)
+  
+  
+
+### SOME EXAMPLES OF ROLLS
+
 - Roll 1d6: `1d6`
 - Roll 1d6, if the result is lower than 4, return 0.Otherwise return 1: `%[1d6,0:0,5:1]`
 - Roll 2d6 exploding, one called Skill and the other Wild, and return the highest: `roll(Skill;1;6;true) roll(Wild;1;6;true) max(?[Skill],?[Wild])`
@@ -431,7 +507,7 @@ SOME EXAMPLES OF ROLLS:
 Now that you are dizzy, confused, and stunned, is the perfect moment to explain about Roll Dialog Panels. If you mark the option of "Has Dialog" and then drag a Panel or Multipanel with panels containing a number of properties, every time you click to roll the original property a dialog will be displayed, showing a bunch of new properties that the user can adjust. To refer to these properties in your original roll expression, you can use d{key_of_the_property}.
 
 ## 8.Folder structure best practices
-If we want to share our creations and systems, we will have to standardise the way we store Sandbox's info. In the future, we could try to include a button to export to db or something like that, I don't know. But for know, let's stick to this structure. In the Actors Directory I normally create 2 folders, one called _CONFIG, and one called CAMPAIGN. In _CONFIG, and within separate folders, I store each Template Actor that the system needs (one for PCs, other for NPCs, other for shared menus like shared inventory, etc).
+If we want to share our creations and systems, we will have to standardize the way we store Sandbox's info. In the future, we could try to include a button to export to db or something like that, I don't know. But for know, let's stick to this structure. In the Actors Directory I normally create 2 folders, one called _CONFIG, and one called CAMPAIGN. In _CONFIG, and within separate folders, I store each Template Actor that the system needs (one for PCs, other for NPCs, other for shared menus like shared inventory, etc).
 
 And on the Items Directory, I keep 2 main folders. One called _COMPENDIUM and the other called _TEMPLATE. Within _COMPENDIUM I create a _CONFIG folder, in Which I include Groups (stores group items),and Group Properties folders (stores properties used for groups).Within the _COMPENDIUM folder I also include separate folders for compendium items created, specific to the system, like Races, Classes, Objects, etc.
 

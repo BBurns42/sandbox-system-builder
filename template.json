@@ -27,7 +27,7 @@
         }
     },
     "Item": {
-        "types": ["property","panel","sheettab","multipanel","group","cItem"],
+        "types": ["property","panel","sheettab","multipanel","group","cItem","lookup"],
         "property": {
             "attKey": "",
             "datatype":"",
@@ -49,6 +49,11 @@
             "maxvisible":true,
             "maxtop":true,
             "listoptions":"",
+            "listoptionsLookupUse":false,
+            "listoptionsLookupKey":"",
+            "listoptionsLookupColumn":"",
+            "listoptionsAutoUse":false,
+            "listoptionsAuto":"",
             "checkgroup":"",
             "customcheck":false,
             "onPath":"",
@@ -289,6 +294,10 @@
             "groups":[],
             "attributes":{},
             "description":""
+        },
+        "lookup":{
+            "lookupKey":"",            
+            "lookupTable":{"columns":["Range Low","Range High"],"rows":[]}            
         }
     }
 }

@@ -1,8 +1,10 @@
 import { SBOX } from "./config.js";
 import { SandboxInfoForm } from "./sb-info-form.js";
-import { sb_custom_dialog_prompt,
-         sb_custom_dialog_confirm,
-       sb_custom_dialog_duplicate_handling} from "./sb-custom-dialogs.js"; 
+import {
+    sb_custom_dialog_prompt,
+    sb_custom_dialog_confirm,
+    sb_custom_dialog_duplicate_handling
+} from "./sb-custom-dialogs.js";
 
 export class auxMeth {
 
@@ -144,114 +146,147 @@ export class auxMeth {
     }
 
     // creates Map based on specific key, for quick searching    
-    static async updateItemMaps(){
-      let updateItemMapsDisabled=game.user.getFlag('world','updateItemMapsDisabled') || false;
-      if(!updateItemMapsDisabled){
-        let items;
-        let itemsummary='';
-        game.system.customitemmaps={};
-        // properties
-        game.system.customitemmaps.properties=new Map();
-        items = await game.items.filter(y=>(y.type=="property" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.properties.set(items[i].system.attKey, items[i]);
+    static async updateItemMaps() {
+        let updateItemMapsDisabled = game.user.getFlag('world', 'updateItemMapsDisabled') || false;
+        if (!updateItemMapsDisabled) {
+            let items;
+            let itemsummary = '';
+            game.system.customitemmaps = {};
+            // properties
+            game.system.customitemmaps.properties = new Map();
+            items = await game.items.filter(y => (y.type == "property"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.properties.set(items[i].system.attKey, items[i]);
+            }
+            itemsummary += 'Properties[' + items.length + ']';
+            // panels
+            game.system.customitemmaps.panels = new Map();
+            items = await game.items.filter(y => (y.type == "panel"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.panels.set(items[i].system.panelKey, items[i]);
+            }
+            itemsummary += ' Panels[' + items.length + ']';
+            // multipanels
+            game.system.customitemmaps.multipanels = new Map();
+            items = await game.items.filter(y => (y.type == "multipanel"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.multipanels.set(items[i].system.panelKey, items[i]);
+            }
+            itemsummary += ' Multipanels[' + items.length + ']';
+            // sheettabs
+            game.system.customitemmaps.sheettabs = new Map();
+            items = await game.items.filter(y => (y.type == "sheettab"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.sheettabs.set(items[i].system.tabKey, items[i]);
+            }
+            itemsummary += ' Sheettabs[' + items.length + ']';
+            // groups
+            game.system.customitemmaps.groups = new Map();
+            items = await game.items.filter(y => (y.type == "group"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.groups.set(items[i].system.groupKey, items[i]);
+            }
+            itemsummary += ' Groups[' + items.length + ']';
+            // lookups
+            game.system.customitemmaps.lookups = new Map();
+            items = await game.items.filter(y => (y.type == "lookup"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.lookups.set(items[i].system.lookupKey, items[i]);
+            }
+            itemsummary += ' Lookups[' + items.length + ']';
+            
+            // citems by ciKey
+            game.system.customitemmaps.citemsbycikey = new Map();
+            items = await game.items.filter(y => (y.type == "cItem"));
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.citemsbycikey.set(items[i].system.ciKey, items[i]);
+            }
+            itemsummary += ' Citems[' + items.length + ']';
+            
+            // actor templates(not really a item but still)
+            game.system.customitemmaps.actortemplates = new Map();
+            items = await game.actors.filter(y => y.system.istemplate);            
+            for (let i = 0; i < items.length; i++) {
+                game.system.customitemmaps.actortemplates.set(items[i].name, items[i]);
+            }
+            itemsummary += ' ActorTemplates[' + items.length + ']';
+            
+            console.log('Sandbox | updateItemMaps | Updated | ' + itemsummary);
         }
-        itemsummary += 'Properties[' + items.length  +']';
-        // panels
-        game.system.customitemmaps.panels=new Map();
-        items = await game.items.filter(y=>(y.type=="panel" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.panels.set(items[i].system.panelKey, items[i]);
-        }
-        itemsummary += ' Panels[' + items.length  +']';
-        // multipanels
-        game.system.customitemmaps.multipanels=new Map();
-        items = await game.items.filter(y=>(y.type=="multipanel" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.multipanels.set(items[i].system.panelKey, items[i]);
-        }
-        itemsummary += ' Multipanels[' + items.length  +']';
-        // sheettabs
-        game.system.customitemmaps.sheettabs=new Map();
-        items = await game.items.filter(y=>(y.type=="sheettab" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.sheettabs.set(items[i].system.tabKey, items[i]);
-        }
-        itemsummary += ' Sheettabs[' + items.length  +']';
-        // groups
-        game.system.customitemmaps.groups=new Map();
-        items = await game.items.filter(y=>(y.type=="group" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.groups.set(items[i].system.groupKey, items[i]);
-        }
-        itemsummary += ' Groups[' + items.length  +']';
-        // citems by ciKey
-        game.system.customitemmaps.citemsbycikey=new Map();
-        items = await game.items.filter(y=>(y.type=="cItem" ));
-        for (let i = 0; i < items.length; i++) {
-          game.system.customitemmaps.citemsbycikey.set(items[i].system.ciKey, items[i]);
-        }
-        itemsummary += ' Citems[' + items.length  +']';
-        console.log('Sandbox | updateItemMaps | Updated | ' + itemsummary );
-      }
     }
 
-
+    static async getActorTemplate(key = null) {
+      let actorTemplate = game.system.customitemmaps.actortemplates.get(key);
+      return actorTemplate;
+    }
     static async getTElement(id, type = null, key = null) {
         //console.log(id + " " + type + " " + key);
         if (id != null && id.match(/_\d+/g) != null) // Skip IDs that are from CREATE mods (ie, oaisjdo123_# <--)
-            return                
-        let myElem = game.items.get(id);
+            return;
+        if(id=='NONE' && type=='property' && key==null)
+          return;
+        let myElem=null;
+        
+        if(id!=null) 
+          myElem = game.items.get(id);
 
         let propKey = "";
 
         if (type == "property") {
-            propKey = "attKey";            
+            propKey = "attKey";
         }
         if (type == "panel") {
-            propKey = "panelKey";            
+            propKey = "panelKey";
         }
         if (type == "multipanel") {
-            propKey = "panelKey";            
+            propKey = "panelKey";
         }
         if (type == "sheettab") {
-            propKey = "tabKey";            
+            propKey = "tabKey";
         }
         if (type == "group") {
-            propKey = "groupKey";            
+            propKey = "groupKey";
         }
-        if (key != null && myElem != null){
-          if (key==='' && myElem != null){
-            key=myElem.system[propKey];
-          } else{
-            if (myElem.system[propKey] != key)
-                myElem = null;
-          }
-        }    
-        if (myElem == null && key!=null && key!='') {
-          if (type == "property") {            
-            //myElem = await game.items.find(y =>y.type=='property' &&  y.system.attKey == key); 
-            myElem = game.system.customitemmaps.properties.get(key);
-          }
-          if (type == "panel") {              
-              //myElem = await game.items.find(y =>y.type=='panel' &&  y.system.panelKey == key);
-              myElem = game.system.customitemmaps.panels.get(key);
-          }
-          if (type == "multipanel") {              
-              //myElem = await game.items.find(y =>y.type=='multipanel' &&  y.system.panelKey == key);
-              myElem = game.system.customitemmaps.multipanels.get(key)
-          }
-          if (type == "sheettab") {              
-              //myElem = await game.items.find(y =>y.type=='sheettab' &&  y.system.tabKey == key);
-              myElem = game.system.customitemmaps.sheettabs.get(key);
-          }
-          if (type == "group") {              
-              //myElem = await game.items.find(y =>y.type=='group' &&  y.system.groupKey == key);
-              myElem = game.system.customitemmaps.groups.get(key);
-          }  
+        if (type == "lookup") {
+            propKey = "lookupKey";
+        }
+        
+        if (key != null && myElem != null) {
+            if (key === '' && myElem != null) {
+                key = myElem.system[propKey];
+            } else {
+                if (myElem.system[propKey] != key)
+                    myElem = null;
+            }
+        }
+        if (myElem == null && key != null && key != '') {
+            if (type == "property") {
+                //myElem = await game.items.find(y =>y.type=='property' &&  y.system.attKey == key); 
+                myElem = game.system.customitemmaps.properties.get(key);
+            }
+            if (type == "panel") {
+                //myElem = await game.items.find(y =>y.type=='panel' &&  y.system.panelKey == key);
+                myElem = game.system.customitemmaps.panels.get(key);
+            }
+            if (type == "multipanel") {
+                //myElem = await game.items.find(y =>y.type=='multipanel' &&  y.system.panelKey == key);
+                myElem = game.system.customitemmaps.multipanels.get(key)
+            }
+            if (type == "sheettab") {
+                //myElem = await game.items.find(y =>y.type=='sheettab' &&  y.system.tabKey == key);
+                myElem = game.system.customitemmaps.sheettabs.get(key);
+            }
+            if (type == "group") {
+                //myElem = await game.items.find(y =>y.type=='group' &&  y.system.groupKey == key);
+                myElem = game.system.customitemmaps.groups.get(key);
+            }
+            if (type == "lookup") {
+                //myElem = await game.items.find(y =>y.type=='group' &&  y.system.groupKey == key);
+                myElem = game.system.customitemmaps.lookups.get(key);
+            }
         }
 
- 
+
         //To correct post 0.9
         if (myElem == null) {
             let is_here = game.items.filter(y => Boolean(y._source.system[propKey])).find(y => y._source.system[propKey] == id);
@@ -260,7 +295,7 @@ export class auxMeth {
             }
         }
 
-        if (myElem == null && key != null && key!='') {
+        if (myElem == null && key != null && key != '') {
             let locatedPack;
             let locatedId;
             for (let pack of game.packs) {
@@ -287,8 +322,9 @@ export class auxMeth {
                 myElem = importedobject;
             }
         }
-        if (myElem==null) {
-          console.error('Sandbox | Unable to find item ('+ type + ') with ID:' + id + ' key(' + propKey +'):' + key );
+        if (myElem == null) {
+            console.error('Sandbox | Unable to find item (' + type + ') with ID:' + id + ' key(' + propKey + '):' + key);
+            return;
         }
         return myElem;
     }
@@ -353,29 +389,29 @@ export class auxMeth {
     }
 
     //EXPORT TEST
-    static recurseFolders(folders,parentid){
-    let returnHTML='<ul class="sb-json-export-ul">'
-    let margin=0;
-      for (let i = 0; i < folders.length; i++) {
-        let thisfolder = folders[i];
-        if(thisfolder.folder!=null){
-          thisfolder=thisfolder.folder;
+    static recurseFolders(folders, parentid) {
+        let returnHTML = '<ul class="sb-json-export-ul">'
+        let margin = 0;
+        for (let i = 0; i < folders.length; i++) {
+            let thisfolder = folders[i];
+            if (thisfolder.folder != null) {
+                thisfolder = thisfolder.folder;
+            }
+            // ul approach
+            if (thisfolder.children.length > 0) {
+                returnHTML += `<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+            } else {
+                returnHTML += `<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
+            }
+            returnHTML += this.recurseFolders(thisfolder.children, thisfolder.id);
+            returnHTML += `</li>`;
         }
-        // ul approach
-        if(thisfolder.children.length>0){
-          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
-        } else {
-          returnHTML +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-${thisfolder.id}"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-${thisfolder.id}" folderid ="${thisfolder.id}" parentid="${parentid}" type="checkbox">${thisfolder.name}</label>`;
-        }
-        returnHTML+= this.recurseFolders(thisfolder.children,thisfolder.id);
-        returnHTML +=`</li>`;
-      }
-      returnHTML+=`</ul>`;
-      return returnHTML;
+        returnHTML += `</ul>`;
+        return returnHTML;
     }
 
     static exportBrowser() {
-        
+
         let entities = {};
 
         entities.actors = [];
@@ -383,41 +419,41 @@ export class auxMeth {
         entities.folders = [];
 
         let allfolders = game.folders.contents.filter(y => y.type == "Item" || y.type == "Actor");
-        
-        
+
+
         //console.log(itemfolders);
-        let rootItemFolders=game.folders.contents.filter(y => y.type == "Item" && y.depth == 1);
-        let rootActorFolders=game.folders.contents.filter(y => y.type == "Actor" && y.depth == 1);
+        let rootItemFolders = game.folders.contents.filter(y => y.type == "Item" && y.depth == 1);
+        let rootActorFolders = game.folders.contents.filter(y => y.type == "Actor" && y.depth == 1);
         let finalContent = `<div class="exportbrowser">`;
         let endDiv = `</div>`;
-          
+
         // ul approach
-        finalContent +=`<ul class="sb-json-export-ul">`;
-        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-folderroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-folderroot" folderid ="folderroot" type="checkbox">FOLDERS</label>`;
-        finalContent +=`<ul class="sb-json-export-ul">`;
+        finalContent += `<ul class="sb-json-export-ul">`;
+        finalContent += `<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-folderroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-folderroot" folderid ="folderroot" type="checkbox">FOLDERS</label>`;
+        finalContent += `<ul class="sb-json-export-ul">`;
         // items
-        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-itemroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-itemroot" folderid ="itemroot" parentid="folderroot" type="checkbox">ITEMS</label>`;
-        finalContent += this.recurseFolders(rootItemFolders,"itemroot");
-        finalContent +=`</li>`;
+        finalContent += `<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-itemroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-itemroot" folderid ="itemroot" parentid="folderroot" type="checkbox">ITEMS</label>`;
+        finalContent += this.recurseFolders(rootItemFolders, "itemroot");
+        finalContent += `</li>`;
         // actors
-        finalContent +=`<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-actorroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-actorroot" folderid ="actorroot" parentid="folderroot" type="checkbox">ACTORS</label>`;
-        finalContent += this.recurseFolders(rootActorFolders,"actorroot");
-        finalContent +=`</li>`;
-        
-        finalContent +=`</ul>`;
-        finalContent +=`</li>`;
-        finalContent +=`</ul>`;
-        
+        finalContent += `<li class="sb-json-export-li"><label class="sb-json-export-li-label" for="sb-json-export-actorroot"><input class="exportDialog checkbox sb-json-export-checkbox" id="sb-json-export-actorroot" folderid ="actorroot" parentid="folderroot" type="checkbox">ACTORS</label>`;
+        finalContent += this.recurseFolders(rootActorFolders, "actorroot");
+        finalContent += `</li>`;
+
+        finalContent += `</ul>`;
+        finalContent += `</li>`;
+        finalContent += `</ul>`;
+
         finalContent += endDiv;
 
         let d = new Dialog({
             title: "Choose folders to export",
-            content: finalContent,            
+            content: finalContent,
             buttons: {
                 ok: {
                     icon: '<i class="fas fa-check"></i>',
                     label: "OK",
-                    
+
                     callback: async (html) => {
                         console.log('Sandbox | JSON Export | Running consistency check before export');
                         await auxMeth.checkConsistency();
@@ -428,47 +464,47 @@ export class auxMeth {
                             if (selectedfolder[k].checked) {
                                 let theFolder;
                                 // check for root folders
-                                if (folderKey=='itemroot'){
-                                  let rootitems=game.items.filter(y => y.folder === null)
-                                  
-                                  //console.log(rootitems)
-                                  for (let n = 0; n < rootitems.length; n++) {
-                                    entities.items.push(rootitems[n]);
-                                  }
-                                  
-                                } else if(folderKey=='actorroot'){
-                                  let rootactors=game.actors.filter(y => y.folder === null)
-                                  //console.log(rootactors)
-                                  for (let n = 0; n < rootactors.length; n++) {
-                                    entities.actors.push(rootactors[n]);
-                                  }
-                                  
+                                if (folderKey == 'itemroot') {
+                                    let rootitems = game.items.filter(y => y.folder === null)
+
+                                    //console.log(rootitems)
+                                    for (let n = 0; n < rootitems.length; n++) {
+                                        entities.items.push(rootitems[n]);
+                                    }
+
+                                } else if (folderKey == 'actorroot') {
+                                    let rootactors = game.actors.filter(y => y.folder === null)
+                                    //console.log(rootactors)
+                                    for (let n = 0; n < rootactors.length; n++) {
+                                        entities.actors.push(rootactors[n]);
+                                    }
+
                                 } else {
-                                  theFolder = allfolders.find(y => y.id == folderKey);
+                                    theFolder = allfolders.find(y => y.id == folderKey);
                                 }
-                                if(theFolder!=null){
-                                  entities.folders.push(theFolder);
-                                  
-                                  for (let n = 0; n < theFolder.contents.length; n++) {
-                                      if (theFolder.contents[n].documentName == "Item") {
-                                          entities.items.push(theFolder.contents[n]);
-                                      }
-                                      if (theFolder.contents[n].documentName == "Actor") {
-                                          entities.actors.push(theFolder.contents[n]);
-                                      }
-                                  }
+                                if (theFolder != null) {
+                                    entities.folders.push(theFolder);
+
+                                    for (let n = 0; n < theFolder.contents.length; n++) {
+                                        if (theFolder.contents[n].documentName == "Item") {
+                                            entities.items.push(theFolder.contents[n]);
+                                        }
+                                        if (theFolder.contents[n].documentName == "Actor") {
+                                            entities.actors.push(theFolder.contents[n]);
+                                        }
+                                    }
                                 }
                             }
                         }
                         //console.log(entities);
                         let saveresult = await auxMeth.exportTree(true, entities);
-                        
-                        ui.notifications.info(`Exported completed`,{"permanent":true}); 
+
+                        ui.notifications.info(`Exported completed`, { "permanent": true });
                     }
                 },
                 cancel: {
                     icon: '<i class="fas fa-times"></i>',
-                    label: "Cancel",                    
+                    label: "Cancel",
                     callback: () => { console.log("canceling selection"); }
                 }
             },
@@ -476,29 +512,29 @@ export class auxMeth {
             exportDialog: true,
             close: () => console.log("cItem selection dialog was shown to player.")
         });
-        
-        d.options.height=600;
-        d.position.height=600;
-        d.options.resizable=true;
+
+        d.options.height = 600;
+        d.position.height = 600;
+        d.options.resizable = true;
         d.render(true);
     }
-    
-    static nowToTimestamp(){
-      let today = new Date();
-      let dd = String(today.getDate()).padStart(2, '0');
-      let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
-      let yyyy = today.getFullYear();
-      let HH = String(today.getHours()).padStart(2, '0');
-      let nn = String(today.getMinutes()).padStart(2, '0');
-      let ss = String(today.getSeconds()).padStart(2, '0');
 
-      return yyyy + mm + dd + HH + nn + ss  ;
+    static nowToTimestamp() {
+        let today = new Date();
+        let dd = String(today.getDate()).padStart(2, '0');
+        let mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        let yyyy = today.getFullYear();
+        let HH = String(today.getHours()).padStart(2, '0');
+        let nn = String(today.getMinutes()).padStart(2, '0');
+        let ss = String(today.getSeconds()).padStart(2, '0');
+
+        return yyyy + mm + dd + HH + nn + ss;
     }
-    
+
     static convertToValidFilename(string) {
-      return (string.replace(/[\/|\\:*?"<>]/g, "_"));
+        return (string.replace(/[\/|\\:*?"<>]/g, "_"));
     }
-    
+
 
     static exportTree(writeFile = true, groups = null) {
         ui.notifications.info("Exporting data...");
@@ -513,19 +549,19 @@ export class auxMeth {
         allData = JSON.stringify(groups, null, 2);
 
         console.log(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items of the world`);
-        ui.notifications.info(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items`);  
+        ui.notifications.info(`Exporting ${groups.actors.length} Actors and ${groups.items.length} Items`);
         //Trigger file save procedure
-        let filename='';
-        if (game.actors.size + game.items.size==groups.actors.length+groups.items.length){
-          filename = game.world.id + "-export-all-"+ auxMeth.nowToTimestamp()+".json";
+        let filename = '';
+        if (game.actors.size + game.items.size == groups.actors.length + groups.items.length) {
+            filename = game.world.id + "-export-all-" + auxMeth.nowToTimestamp() + ".json";
         } else {
-          if(groups.folders.length==1){
-            filename = game.world.id + "-export-" + groups.folders[0].name + "-"+ auxMeth.nowToTimestamp()+".json";
-          } else{
-            filename = game.world.id + "-export-subset-"+ auxMeth.nowToTimestamp()+".json";
-          }
+            if (groups.folders.length == 1) {
+                filename = game.world.id + "-export-" + groups.folders[0].name + "-" + auxMeth.nowToTimestamp() + ".json";
+            } else {
+                filename = game.world.id + "-export-subset-" + auxMeth.nowToTimestamp() + ".json";
+            }
         }
-        filename=auxMeth.convertToValidFilename(filename);
+        filename = auxMeth.convertToValidFilename(filename);
 
         if (writeFile) auxMeth.writeJSONToFile(filename, allData);
         return {
@@ -535,61 +571,61 @@ export class auxMeth {
     }
 
     static async writeJSONToFile(filename, data) {
-        ui.notifications.info(`Saving exported data to file...`); 
+        ui.notifications.info(`Saving exported data to file...`);
         saveDataToFile(data, "application/json", filename);
         console.log(`Saved to file ${filename}`);
-        
+
     }
 
     static async getImportFile() {
-      // ask user to proceed
-    let prompttitle =game.i18n.format("SANDBOX.confirmStartImportPromptTitle",{});
-    let promptbody='<h4>' + game.i18n.localize("AreYouSure") +'</h4>';        
-    promptbody   +='<p>' + game.i18n.format("SANDBOX.confirmStartImportPromptBody",{}) +'</p>';        
-    let answer=await sb_custom_dialog_confirm(prompttitle,promptbody,game.i18n.localize("Yes"),game.i18n.localize("No"));
-    if(!answer){
-      return 0;
-    }
-      let currentinput = `worlds/${game.world.id}`;
-      new FilePicker({
-        current: currentinput,
-        type: "json",
-        callback: filePath => auxMeth.importTree(filePath),
-      }).browse();
-    
+        // ask user to proceed
+        let prompttitle = game.i18n.format("SANDBOX.confirmStartImportPromptTitle", {});
+        let promptbody = '<h4>' + game.i18n.localize("AreYouSure") + '</h4>';
+        promptbody += '<p>' + game.i18n.format("SANDBOX.confirmStartImportPromptBody", {}) + '</p>';
+        let answer = await sb_custom_dialog_confirm(prompttitle, promptbody, game.i18n.localize("Yes"), game.i18n.localize("No"));
+        if (!answer) {
+            return 0;
+        }
+        let currentinput = `worlds/${game.world.id}`;
+        new FilePicker({
+            current: currentinput,
+            type: "json",
+            callback: filePath => auxMeth.importTree(filePath),
+        }).browse();
+
     }
 
-    static async getSandboxFlag(obj,flag,value=null){
-      if(!obj.hasOwnProperty('flags')){
-        // no flags at all, add it
-        console.log('getSandboxFlag | Adding flags');
-        obj.flags={};
-      }          
-      if(!obj.flags.hasOwnProperty('sandbox')){        
-        // no sandbox flags, add it
-        console.log('getSandboxFlag | Adding sandbox flags');
-        obj.flags.sandbox={};        
-      }
-      if(!obj.flags.sandbox.hasOwnProperty(flag)){        
-        // no such sandbox flag
-        if(value!=null){
-          // add it
-          console.log('getSandboxFlag | Adding sandbox flag ['+ flag +']');
-          obj.flags.sandbox[flag]=value;  
-          return value;
-        } else {
-          return null;
+    static async getSandboxFlag(obj, flag, value = null) {
+        if (!obj.hasOwnProperty('flags')) {
+            // no flags at all, add it
+            console.log('getSandboxFlag | Adding flags');
+            obj.flags = {};
         }
-      } else {
-        console.log('getSandboxFlag | Found sandbox flag ['+ flag +']',obj.flags.sandbox[flag]);
-        return obj.flags.sandbox[flag];
-      }                      
+        if (!obj.flags.hasOwnProperty('sandbox')) {
+            // no sandbox flags, add it
+            console.log('getSandboxFlag | Adding sandbox flags');
+            obj.flags.sandbox = {};
+        }
+        if (!obj.flags.sandbox.hasOwnProperty(flag)) {
+            // no such sandbox flag
+            if (value != null) {
+                // add it
+                console.log('getSandboxFlag | Adding sandbox flag [' + flag + ']');
+                obj.flags.sandbox[flag] = value;
+                return value;
+            } else {
+                return null;
+            }
+        } else {
+            console.log('getSandboxFlag | Found sandbox flag [' + flag + ']', obj.flags.sandbox[flag]);
+            return obj.flags.sandbox[flag];
+        }
     }
     /* -------------------------------------------- */
     static async importTree(exportfilePath) {
         //let exportfilePath = "worlds/" + gameName + "/export.json";
         await console.log('Sandbox | importTree | ' + `Data import from file ${exportfilePath} started`)
-        await ui.notifications.info(`Data import from file ${exportfilePath} started`,{console:false}); 
+        await ui.notifications.info(`Data import from file ${exportfilePath} started`, { console: false });
         const response = await fetch(exportfilePath);
         const importedPack = await response.json();
         const actors = importedPack.actors;
@@ -597,44 +633,44 @@ export class auxMeth {
         const folders = importedPack.folders;
 
         let idCollection = {};
-        let originalId=null;
+        let originalId = null;
         await console.log('Sandbox | importTree | Importing actors phase 1')
         for (let i = 0; i < actors.length; i++) {
             let anactor = actors[i];
             // compability check
-            if(!anactor.hasOwnProperty('system')){
-              // to old data(pre v10) exit and set error                                                         
-              sb_custom_dialog_prompt(game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Title"),game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Body"),'Ok','Error')
-              console.error('Sandbox | importTree | Data in file ' + exportfilePath + ' is missing [system] property' );
-              return false;
+            if (!anactor.hasOwnProperty('system')) {
+                // to old data(pre v10) exit and set error                                                         
+                sb_custom_dialog_prompt(game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Title"), game.i18n.localize("SANDBOX.ImportDataIsFromPreV10Body"), 'Ok', 'Error')
+                console.error('Sandbox | importTree | Data in file ' + exportfilePath + ' is missing [system] property');
+                return false;
             }
             let istemplate = duplicate(anactor.system.istemplate);
             // -------------------------------------------
             // detailed import, will be expanded in future                       
-            originalId=null;
+            originalId = null;
             // check for sandbox flags
-            originalId = await auxMeth.getSandboxFlag(anactor,'originalId',anactor._id)
+            originalId = await auxMeth.getSandboxFlag(anactor, 'originalId', anactor._id)
             // prepare import flag
-            anactor.flags.sandbox.import={'importedTime':0};  // add/reset marker for import before the create
-            anactor.flags.sandbox.import.importId=originalId;
+            anactor.flags.sandbox.import = { 'importedTime': 0 };  // add/reset marker for import before the create
+            anactor.flags.sandbox.import.importId = originalId;
             // check if import has _stats(v10 and forward)
-            if(anactor.hasOwnProperty('_stats')){
-              anactor.flags.sandbox.import.systemVersion=anactor._stats.systemVersion;
-              anactor.flags.sandbox.import.coreVersion=anactor._stats.coreVersion;
-              anactor.flags.sandbox.import.createdTime=anactor._stats.createdTime;
-              anactor.flags.sandbox.import.modifiedTime=anactor._stats.modifiedTime;
-              anactor.flags.sandbox.import.lastModifiedBy=anactor._stats.lastModifiedBy;
+            if (anactor.hasOwnProperty('_stats')) {
+                anactor.flags.sandbox.import.systemVersion = anactor._stats.systemVersion;
+                anactor.flags.sandbox.import.coreVersion = anactor._stats.coreVersion;
+                anactor.flags.sandbox.import.createdTime = anactor._stats.createdTime;
+                anactor.flags.sandbox.import.modifiedTime = anactor._stats.modifiedTime;
+                anactor.flags.sandbox.import.lastModifiedBy = anactor._stats.lastModifiedBy;
             }
-                                    
+
             // end detailed import
             // -------------------------------------------
-            
+
             let result = await Actor.create(anactor);
             if (anactor.folder)
                 result.setFlag('sandbox', 'folder', anactor.folder);
             result.setFlag('sandbox', 'istemplate', istemplate);
-            
-            
+
+
             idCollection[anactor._id] = result._id;
         }
         await console.log('Sandbox | importTree | Importing items phase 1')
@@ -642,32 +678,32 @@ export class auxMeth {
             let anitem = items[i];
             // -------------------------------------------
             // detailed import, will be expanded in future                       
-            originalId=null;
+            originalId = null;
             // check for sandbox flags
-            originalId = await auxMeth.getSandboxFlag(anitem,'originalId',anitem._id)
+            originalId = await auxMeth.getSandboxFlag(anitem, 'originalId', anitem._id)
             // prepare import flag
-            anitem.flags.sandbox.import={'importedTime':0};  // add/reset marker for import before the create
-            anitem.flags.sandbox.import.importId=originalId;
+            anitem.flags.sandbox.import = { 'importedTime': 0 };  // add/reset marker for import before the create
+            anitem.flags.sandbox.import.importId = originalId;
             // check if import has _stats(v10 and forward)
-            if(anitem.hasOwnProperty('_stats')){
-              anitem.flags.sandbox.import.systemVersion=anitem._stats.systemVersion;
-              anitem.flags.sandbox.import.coreVersion=anitem._stats.coreVersion;
-              anitem.flags.sandbox.import.createdTime=anitem._stats.createdTime;
-              anitem.flags.sandbox.import.modifiedTime=anitem._stats.modifiedTime;
-              anitem.flags.sandbox.import.lastModifiedBy=anitem._stats.lastModifiedBy;
+            if (anitem.hasOwnProperty('_stats')) {
+                anitem.flags.sandbox.import.systemVersion = anitem._stats.systemVersion;
+                anitem.flags.sandbox.import.coreVersion = anitem._stats.coreVersion;
+                anitem.flags.sandbox.import.createdTime = anitem._stats.createdTime;
+                anitem.flags.sandbox.import.modifiedTime = anitem._stats.modifiedTime;
+                anitem.flags.sandbox.import.lastModifiedBy = anitem._stats.lastModifiedBy;
             }
-                                    
+
             // end detailed import
             // -------------------------------------------
-            
-            
+
+
             let result = await Item.create(anitem);
             if (anitem.folder)
                 result.setFlag('sandbox', 'folder', anitem.folder);
             idCollection[anitem._id] = result._id;
         }
-         
-        await ui.notifications.info(`Importing folders from file...`,{console:false}); 
+
+        await ui.notifications.info(`Importing folders from file...`, { console: false });
         await console.log('Sandbox | importTree | Importing folders phase 1')
         for (let i = 0; i < folders.length; i++) {
             let afolder = folders[i];
@@ -681,11 +717,11 @@ export class auxMeth {
             if (hasProperty(idCollection, folder.realparent))
                 folder.update({ "folder": idCollection[folder.realparent] });
         }
-        
+
         await console.log('Sandbox | importTree | Folders imported')
-        await ui.notifications.info(`Folders imported from file`,{console:false}); 
+        await ui.notifications.info(`Folders imported from file`, { console: false });
         await console.log('Sandbox | importTree | Importing items phase 2')
-        await ui.notifications.info(`Importing items from file...`,{console:false});
+        await ui.notifications.info(`Importing items from file...`, { console: false });
         for (let item of game.items.contents) {
             let finalitem = await duplicate(item);
             //console.log("importing item: " + finalitem.name);
@@ -789,10 +825,10 @@ export class auxMeth {
 
 
         }
-        await ui.notifications.info(`Items imported from file`,{console:false});
-        
+        await ui.notifications.info(`Items imported from file`, { console: false });
+
         await console.log('Sandbox | importTree | Items imported')
-        await ui.notifications.info(`Importing actors from file...`,{console:false});
+        await ui.notifications.info(`Importing actors from file...`, { console: false });
         await console.log('Sandbox | importTree | Importing actors phase 2')
         for (let actor of game.actors.contents) {
             let finalactor = await duplicate(actor);
@@ -850,11 +886,11 @@ export class auxMeth {
 
 
         }
-        await ui.notifications.info(`Actors imported from file`,{console:false});
-        await ui.notifications.info(`Import from file completed`,{console:false});
-        
+        await ui.notifications.info(`Actors imported from file`, { console: false });
+        await ui.notifications.info(`Import from file completed`, { console: false });
+
         await console.log('Sandbox | importTree | Import completed')
-        await sb_custom_dialog_prompt(game.i18n.localize("Information"),game.i18n.localize("SANDBOX.ImportCompletedBody"),game.i18n.localize("Ok"),'Information');
+        await sb_custom_dialog_prompt(game.i18n.localize("Information"), game.i18n.localize("SANDBOX.ImportCompletedBody"), game.i18n.localize("Ok"), 'Information');
     }
 
 
@@ -863,7 +899,7 @@ export class auxMeth {
     static async registerIfHelper() {
         Handlebars.registerHelper('ifCond', function (v1, v2, options) {
 
-            if (v1 == null || v2 == null)              
+            if (v1 == null || v2 == null)
                 return options.inverse(this);
 
             let regE = /^\d+$/g;
@@ -1038,12 +1074,64 @@ export class auxMeth {
 
         return expr;
     }
+    static async basicParser(expr,actor=null,actorcitem=null){
+      let returnValue=expr;
+      // parses basic things
+      if(expr.length==0) return returnValue;
+      if(expr.includes("#{diff}")){
+        let diff = await game.settings.get("sandbox", "diff");
+        if (diff == null)
+            diff = 0;
+        if (isNaN(diff))
+            diff = 0;
+        returnValue = returnValue.replace(/\#{diff}/g, diff);
+      }
+      if(actor=!null){        
+        returnValue = returnValue.replace(/\@{name}/g, actor.name);
+      }
+      if(actorcitem!=null){
+        // for future when i rewritten other functions to pass actor,actorcitem
+      }
+      if(returnValue.includes("#{targetname}")){
+        let firstTarget=game.user.targets.first();
+        if(firstTarget!=null){
+          returnValue = await returnValue.replace(/\#{targetname}/g, firstTarget.document.name);
+        } else{
+          returnValue = await returnValue.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+        }
+      }
+      // parse target(s) name
+      if (returnValue.includes("#{targetlist}")) {
+        let targets = game.user.targets.ids;
+        if (targets.length > 0) {
+          let targetnames = '';
+          let targettoken = null;
+          for (let i = 0; i < targets.length; i++) {
+            targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
+            if (targettoken != null) {
+              if (targetnames.length == 0) {
+                targetnames = targettoken.name;
+              } else {
+                targetnames = targetnames + '&#44 ' + targettoken.name;
+              }
+            }
+          }          
+          returnValue = await returnValue.replace(/\#{targetlist}/g, targetnames);
+        } else {
+          returnValue = await returnValue.replace(/\#{targetlist}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+        }
+      }
+      return returnValue;
+    }
+    
+    
+    
 
-    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0,maxuses=1) {
-        const initialexp=expr;
+    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) {
+        const initialexp = expr;
         var toreturn = expr;
-        //console.log("autoparsing");
-        //console.log(expr);
+        //console.log("autoParser | ", expr);
+        
 
 
         if (typeof (expr) != "string")
@@ -1319,7 +1407,7 @@ export class auxMeth {
         //NEW SMART PARSING
         let sums_are_num = false;
         let safety_break = 0;
-
+        let useMathParser=false;
         while (!sums_are_num) {
             //console.log(expr);
             sums_are_num = true;
@@ -1327,7 +1415,7 @@ export class auxMeth {
                 break;
 
             //console.log(expr);
-
+if(!useMathParser){
             //PARSE CEIL
             let ceilmatch = /\bceil\(/g;
             var ceilResultArray;
@@ -1368,9 +1456,9 @@ export class auxMeth {
 
                 }
             }
-
+            }
             //console.log(expr);
-
+if(!useMathParser){
             //PARSE FLOOR
             let floormatch = /\bfloor\(/g;
             var floorResultArray;
@@ -1412,6 +1500,7 @@ export class auxMeth {
 
                 }
             }
+        }
 
             //console.log(expr);
 
@@ -1757,6 +1846,7 @@ export class auxMeth {
             //console.log(expr);
 
             //SUM
+        if(!useMathParser){
             //var sumResult = expr.match(/(?<=\bsum\b\().*?(?=\))/g);
             let summatch = /\bsum\(/g;
             var sumResultResultArray;
@@ -1792,9 +1882,16 @@ export class auxMeth {
                                 let sumExpr = blocks[n];
                                 //console.log(sumExpr);
                                 if (isNaN(blocks[n])) {
+                                  try{
                                     sumExpr = eval(sumExpr);
+                                  }
+                                  catch{
+                                    nonumber = true;
+                                  }
                                 }
-                                finalvalue += parseInt(sumExpr);
+                                if(!nonumber){
+                                  finalvalue += parseInt(sumExpr);
+                                }
                             }
                             else {
                                 //console.log("nonumber");
@@ -1820,8 +1917,7 @@ export class auxMeth {
 
                 }
             }
-
-            //console.log(expr);
+        } 
 
             //PARSE SCALED AUTO VALUES
             //var scaleresult = expr.match(/(?<=\%\[).*?(?=\])/g);
@@ -1844,8 +1940,10 @@ export class auxMeth {
                     let nonvalidscalecheck = scaleresult[i].match(nonvalidscale);
                     //console.log(scaleresult[i]);
                     if (!nonvalidscalecheck) {
-                        let limits = scaleresult[i].split(",");
-                        //console.log(limits[0]);
+                        //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis, number, or math symbol
+                        let limitsregexp = /,(?=\s*[0-9()+\-*.\/]*:)/g;
+                        let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
+                        //console.log(limits);
                         let value = limits[0];
                         if (isNaN(value) && !value.includes("$") && !value.includes("min") && !value.includes("max")) {
                             let roll = new Roll(limits[0]);
@@ -1858,7 +1956,10 @@ export class auxMeth {
                         let limitArray = [];
 
                         for (let j = 1; j < limits.length; j++) {
-                            let splitter = limits[j].split(":");
+                            //Only split the first :
+                            let splitterregexp = /(?::)(.*?$)/;
+                            let splitter = limits[j].split(":", 1);
+                            splitter.push(limits[j].match(splitterregexp)[1]);
                             let scale = splitter[0];
                             //console.log(scale);
 
@@ -1918,7 +2019,6 @@ export class auxMeth {
 
                         //console.log(expr);
                     }
-
                     else {
                         sums_are_num = false;
                     }
@@ -2114,7 +2214,7 @@ export class auxMeth {
                                     //                                    let newroll = new Roll(thiscondition);
                                     //                                    await newroll.evaluate({async: true});
                                     //                                    thiscondition = newroll.total;
-                                    checker = eval(checker);
+                                    thiscondition = eval(thiscondition);
                                 }
                                 catch (err) {
                                     dontparse = true;
@@ -2237,25 +2337,85 @@ export class auxMeth {
         }
         //console.log('Sandbox | autoParser | initialexp:[' + initialexp +'] toreturn:[' + toreturn + ']');
         // look for number and decimals
-        
-        if(typeof toreturn=='number'){
-          const initialvalue=toreturn;
-          // check for to many decimals
-          const numberAsString = toreturn.toString();
-          let numberofdecimals=0;
-          // String Contains Decimal
-          if (numberAsString.includes('.')) {
-            numberofdecimals= numberAsString.split('.')[1].length;                                   
-          }
 
-          if (numberofdecimals>2){
-            //parseFloat(n.toFixed(4));
-            toreturn=parseFloat(toreturn.toFixed(3));
-            //console.log('Sandbox | autoParser | fixdecimals ' + initialvalue + ' -> '+ toreturn + ' | ' + typeof toreturn);
-          }
-          
+        if (typeof toreturn == 'number') {
+            const initialvalue = toreturn;
+            // check for to many decimals
+            const numberAsString = toreturn.toString();
+            let numberofdecimals = 0;
+            // String Contains Decimal
+            if (numberAsString.includes('.')) {
+                numberofdecimals = numberAsString.split('.')[1].length;
+            }
+
+            if (numberofdecimals > 2) {
+                //parseFloat(n.toFixed(4));
+                toreturn = parseFloat(toreturn.toFixed(3));
+                //console.log('Sandbox | autoParser | fixdecimals ' + initialvalue + ' -> '+ toreturn + ' | ' + typeof toreturn);
+            }
+
         }
+
+        
+        
         return toreturn;
+    }
+    static async  useAPIFunction(functionName,expr){
+    let replaceValue;
+    let blocks = expr.split(";");
+    let args = [];
+    for (let a = 0; a < blocks.length; a++) {
+      let argument = await auxMeth.autoParser(blocks[a], null, null, false);
+      //let argument=blocks[a];
+      args.push(argument);
+    }
+    // get the number of required arguments for function
+    let requiredArgumentsCount=game.system.api._APIFunctionRequiredArguments(functionName);
+    
+    if(args.length<requiredArgumentsCount){
+      ui.notifications.warn("Function ["+ functionName +"] requires minimum " + requiredArgumentsCount +" arguments");
+      return null;
+    }
+    
+    switch (args.length) {
+      case 0:
+        replaceValue = game.system.api[functionName]();
+        break;
+      case 1:
+        replaceValue = game.system.api[functionName](args[0]);
+        break;
+      case 2:
+        replaceValue = game.system.api[functionName](args[0], args[1]);
+        break;
+      case 3:
+        replaceValue =await  game.system.api[functionName](args[0], args[1], args[2]);
+        break;
+      case 4:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3]);
+        break;
+      case 5:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4]);
+        break;
+      case 6:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5]);
+        break;
+      case 7:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6]);
+        break; 
+      case 8:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7]);
+        break;
+      case 9:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8]);
+        break;
+      case 10:
+        replaceValue = game.system.api[functionName](args[0], args[1], args[2], args[3], args[4],args[5],args[6],args[7],args[8],args[9]);
+        break;
+      default:
+        ui.notifications.error("Out of depth in  function useAPIFunction for function ["+ functionName +"] requires minimum " + requiredArgumentsCount +" arguments");
+        break;
+    }
+    return replaceValue
     }
 
     static getParenthesString(expr) {
@@ -2379,7 +2539,7 @@ export class auxMeth {
             let found = false;
 
             for (let i = game.messages.size - 1; i >= 0; i--) {
-                
+
                 let amessage = game.messages.contents[i];
                 if (!found) {
                     if (amessage.content.includes("roll-template") && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
@@ -2389,7 +2549,7 @@ export class auxMeth {
                     }
 
                 }
-                
+
             }
 
 
@@ -2420,91 +2580,91 @@ export class auxMeth {
 
         hotbar[0].appendChild(rollMenu);
     }
-    
-  static sb_two_col_card(left,right,type='table'){
-      let htmltable=`
+
+    static sb_two_col_card(left, right, type = 'table') {
+        let htmltable = `
         <div class="sb-two-col-card-wrapper" >
-      <div class="sb-two-col-card-image-in-` +type+`">`+left+`</div>  
-      <div class="sb-two-col-card-name">`+right+`</div>
+      <div class="sb-two-col-card-image-in-` + type + `">` + left + `</div>  
+      <div class="sb-two-col-card-name">`+ right + `</div>
     </div>
         `;
-      return htmltable;
+        return htmltable;
     }
-    
-   
-  static showCIitemInfo(cItem=null){      
-      if (cItem!=null){
-        let item_description=cItem.system.description;
-        let item_name=cItem.name;
-        let item_img=cItem.img;
-        let options = {
-            show:{
-              name:true,
-              image:true,
-              description:true
-            },
-            id:cItem.id,    
-            type:'Item',
-            class:'sbe-info-form-show-all',
-            reshowable:true,
-            name: item_name,
-            image: item_img,        
-            description:item_description
-          };                                                                   
-        let f=new SandboxInfoForm(options).render(true,{focus:true});
-      }
-      
+
+
+    static showCIitemInfo(cItem = null) {
+        if (cItem != null) {
+            let item_description = cItem.system.description;
+            let item_name = cItem.name;
+            let item_img = cItem.img;
+            let options = {
+                show: {
+                    name: true,
+                    image: true,
+                    description: true
+                },
+                id: cItem.id,
+                type: 'Item',
+                class: 'sbe-info-form-show-all',
+                reshowable: true,
+                name: item_name,
+                image: item_img,
+                description: item_description
+            };
+            let f = new SandboxInfoForm(options).render(true, { focus: true });
+        }
+
     };
-  
-  
-  static async setcItemsKey() {
-    console.log("Sandbox | setcItemsKey | Started");
+
+
+    static async setcItemsKey() {
+        console.log("Sandbox | setcItemsKey | Started");
         let gamecItems = game.items.filter(y => y.type == "cItem");
         for (let i = 0; i < gamecItems.length; i++) {
             const mycitem = gamecItems[i];
-            if (mycitem.system.ciKey == ""){
-              console.log("Sandbox | setcItemsKey | Updating ciKey for cItem " + mycitem.name );
-              await mycitem.update({ "system.ciKey": mycitem.id });
+            if (mycitem.system.ciKey == "") {
+                console.log("Sandbox | setcItemsKey | Updating ciKey for cItem " + mycitem.name);
+                await mycitem.update({ "system.ciKey": mycitem.id });
             }
         }
-      console.log("Sandbox | setcItemsKey | Completed");  
-  } 
-  
-  static async setcItemsNameAttribute() {
-    console.log("Sandbox | setcItemsNameAttribute | Started");
-        let gamecItems = game.items.filter(y => y.type == "cItem");
-        for (let i = 0; i < gamecItems.length; i++) {
-            const mycitem = gamecItems[i];
-            if (mycitem.name != mycitem.system.attributes.name){
-              console.log("Sandbox | setcItemsKey | Updating attribute name for cItem " + mycitem.name );
-              await mycitem.update({ "system.attributes.name": mycitem.name });
-            }
-        }
-      console.log("Sandbox | setcItemsNameAttribute | Completed");  
+        console.log("Sandbox | setcItemsKey | Completed");
     }
-  
-  
+
+    static async setcItemsNameAttribute() {
+        console.log("Sandbox | setcItemsNameAttribute | Started");
+        let gamecItems = game.items.filter(y => y.type == "cItem");
+        for (let i = 0; i < gamecItems.length; i++) {
+            const mycitem = gamecItems[i];
+            if (mycitem.name != mycitem.system.attributes.name) {
+                console.log("Sandbox | setcItemsKey | Updating attribute name for cItem " + mycitem.name);
+                await mycitem.update({ "system.attributes.name": mycitem.name });
+            }
+        }
+        console.log("Sandbox | setcItemsNameAttribute | Completed");
+    }
+
+
     static async setOriginalid() {
-      // for any actor or item that has not the flag originalId set
-      console.log("Sandbox | setOriginalid | Started");      
-      let gameActors = game.actors.filter(y =>!y.flags.hasOwnProperty('sandbox') ||  y.flags.sandbox.originalId ==null);
-      for (let i = 0; i < gameActors.length; i++) {
-        const myactor = gameActors[i];
-        console.log("Sandbox | setOriginalid | Updating originalId for actor " + myactor.name );
-        await myactor.setFlag('sandbox','originalId',myactor.id)        
-      }
-      let gameItems = game.items.filter(y =>!y.flags.hasOwnProperty('sandbox') || y.flags.sandbox.originalId ==null);
-      for (let i = 0; i < gameItems.length; i++) {
-        const myitem = gameItems[i];
-        console.log("Sandbox | setOriginalid | Updating originalId for item " + myitem.name );
-        await myitem.setFlag('sandbox','originalId',myitem.id)        
-      }
-      
-      console.log("Sandbox | setOriginalid | Completed");  
-    } 
-  
-  
-   static async checkConsistency() {
+        // for any actor or item that has not the flag originalId set
+        console.log("Sandbox | setOriginalid | Started");
+        let gameActors = game.actors.filter(y => !y.flags.hasOwnProperty('sandbox') || y.flags.sandbox.originalId == null);
+        for (let i = 0; i < gameActors.length; i++) {
+            const myactor = gameActors[i];
+            console.log("Sandbox | setOriginalid | Updating originalId for actor " + myactor.name);
+            await myactor.setFlag('sandbox', 'originalId', myactor.id)
+        }
+        let gameItems = game.items.filter(y => !y.flags.hasOwnProperty('sandbox') || y.flags.sandbox.originalId == null);
+        for (let i = 0; i < gameItems.length; i++) {
+            const myitem = gameItems[i];
+            console.log("Sandbox | setOriginalid | Updating originalId for item " + myitem.name);
+            await myitem.setFlag('sandbox', 'originalId', myitem.id)
+        }
+
+        console.log("Sandbox | setOriginalid | Completed");
+    }
+
+
+    static async checkConsistency() {
         console.log("Sandbox | checkConsistency | Started");
         await this.setOriginalid();
         await this.setcItemsKey();
@@ -2529,7 +2689,7 @@ export class auxMeth {
                             let toaddotem = await auxMeth.getcItem(mymod.items[h].id, mymod.items[h].ciKey);
                             if (toaddotem) {
                                 toupdate = true;
-                                console.log("Sandbox | checkConsistency | Adding ITEM mod ciKey for "+ mycitem.name);
+                                console.log("Sandbox | checkConsistency | Adding ITEM mod ciKey for " + mycitem.name);
                                 mymod.items[h].ciKey = toaddotem.system.ciKey;
                             }
 
@@ -2543,9 +2703,9 @@ export class auxMeth {
                 //console.log("updating consistency");
                 await mycitem.update({ "system": mycitem.system });
             }
-          
+
         }
-        
+
         // let gameactors = game.actors;
         // for (let i = 0; i < gameactors.entities.length; i++) {
 
@@ -2625,76 +2785,132 @@ export class auxMeth {
 
 
         // }
-      console.log("Sandbox | checkConsistency | Completed");
-    }  
-    
-  static invertColor(hex, bw) {
-    if (hex.indexOf('#') === 0) {
-        hex = hex.slice(1);
+        console.log("Sandbox | checkConsistency | Completed");
     }
-    // convert 3-digit hex to 6-digits.
-    if (hex.length === 3) {
-        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
-    if (hex.length !== 6) {
-        throw new Error('Invalid HEX color.');
-    }
-    var r = parseInt(hex.slice(0, 2), 16),
-        g = parseInt(hex.slice(2, 4), 16),
-        b = parseInt(hex.slice(4, 6), 16);
-    if (bw) {
-        // https://stackoverflow.com/a/3943023/112731
-        return (r * 0.299 + g * 0.587 + b * 0.114) > 186
-            ? '#000000'
-            : '#FFFFFF';
-    }
-    // invert color components
-    r = (255 - r).toString(16);
-    g = (255 - g).toString(16);
-    b = (255 - b).toString(16);
-    // pad each with zeros and return
-    return "#" + this.padZero(r) + this.padZero(g) + this.padZero(b);
-  }
-  static padZero(str, len) {
-    len = len || 2;
-    var zeros = new Array(len).join('0');
-    return (zeros + str).slice(-len);
-  }
-  
-  
 
-  
-  
-  static async clientRefresh(options){
-    if(options.askForReload){
-        let answer = await sb_custom_dialog_confirm(game.i18n.localize("SETTINGS.ReloadPromptTitle"),game.i18n.localize("SETTINGS.ReloadPromptBody"),game.i18n.localize("Yes"),game.i18n.localize("No"))
-        if(answer){
-          // reload for settings to take effect
-          location.reload();
+    static invertColor(hex, bw) {
+        if (hex.indexOf('#') === 0) {
+            hex = hex.slice(1);
         }
-      }
-    if(options.requiresHardRender || options.requiresRender){
-      // check all open windows
-      let win;
-      let settingWin=null;
-      for (let app in ui.windows){
-        // if actor or item sheet
-        if(ui.windows[app].options.baseApplication=='ActorSheet' || ui.windows[app].options.baseApplication=='ItemSheet'){
-          win=ui.windows[app];
-          if(options.requiresHardRender){
-            await win.close();        
-            await win._render(true);          
-          } else if(options.requiresRender){
-            win.render(true);
-          }                        
-        } else if(ui.windows[app].options.id=='system-settings-form'){
-          settingWin=ui.windows[app];
+        // convert 3-digit hex to 6-digits.
+        if (hex.length === 3) {
+            hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
         }
-      }
-      if(settingWin!=null){      
-        settingWin.bringToTop();      
-      }
+        if (hex.length !== 6) {
+            throw new Error('Invalid HEX color.');
+        }
+        var r = parseInt(hex.slice(0, 2), 16),
+            g = parseInt(hex.slice(2, 4), 16),
+            b = parseInt(hex.slice(4, 6), 16);
+        if (bw) {
+            // https://stackoverflow.com/a/3943023/112731
+            return (r * 0.299 + g * 0.587 + b * 0.114) > 186
+                ? '#000000'
+                : '#FFFFFF';
+        }
+        // invert color components
+        r = (255 - r).toString(16);
+        g = (255 - g).toString(16);
+        b = (255 - b).toString(16);
+        // pad each with zeros and return
+        return "#" + this.padZero(r) + this.padZero(g) + this.padZero(b);
     }
-  }
+    static padZero(str, len) {
+        len = len || 2;
+        var zeros = new Array(len).join('0');
+        return (zeros + str).slice(-len);
+    }
+
+
+    //You can use the above as el = replaceHtml(el, newHtml) instead of el.innerHTML = newHtml.
+    static replaceHtml(el, html,appendExisting=false) {
+	let oldEl = typeof el === "string" ? document.getElementById(el) : el;
+        if(appendExisting){
+          html=oldEl.innerHTML + html;
+        }
+	/*@cc_on // Pure innerHTML is slightly faster in IE
+		oldEl.innerHTML = html;
+		return oldEl;
+	@*/
+	let newEl = oldEl.cloneNode(false);
+	newEl.innerHTML = html;
+        if (oldEl.parentNode!=null){
+          oldEl.parentNode.replaceChild(newEl, oldEl);
+          
+        }
+	/* Since we just removed the old element from the DOM, return a reference
+	to the new element, which can be used to restore variable references. */
+	return newEl;
+    };
+    
+    static addOptionsToSelectFromList(el,strOptions,value=null,strSeparator=",",appendExisting=false){
+      const inputArray=strOptions.split(strSeparator);
+      let newHtml=``;
+      let selectedValue=null;
+      // remove duplicates
+      const optionsArray=[...new Set(inputArray)];
+//      // sort it
+//      optionsArray.sort(function (a, b) {
+//        return a.toLowerCase().localeCompare(b.toLowerCase());
+//      });
+
+      if(value!=null){        
+        // make sure that the list contains the selected value
+        for (let i = 0; i < optionsArray.length; i++) {
+          if(value==optionsArray[i]){
+            // found it
+            selectedValue=value;
+            break;
+          }
+        }
+        // if not found use the first entry
+        if(selectedValue==null){
+          selectedValue==optionsArray[0];
+        }
+      }
+      for (let i = 0; i < optionsArray.length; i++) {        
+        if(selectedValue!=null && selectedValue==optionsArray[i]){         
+          newHtml += `<option value="${optionsArray[i]}" selected >${optionsArray[i]}</option>`;
+        } else {
+          newHtml += `<option value="${optionsArray[i]}" >${optionsArray[i]}</option>`;
+        }
+      }
+      el = auxMeth.replaceHtml(el, newHtml,appendExisting);
+      return el;
+    }
+    
+
+
+    static async clientRefresh(options) {
+        if (options.askForReload) {
+            let answer = await sb_custom_dialog_confirm(game.i18n.localize("SETTINGS.ReloadPromptTitle"), game.i18n.localize("SETTINGS.ReloadPromptBody"), game.i18n.localize("Yes"), game.i18n.localize("No"))
+            if (answer) {
+                // reload for settings to take effect
+                location.reload();
+            }
+        }
+        if (options.requiresHardRender || options.requiresRender) {
+            // check all open windows
+            let win;
+            let settingWin = null;
+            for (let app in ui.windows) {
+                // if actor or item sheet
+                if (ui.windows[app].options.baseApplication == 'ActorSheet' || ui.windows[app].options.baseApplication == 'ItemSheet') {
+                    win = ui.windows[app];
+                    if (options.requiresHardRender) {
+                        await win.close();
+                        await win._render(true);
+                    } else if (options.requiresRender) {
+                        win.render(true);
+                    }
+                } else if (ui.windows[app].options.id == 'system-settings-form') {
+                    settingWin = ui.windows[app];
+                }
+            }
+            if (settingWin != null) {
+                settingWin.bringToTop();
+            }
+        }
+    }
 }
 

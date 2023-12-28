@@ -6,469 +6,503 @@ import { sb_property_has_valid_table_filter } from "./sb-table-filters.js";
 
 export class gActor extends Actor {
 
-prepareData() { // v10
-  super.prepareData();
-  // Get the Actor's data object
-  const actorData = this; 
-  const data = actorData.system; 
-  const flags = this.flags;
-  if (!hasProperty(flags, "ischeckingauto")) {
-    setProperty(flags, "ischeckingauto", false);
-  }
-  if (!hasProperty(flags, "hasupdated")) {
-    setProperty(flags, "hasupdated", true);
-  }
-  if (!hasProperty(flags, "scrolls")) {
-    setProperty(flags, "scrolls", {});
-  }
-  // Prepare Character data
-  //console.log("preparing data");
-  if (data.istemplate) {
-    if (!hasProperty(flags, "tabarray")) {
-      setProperty(flags, "tabarray", []);
-    }
-    if (!hasProperty(flags, "rows")) {
-      setProperty(flags, "rows", 0);
-      setProperty(flags, "rwidth", 0);
-    }
-  }
-  if (!hasProperty(flags, "sandbox")) {
-    setProperty(flags, "sandbox", {});
-  }
-  if (!hasProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id)) {
-    setProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id, 0);
-  }
-  //console.log(this);
-}
-
-prepareDerivedData() {  // v10  
-  if (!hasProperty(this.flags, "sbupdated")) {
-    setProperty(this.flags, "sbupdated", 0);
-  }
-  if (!hasProperty(this.system, "biovisible")) {
-    setProperty(this.system, "biovisible", false);
-  }
-}
-
-async _preCreate(data, options, user) { // v10
-  await super._preCreate(data, options, user);
-  if (this.system != null)
-    if (this.system.istemplate)
-      this.updateSource({ "system.istemplate": false });
-}
-
-async _preUpdate(updateData, options, userId) { //v10
-  //        let upclon = duplicate(updateData);
-  //  console.log('_preUpdate')
-  //  console.log(updateData);
-  
-  if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
-   
-      let myuser = userId;
-  }
-  else {
-      return;
-  }
-  let noTemplate = true;
-  if (updateData.istemplate) {
-      noTemplate = false;
-  }
-  if (!this.system.istemplate && updateData.system != null && noTemplate) {
-      
-      let actor = duplicate(this);
-      let newtoken;
-      //console.log(actor);
-      //I AM TRYING TO MERGE UPDATE DATA TO A DUPLICATE ACTOR, TO RETURN THE RESULTING ACTOR
-      let uData = await this.getFinalActorData(actor, updateData.system);
-      //console.log(uData);
-      //HERE I APPLY THE AUTO CALCULATIONS TO THE RETURNED ACTOR
-      let adata = await this.actorUpdater(uData);
-      adata = await this.actorUpdater(adata);
-      //console.log(adata);
-
-      //COMPARES RETURNED ACTOR DATA TO THE ORIGINAL UPDATEDATA, AND ADDS WHATERVER IS MISSING
-      let newattributes = await this.compareKeys(this.system.attributes, adata.system.attributes);
-      adata.system.citems =await this.updatecItemUsesIfNumberIncreased(this.system.citems, adata.system.citems);
-      let newcitems = await this.comparecItems(this.system.citems, adata.system.citems);
-      
-      let newrolls = await this.compareValues(this.system.rolls, adata.system.rolls);
-      let maindata = updateData.system;
-      setProperty(maindata, "selector", adata.selector);
-      if (newattributes)
-          setProperty(maindata, "attributes", newattributes);
-      if (newcitems.length > 0) {
-          setProperty(maindata, "citems", newcitems);
-      }
-      else {
-          if (updateData.citems)
-              updateData.citems = adata.citems;
-      }
-      if (newrolls)
-          setProperty(maindata, "rolls", newrolls);
-  }
-  super._preUpdate(updateData, options, userId);
-}
-
-async createAttProps(actorData, updateData, key) { //v10
-  const n = actorData.attributes;
-  n[key] = {};
-  const c = actorData.attributes[key];
-  let a = updateData.attributes[key]
-  for (var f in updateData.attributes[key]) {
-    let b = a[f];
-    c[f] = b;
-    //console.log(f + " " + b);
-  }
-}
-
-async getFinalActorData(actor, updateData) { //v10
-  const actorData = actor.system;
-  //MERGE ATTRIBUTES
-  let attributes;
-  let attKeys = await Object.keys(actorData.attributes);
-  //console.log(attKeys);
-  if (updateData.attributes)
-      attributes = updateData.attributes;
-  if (updateData.istemplate)
-      actorData.istemplate = true;
-  if (updateData.gtemplate)
-      actorData.gtemplate = updateData.gtemplate;
-  //console.log(actorData.attributes);
-  for (var key in attributes) {
-    if (attKeys.includes(key)) {
-      if (attributes[key].id != null)
-        actorData.attributes[key].id = attributes[key].id;
-        //Checkbox group implementation
-        if (attributes[key].checkgroup != null)
-          actorData.attributes[key].checkgroup = attributes[key].checkgroup;
-
-          // if (actorData.attributes[key].checkgroup != null) {
-          //     if (attributes[key].value == "on")
-          //         attributes[key].value = true;
-          // }
-
-        //Checkbox group implementation
-        if (actorData.attributes[key].checkgroup != null && attributes[key].modified) {
-          if (actorData.attributes[key].checkgroup != "" && !actorData.attributes[key].value) {
-            let checkgroup = actorData.attributes[key].checkgroup;
-            let chkgroupArray = checkgroup.split(";");
-            for (const [propKey, propValues] of Object.entries(actorData.attributes)) {
-              let propKeyObj = game.items.find(y => y.system.attKey == propKey);
-              if (propKeyObj != null && propKeyObj != undefined && propKeyObj != "") //skip mismatch data (CREATE mod)
-                if (propKeyObj.system.datatype == "checkbox" && propKey != key) {
-                  let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
-                  for (let z = 0; z < chkgroupArray.length; z++) {
-                    let checkKey = chkgroupArray[z];
-                    let parsedKey = await auxMeth.autoParser(checkKey, actorData.attributes, null, true);
-                    if (pointerchkgroupArray.includes(parsedKey))
-                      propValues.value = false;
-                  }
-                }
+    prepareData() { // v10
+        super.prepareData();
+        // Get the Actor's data object
+        const actorData = this;
+        const data = actorData.system;
+        const flags = this.flags;
+        if (!hasProperty(flags, "ischeckingauto")) {
+            setProperty(flags, "ischeckingauto", false);
+        }
+        if (!hasProperty(flags, "hasupdated")) {
+            setProperty(flags, "hasupdated", true);
+        }
+        if (!hasProperty(flags, "scrolls")) {
+            setProperty(flags, "scrolls", {});
+        }
+        // Prepare Character data
+        //console.log("preparing data");
+        if (data.istemplate) {
+            if (!hasProperty(flags, "tabarray")) {
+                setProperty(flags, "tabarray", []);
             }
-            if (updateData.citems) {
-              for (let r = 0; r < updateData.citems.length; r++) {
-                for (const [propKey, propValues] of Object.entries(updateData.citems[r].attributes)) {
-                  if (propKey != propObj.system.attKey) {
-                    let propKeyObj = game.items.find(y => y.system.attKey == propKey);
-                    if (propKeyObj != null && propKeyObj != "" && propKeyObj != undefined) {
-                      let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
-                      for (let z = 0; z < chkgroupArray.length; z++) {
-                        let checkKey = chkgroupArray[z];
-                        let parsedKey = await auxMeth.autoParser(checkKey, this.actor.system.attributes, citem.attributes, true);
-                        if (pointerchkgroupArray.includes(parsedKey))
-                          propValues.value = false;
-                      }
-                    }
-                  }
-                }
+            if (!hasProperty(flags, "rows")) {
+                setProperty(flags, "rows", 0);
+                setProperty(flags, "rwidth", 0);
+            }
+        }
+        if (!hasProperty(flags, "sandbox")) {
+            setProperty(flags, "sandbox", {});
+        }
+        if (!hasProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id)) {
+            setProperty(flags.sandbox, "scrolls_" + game.user.id + "_" + this.id, 0);
+        }
+        //console.log(this);
+    }
+
+    prepareDerivedData() {  // v10  
+        if (!hasProperty(this.flags, "sbupdated")) {
+            setProperty(this.flags, "sbupdated", 0);
+        }
+        if (!hasProperty(this.system, "biovisible")) {
+            setProperty(this.system, "biovisible", false);
+        }
+    }
+
+    async _preCreate(data, options, user) { // v10
+        await super._preCreate(data, options, user);
+        if (this.system != null)
+            if (this.system.istemplate)
+                this.updateSource({ "system.istemplate": false });
+    }
+    
+    
+
+    async _preUpdate(updateData, options, userId) { //v10
+        //        let upclon = duplicate(updateData);
+        //  console.log('_preUpdate')
+        //  console.log(updateData);
+
+        if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+
+            let myuser = userId;
+        }
+        else {
+            return;
+        }
+        // check for deleted attributes
+        let deletedAttributes=[];
+        if(updateData.hasOwnProperty('system')){
+          if(updateData.system.hasOwnProperty('attributes')){
+            // loop attributes
+            for (const attribute in updateData.system.attributes) {
+              // check if attribute is marked for delete ie begins with -=
+              if(attribute.startsWith("-=")){
+                //console.log(`${attribute}`,attribute);
+                deletedAttributes.push(attribute.substring(2));
+                super._preUpdate(updateData, options, userId);
+                return;
               }
             }
           }
         }
-
-        //console.log(key + " checkgroup: " + actorData.attributes[key].checkgroup + " value: " + attributes[key].value);
-        if (attributes[key].value != null) {
-          actorData.attributes[key].value = attributes[key].value;
+        let noTemplate = true;
+        if (updateData.istemplate) {
+            noTemplate = false;
         }
-        if (attributes[key].modified != null)
-          actorData.attributes[key].modified = attributes[key].modified;
-        if (attributes[key].max != null)
-          actorData.attributes[key].max = attributes[key].max;
-        if (attributes[key].modmax != null)
-          actorData.attributes[key].modmax = attributes[key].modmax;
-        if (attributes[key].maxadd != null)
-          actorData.attributes[key].maxadd = attributes[key].maxadd;
-        if (attributes[key].listedit != null)
-          actorData.attributes[key].listedit = attributes[key].listedit;
-        if (actorData.attributes[key].istable && hasProperty(attributes[key], "tableitems"))
-          actorData.attributes[key].tableitems = attributes[key].tableitems;
-        if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")) {
-          for (var totkey in attributes[key].totals) {
-            actorData.attributes[key].totals[totkey] = attributes[key].totals[totkey];
-          }
+        if (!this.system.istemplate && updateData.system != null && noTemplate) {
 
-        }
-    }
-    else {
-      //console.log("adding " + key)
-      await this.createAttProps(actorData, updateData, key);
-    }
-  }
+            let actor = duplicate(this);
+            let newtoken;
+            //console.log(actor);
+            //I AM TRYING TO MERGE UPDATE DATA TO A DUPLICATE ACTOR, TO RETURN THE RESULTING ACTOR
+            let uData = await this.getFinalActorData(actor, updateData.system);
+            //console.log(uData);
+            //HERE I APPLY THE AUTO CALCULATIONS TO THE RETURNED ACTOR
+            let adata = await this.actorUpdater(uData);
+            adata = await this.actorUpdater(adata);
+            //console.log(adata);
 
-  //MERGE ROLLS
-  let rolls;
-  let rollKeys = Object.keys(actorData.rolls);
-  if (updateData.rolls)
-    rolls = updateData.rolls;
-  for (var key in rolls) {
-    if (rollKeys.includes(key)) {
-      actorData.rolls[key].value = rolls[key].value;
-    }
-  }
+            //COMPARES RETURNED ACTOR DATA TO THE ORIGINAL UPDATEDATA, AND ADDS WHATERVER IS MISSING
+            let newattributes = await this.compareKeys(this.system.attributes, adata.system.attributes);
+            adata.system.citems = await this.updatecItemUsesIfNumberIncreased(this.system.citems, adata.system.citems);
+            let newcitems = await this.comparecItems(this.system.citems, adata.system.citems);
 
-  //MERGE CITEMS
-  let citems;
-  if (updateData.citems) {
-      citems = updateData.citems;
-      actorData.citems = citems;
-  }
-  //console.log(citems);
-  return actor;
-}
-
-async compareValues(data1, data2) { //v10
-  var result = {};
-  var keys = Object.keys(data1);
-  for (var key in data2) {
-    //console.log(data1[key].value + " vs " + data2[key].value);
-    if (!keys.includes(key) || data1[key].value !== data2[key].value) {
-        result[key] = {};
-        result[key].value = data2[key].value;
-    }
-  }
-  return result;
-}
-
-async compareKeys(data1, data2) { //v10
-  var result = {};
-  for (var key in data2) {
-    let noProp = false;
-    if (data1[key] == null) {
-      noProp = true;
-    }
-    for (var subkey in data2[key]) {
-      let createKey = false;
-      let noSubKey = false;
-      if (!noProp) {
-        if (data1[key][subkey] == null) {
-          createKey = true;
-        }
-        else {
-          if (data1[key][subkey] !== data2[key][subkey])
-            createKey = true;
-          }
-      }
-      else {
-        createKey = true;
-      }
-      if (createKey) {
-        if (result[key] == null)
-          result[key] = {};
-        if (data2[key][subkey] != null) {
-          result[key][subkey] = data2[key][subkey];
-        }
-      }
-    }
-  }
-  //console.log(result);
-  return result;
-}
-
-
-async updatecItemUsesIfNumberIncreased(originalcitems,updatedcitems){
-  // start by finding consumable citems in the original data
-  let orginalconsumables=originalcitems.filter(y=>y.usetype=='CON')
-  if (orginalconsumables!=null){
-    if(orginalconsumables.length>0){
-      // now loop them
-      let newcitem;
-      for (let i = 0; i < orginalconsumables.length; i++) {
-        // see if this exists in new data
-        newcitem=updatedcitems.find(y=>y.id==orginalconsumables[i].id);
-        if(newcitem!=null){
-          // found it
-          // now compare uses, check if new has a greater number and uses did not increase
-          if(newcitem.number>orginalconsumables[i].number && newcitem.uses==orginalconsumables[i].uses ){
-            // time to re-calculate the uses
-            //console.warn('updatecItemUsesIfNumberIncreased increased');            
-            const citem=await auxMeth.getcItem(orginalconsumables[i].id);
-            if(citem!=null){
-              // get the original maxuses
-              let newuses=(newcitem.number - orginalconsumables[i].number) * citem.system.maxuses
-              newcitem.uses = parseInt(newuses) + parseInt(orginalconsumables[i].uses);
+            let newrolls = await this.compareValues(this.system.rolls, adata.system.rolls);
+            let maindata = updateData.system;
+            setProperty(maindata, "selector", adata.selector);
+            if (newattributes)
+                setProperty(maindata, "attributes", newattributes);
+            if (newcitems.length > 0) {
+                setProperty(maindata, "citems", newcitems);
             }
+            else {
+                if (updateData.citems)
+                    updateData.citems = adata.citems;
+            }
+            if (newrolls)
+                setProperty(maindata, "rolls", newrolls);
+        }
+        // check for deleted attributes
+        if(deletedAttributes.length>0){
+          // make sure that the update carries system.attributes
+          if(!updateData.hasOwnProperty('system')){
+            updateData.system={};
           }
+          if(!updateData.system.hasOwnProperty('attributes')){
+            updateData.system.attributes={};
+          }
+          
+          for (let i = 0; i < deletedAttributes.length; i++) {
+            console.warn('Deleting attribute ' + deletedAttributes[i]);
+            updateData.system.attributes[deletedAttributes[i]]=null;
+          } 
         }
-        
-      }
+        //console.log(JSON.stringify(updateData));
+        super._preUpdate(updateData, options, userId);
     }
-  }
-  return updatedcitems;
-}
 
-async comparecItems(data1, data2) { 
-  var result = [];
-  var keys = Object.keys(data1);
-  for (let i = 0; i < data2.length; i++) {
-    if (!data1.includes(data2[i])) {
-      result.push(data2[i]);
+    async createAttProps(actorData, updateData, key) { //v10
+        const n = actorData.attributes;
+        n[key] = {};
+        const c = actorData.attributes[key];
+        let a = updateData.attributes[key];
+        for (var f in updateData.attributes[key]) {
+            let b = a[f];
+            c[f] = b;
+            //console.log(f + " " + b);
+        }
     }
-    else {
-      if (data2[i] != data1[i]) {
-        result.push(data2[i]);
-      }
+
+    async getFinalActorData(actor, updateData) { //v10
+        const actorData = actor.system;
+        //MERGE ATTRIBUTES
+        let attributes;
+        let attKeys = await Object.keys(actorData.attributes);
+        //console.log(attKeys);
+        if (updateData.attributes)
+            attributes = updateData.attributes;
+        if (updateData.istemplate)
+            actorData.istemplate = true;
+        if (updateData.gtemplate)
+            actorData.gtemplate = updateData.gtemplate;
+        //console.log(actorData.attributes);
+        for (var key in attributes) {
+            if (attKeys.includes(key)) {
+                if (attributes[key].id != null)
+                    actorData.attributes[key].id = attributes[key].id;
+                //Checkbox group implementation
+                if (attributes[key].checkgroup != null)
+                    actorData.attributes[key].checkgroup = attributes[key].checkgroup;
+
+                // if (actorData.attributes[key].checkgroup != null) {
+                //     if (attributes[key].value == "on")
+                //         attributes[key].value = true;
+                // }
+
+                //Checkbox group implementation
+                if (actorData.attributes[key].checkgroup != null && attributes[key].modified) {
+                    if (actorData.attributes[key].checkgroup != "" && !actorData.attributes[key].value) {
+                        let checkgroup = actorData.attributes[key].checkgroup;
+                        let chkgroupArray = checkgroup.split(";");
+                        for (const [propKey, propValues] of Object.entries(actorData.attributes)) {
+                            let propKeyObj = game.items.find(y => y.system.attKey == propKey);
+                            if (propKeyObj != null && propKeyObj != undefined && propKeyObj != "") //skip mismatch data (CREATE mod)
+                                if (propKeyObj.system.datatype == "checkbox" && propKey != key) {
+                                    let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
+                                    for (let z = 0; z < chkgroupArray.length; z++) {
+                                        let checkKey = chkgroupArray[z];
+                                        let parsedKey = await auxMeth.autoParser(checkKey, actorData.attributes, null, true);
+                                        if (pointerchkgroupArray.includes(parsedKey))
+                                            propValues.value = false;
+                                    }
+                                }
+                        }
+                        if (updateData.citems) {
+                            for (let r = 0; r < updateData.citems.length; r++) {
+                                for (const [propKey, propValues] of Object.entries(updateData.citems[r].attributes)) {
+                                    if (propKey != propObj.system.attKey) {
+                                        let propKeyObj = game.items.find(y => y.system.attKey == propKey);
+                                        if (propKeyObj != null && propKeyObj != "" && propKeyObj != undefined) {
+                                            let pointerchkgroupArray = propKeyObj.system.checkgroup.split(";");
+                                            for (let z = 0; z < chkgroupArray.length; z++) {
+                                                let checkKey = chkgroupArray[z];
+                                                let parsedKey = await auxMeth.autoParser(checkKey, this.actor.system.attributes, citem.attributes, true);
+                                                if (pointerchkgroupArray.includes(parsedKey))
+                                                    propValues.value = false;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                //console.log(key + " checkgroup: " + actorData.attributes[key].checkgroup + " value: " + attributes[key].value);
+                if (attributes[key].value != null) {
+                    actorData.attributes[key].value = attributes[key].value;
+                }
+                if (attributes[key].modified != null)
+                    actorData.attributes[key].modified = attributes[key].modified;
+                if (attributes[key].max != null)
+                    actorData.attributes[key].max = attributes[key].max;
+                if (attributes[key].modmax != null)
+                    actorData.attributes[key].modmax = attributes[key].modmax;
+                if (attributes[key].maxadd != null)
+                    actorData.attributes[key].maxadd = attributes[key].maxadd;
+                if (attributes[key].listedit != null)
+                    actorData.attributes[key].listedit = attributes[key].listedit;
+                if (actorData.attributes[key].istable && hasProperty(attributes[key], "tableitems"))
+                    actorData.attributes[key].tableitems = attributes[key].tableitems;
+                if (actorData.attributes[key].istable && hasProperty(attributes[key], "totals")) {
+                    for (var totkey in attributes[key].totals) {
+                        actorData.attributes[key].totals[totkey] = attributes[key].totals[totkey];
+                    }
+
+                }
+            }
+            else {
+                //console.log("adding " + key)
+                await this.createAttProps(actorData, updateData, key);
+            }
+        }
+
+        //MERGE ROLLS
+        let rolls;
+        let rollKeys = Object.keys(actorData.rolls);
+        if (updateData.rolls)
+            rolls = updateData.rolls;
+        for (var key in rolls) {
+            if (rollKeys.includes(key)) {
+                actorData.rolls[key].value = rolls[key].value;
+            }
+        }
+
+        //MERGE CITEMS
+        let citems;
+        if (updateData.citems) {
+            citems = updateData.citems;
+            actorData.citems = citems;
+        }
+        //console.log(citems);
+        return actor;
     }
-  }
-  return result;
-}
 
-
-getActorSheetAppWindow(){
-  let sheet=null;
-  try{        
-    // in v9 actor-JUbqädmwqpomd
-    // in v10 gActorSheet-Actor-Ip0xrpFBKOtw2JuJ
-    sheet=document.getElementById("gActorSheet-Actor-" + this.id);
-  }
-  catch(err){
-    console.warn("Sandbox | a-entity.getActorSheetAppWindow | Error getting actor sheet window." + err.message);
-  }
-  return sheet;
-}
-
-getTokenActorSheetAppWindow(){
-  let sheet=null;
-  try{        
-    // in v9 actor-imBaWUXi839TFMBe-M8nW7HUagycvLpIO    
-    // in v10 gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
-    // gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
-    // in v11 gActorSheet-Scene-DmeAh0YMgGpmMQMy-Token-7Uhz4ztJwbCISzFN-Actor-ZXJ4g2OK5oEMy6mD
-    sheet = document.getElementById("gActorSheet-Scene-" + canvas.id + "-Token-" + this.token.id);
-  }
-  catch(err){
-    console.warn("Sandbox | a-entity.getTokenActorSheetAppWindow | Error getting token actor sheet window." + err.message);
-  }
-  return sheet;
-}
-
-getCompendiumActorSheetAppWindow(compendium){
-  let sheet=null;
-  try{ 
-    if (isNewerVersion(game.version,11)){
-      // in v11 gActorSheet-Compendium-world-npcs-Actor-0ChCP1wIY8gmkJc3
-      sheet = document.getElementById("gActorSheet-Compendium-" + compendium.metadata.packageType + "-" + compendium.metadata.name + '-' + compendium.metadata.type  +"-" + this.id);  
-    } else {
-      // in v10 gActorSheet-Compendium-world-monsters-PbY9XcLCKKGrlvtU        
-      sheet = document.getElementById("gActorSheet-Compendium-" + compendium.metadata.packageType + "-" + compendium.metadata.name +"-" + this.id);
+    async compareValues(data1, data2) { //v10
+        var result = {};
+        var keys = Object.keys(data1);
+        for (var key in data2) {
+            //console.log(data1[key].value + " vs " + data2[key].value);
+            if (!keys.includes(key) || data1[key].value !== data2[key].value) {
+                result[key] = {};
+                result[key].value = data2[key].value;
+            }
+        }
+        return result;
     }
-    
-  }
-  catch(err){
-    console.warn("Sandbox | a-entity.getCompendiumActorSheetAppWindow | Error getting token actor sheet window." + err.message);
-  }
-  return sheet;
-}
 
-async listSheets() {  //v10
-  let templates = await auxMeth.getSheets();
-  this.system.sheets = templates;
- 
-  let charsheet;
-  if (this.isToken == false) {
-    // check if in a compendium
-    if(this.compendium!=null){
-      // compendium actor
-      charsheet = this.getCompendiumActorSheetAppWindow(this.compendium)
-    } else {
-      // normal
-      charsheet = this.getActorSheetAppWindow();
+    async compareKeys(data1, data2) { //v10
+        var result = {};
+        for (var key in data2) {
+            let noProp = false;
+            if (data1[key] == null) {
+                noProp = true;
+            }
+            for (var subkey in data2[key]) {
+                let createKey = false;
+                let noSubKey = false;
+                if (!noProp) {
+                    if (data1[key][subkey] == null) {
+                        createKey = true;
+                    }
+                    else {
+                        if (data1[key][subkey] !== data2[key][subkey])
+                            createKey = true;
+                    }
+                }
+                else {
+                    createKey = true;
+                }
+                if (createKey) {
+                    if (result[key] == null)
+                        result[key] = {};
+                    if (data2[key][subkey] != null) {
+                        result[key][subkey] = data2[key][subkey];
+                    }
+                }
+            }
+        }
+        //console.log(result);
+        return result;
     }
-  }
-  else {
-    charsheet = this.getTokenActorSheetAppWindow();
-  }
-  let sheets = charsheet.getElementsByClassName("selectsheet");
-  if (sheets == null)
-    return;
-  let selector = sheets[0];
-  if (selector == null)
-    return;
-  var length = selector.options.length;
-  for (let j = length - 1; j >= 0; j--) {
-    selector.options[j] = null;
-  }
-  for (let k = 0; k < templates.length; k++) {
-    var opt = document.createElement('option');
-    opt.appendChild(document.createTextNode(templates[k]));
-    opt.value = templates[k];
-    selector.appendChild(opt);
-  }
-  selector.value = this.system.gtemplate;
-}
 
-async updateModifiedData(originaldata, extradata) { //v10
-  let existingData = await duplicate(originaldata);
-  for (let prop in extradata) {
-      if (extradata[prop] === null || extradata[prop] === undefined)
-          delete extradata[prop];
-      existingData[prop] = extradata[prop];
-  }
-  let newData = await this.actorUpdater(existingData);
-  //console.log(newData);
-  return newData;
-}
 
-//Overrides update method
-async update(data, options = {}) {
-    //console.log("updating");
-    //console.log("alla");
-    //console.log(data);
-    //console.log(options);
-    let newdata = {};
-    let scrollTop;
-    if (data != null) {
-        if (data["citems"] != null) {
-            newdata = {};
-            setProperty(newdata, "data", {});
-            newdata.citems = data["citems"];
+    async updatecItemUsesIfNumberIncreased(originalcitems, updatedcitems) {
+        // start by finding consumable citems in the original data
+        let orginalconsumables = originalcitems.filter(y => y.usetype == 'CON');
+        if (orginalconsumables != null) {
+            if (orginalconsumables.length > 0) {
+                // now loop them
+                let newcitem;
+                for (let i = 0; i < orginalconsumables.length; i++) {
+                    // see if this exists in new data
+                    newcitem = updatedcitems.find(y => y.id == orginalconsumables[i].id);
+                    if (newcitem != null) {
+                        // found it
+                        // now compare uses, check if new has a greater number and uses did not increase
+                        if (newcitem.number > orginalconsumables[i].number && newcitem.uses == orginalconsumables[i].uses) {
+                            // time to re-calculate the uses
+                            //console.warn('updatecItemUsesIfNumberIncreased increased');            
+                            const citem = await auxMeth.getcItem(orginalconsumables[i].id);
+                            if (citem != null) {
+                                // get the original maxuses
+                                let newuses = (newcitem.number - orginalconsumables[i].number) * citem.system.maxuses;
+                                newcitem.uses = parseInt(newuses) + parseInt(orginalconsumables[i].uses);
+                            }
+                        }
+                    }
+
+                }
+            }
+        }
+        return updatedcitems;
+    }
+
+    async comparecItems(data1, data2) {
+        var result = [];
+        var keys = Object.keys(data1);
+        for (let i = 0; i < data2.length; i++) {
+            if (!data1.includes(data2[i])) {
+                result.push(data2[i]);
+            }
+            else {
+                if (data2[i] != data1[i]) {
+                    result.push(data2[i]);
+                }
+            }
+        }
+        return result;
+    }
+
+
+    getActorSheetAppWindow() {
+        let sheet = null;
+        try {
+            // in v9 actor-JUbqï¿½dmwqpomd
+            // in v10 gActorSheet-Actor-Ip0xrpFBKOtw2JuJ
+            sheet = document.getElementById("gActorSheet-Actor-" + this.id);
+        }
+        catch (err) {
+            console.warn("Sandbox | a-entity.getActorSheetAppWindow | Error getting actor sheet window." + err.message);
+        }
+        return sheet;
+    }
+
+    getTokenActorSheetAppWindow() {
+        let sheet = null;
+        try {
+            // in v9 actor-imBaWUXi839TFMBe-M8nW7HUagycvLpIO    
+            // in v10 gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
+            // gActorSheet-Scene-8VQZqtjzEgqqaPDK-Token-MPWjc8w15806WYt1
+            // in v11 gActorSheet-Scene-DmeAh0YMgGpmMQMy-Token-7Uhz4ztJwbCISzFN-Actor-ZXJ4g2OK5oEMy6mD
+            sheet = document.getElementById("gActorSheet-Scene-" + canvas.id + "-Token-" + this.token.id);
+        }
+        catch (err) {
+            console.warn("Sandbox | a-entity.getTokenActorSheetAppWindow | Error getting token actor sheet window." + err.message);
+        }
+        return sheet;
+    }
+
+    getCompendiumActorSheetAppWindow(compendium) {
+        let sheet = null;
+        try {
+            if (isNewerVersion(game.version, 11)) {
+                // in v11 gActorSheet-Compendium-world-npcs-Actor-0ChCP1wIY8gmkJc3
+                sheet = document.getElementById("gActorSheet-Compendium-" + compendium.metadata.packageType + "-" + compendium.metadata.name + '-' + compendium.metadata.type + "-" + this.id);
+            } else {
+                // in v10 gActorSheet-Compendium-world-monsters-PbY9XcLCKKGrlvtU        
+                sheet = document.getElementById("gActorSheet-Compendium-" + compendium.metadata.packageType + "-" + compendium.metadata.name + "-" + this.id);
+            }
+
+        }
+        catch (err) {
+            console.warn("Sandbox | a-entity.getCompendiumActorSheetAppWindow | Error getting token actor sheet window." + err.message);
+        }
+        return sheet;
+    }
+
+    async listSheets() {  //v10
+        let templates = await auxMeth.getSheets();
+        this.system.sheets = templates;
+
+        let charsheet;
+        if (this.isToken == false) {
+            // check if in a compendium
+            if (this.compendium != null) {
+                // compendium actor
+                charsheet = this.getCompendiumActorSheetAppWindow(this.compendium);
+            } else {
+                // normal
+                charsheet = this.getActorSheetAppWindow();
+            }
         }
         else {
-            newdata = data;
+            charsheet = this.getTokenActorSheetAppWindow();
         }
-        if (data.biovisible != null) {
-            options.diff = false;
+        let sheets = charsheet.getElementsByClassName("selectsheet");
+        if (sheets == null)
+            return;
+        let selector = sheets[0];
+        if (selector == null)
+            return;
+        var length = selector.options.length;
+        for (let j = length - 1; j >= 0; j--) {
+            selector.options[j] = null;
         }
-        //newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = await this.sheet.scrollbarSet;
+        for (let k = 0; k < templates.length; k++) {
+            var opt = document.createElement('option');
+            opt.appendChild(document.createTextNode(templates[k]));
+            opt.value = templates[k];
+            selector.appendChild(opt);
+        }
+        selector.value = this.system.gtemplate;
     }
-    //console.log(newdata);
-    if (this.system.gtemplate != null) {
-        if (newdata == null) {
-            setProperty(newdata, "flags", {});
-        }
-        if (!newdata.flags) {
-            newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = scrollTop;
-        }
-        else {
-            if (!hasProperty(newdata.flags, "sandbox"))
-                setProperty(newdata.flags, "sandbox", {});
-            newdata.flags.sandbox["scrolls_" + game.user.id + "_" + this.id] = scrollTop;
-        }
-    }
-    //console.log(newdata);
-    return super.update(newdata, options);
-}
 
-    async addcItem(ciTem, addedBy = null, data = null, number = null, uses=null) {
+    async updateModifiedData(originaldata, extradata) { //v10
+        let existingData = await duplicate(originaldata);
+        for (let prop in extradata) {
+            if (extradata[prop] === null || extradata[prop] === undefined)
+                delete extradata[prop];
+            existingData[prop] = extradata[prop];
+        }
+        let newData = await this.actorUpdater(existingData);
+        //console.log(newData);
+        return newData;
+    }
+
+    //Overrides update method
+    async update(data, options = {}) {
+        //console.log("updating");
+        //console.log("alla");
+        //console.log(data);
+        //console.log(options);
+        let newdata = {};
+        let scrollTop;
+        if (data != null) {
+            if (data["citems"] != null) {
+                newdata = {};
+                setProperty(newdata, "data", {});
+                newdata.citems = data["citems"];
+            }
+            else {
+                newdata = data;
+            }
+            if (data.biovisible != null) {
+                options.diff = false;
+            }
+            //newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = await this.sheet.scrollbarSet;
+        }
+        //console.log(newdata);
+        if (this.system.gtemplate != null) {
+            if (newdata == null) {
+                setProperty(newdata, "flags", {});
+            }
+            if (!newdata.flags) {
+                newdata["flags.sandbox." + "scrolls_" + game.user.id + "_" + this.id] = scrollTop;
+            }
+            else {
+                if (!hasProperty(newdata.flags, "sandbox"))
+                    setProperty(newdata.flags, "sandbox", {});
+                newdata.flags.sandbox["scrolls_" + game.user.id + "_" + this.id] = scrollTop;
+            }
+        }
+        //console.log(newdata);
+        return super.update(newdata, options);
+    }
+
+    async addcItem(ciTem, addedBy = null, data = null, number = null, uses = null,addedType='USER') {
         //console.log("adding citems");
         //console.log(ciTem);
 
@@ -499,15 +533,15 @@ async update(data, options = {}) {
         newItem[itemKey].ikey = itemKey;
         newItem[itemKey].name = ciTem.name;
         let ciKey = ciTem.system.ciKey;
-        if (ciKey == ""){
+        if (ciKey == "") {
             ciKey = ciTem.id;
             // also update the original citems cikey if it for some reason has lost it
-            let orginalcitem=game.items.get(ciTem.id);
-            if(orginalcitem!=null){
-              await orginalcitem.update({ "system.ciKey": ciTem.id });
-              console.log('Sandbox | addcItem | Patched ciKey for cItem ['+ orginalcitem.name +']')
+            let orginalcitem = game.items.get(ciTem.id);
+            if (orginalcitem != null) {
+                await orginalcitem.update({ "system.ciKey": ciTem.id });
+                console.log('Sandbox | addcItem | Patched ciKey for cItem [' + orginalcitem.name + ']');
             }
-            
+
         }
         newItem[itemKey].ciKey = ciTem.system.ciKey;
 
@@ -517,8 +551,8 @@ async update(data, options = {}) {
             newItem[itemKey].number = number;
             newItem[itemKey].isactive = false;
             newItem[itemKey].isreset = true;
-            
-            
+
+
 
             let isunik = citemData.isUnique;
 
@@ -526,25 +560,25 @@ async update(data, options = {}) {
 
                 //let _groupcheck = await game.items.get(ciTem.data.data.groups[j].id);
                 let _groupcheck = await auxMeth.getTElement(citemData.groups[j].id, "group", citemData.groups[j].ikey);
-                
-                if(_groupcheck!=null){
-                  if (_groupcheck.system.isUnique) {
-                    let groupID = citemData.groups[j].id;
-                      for (let i = citems.length - 1; i >= 0; i--) {
-                          //let citemObj = game.items.get(citems[i].id);
-                          let citemObj = await auxMeth.getcItem(citems[i].id, citems[i].ciKey);
-                          let hasgroup = citemObj.system.groups.some(y => y.id == groupID);
 
-                          if (hasgroup) {
-                              //                            newdata = await this.deletecItem(citems[i].id, true,data);
-                              //                            citems = newdata.data.citems;
-                              citems[i].todelete = true;
-                          }
+                if (_groupcheck != null) {
+                    if (_groupcheck.system.isUnique) {
+                        let groupID = citemData.groups[j].id;
+                        for (let i = citems.length - 1; i >= 0; i--) {
+                            //let citemObj = game.items.get(citems[i].id);
+                            let citemObj = await auxMeth.getcItem(citems[i].id, citems[i].ciKey);
+                            let hasgroup = citemObj.system.groups.some(y => y.id == groupID);
 
-                      }
-                  }
+                            if (hasgroup) {
+                                //                            newdata = await this.deletecItem(citems[i].id, true,data);
+                                //                            citems = newdata.data.citems;
+                                citems[i].todelete = true;
+                            }
+
+                        }
+                    }
                 } else {
-                  console.warn(`Sandbox | a-entity.addcItem | Unable to find group(${citemData.groups[j].name}) for unique check for item ${newItem[itemKey].name}`);
+                    console.warn(`Sandbox | a-entity.addcItem | Unable to find group(${citemData.groups[j].name}) for unique check for item ${newItem[itemKey].name}`);
                 }
             }
 
@@ -577,7 +611,7 @@ async update(data, options = {}) {
                     let defvalue = myprop.system.defvalue;
                     let isauto = defvalue.match(/@|{|,|;|%|\[/g);
                     if (isauto) {
-                      
+
                         let newvalue = await auxMeth.autoParser(defvalue, attributes, citemData.attributes, false);
                         newItem[itemKey].attributes[key].value = newvalue;
                     }
@@ -597,10 +631,10 @@ async update(data, options = {}) {
             if (isNaN(maxuses))
                 maxuses = await auxMeth.autoParser(maxuses, attributes, citemData.attributes, false);
             newItem[itemKey].maxuses = maxuses;
-            if(uses!=null){
-              newItem[itemKey].uses=uses;              
+            if (uses != null) {
+                newItem[itemKey].uses = uses;
             } else {
-              newItem[itemKey].uses = parseInt(maxuses);
+                newItem[itemKey].uses = parseInt(maxuses);
             }
             newItem[itemKey].icon = citemData.icon;
             newItem[itemKey].selfdestruct = citemData.selfdestruct;
@@ -624,6 +658,7 @@ async update(data, options = {}) {
 
             if (addedBy) {
                 newItem[itemKey].addedBy = addedBy;
+                newItem[itemKey].addedType = addedType;
             }
         }
 
@@ -730,7 +765,7 @@ async update(data, options = {}) {
                 if (_ccitem != null) {
                     let ccmod = await _ccitem.mods.find(x => x.index == ccmodID);
                     let ccAtt = ccmod.attribute;
-
+                    if(attributes.hasOwnProperty(ccAtt))
                     attributes[ccAtt].value = attributes[ccAtt].prev;
 
                 }
@@ -868,7 +903,7 @@ async update(data, options = {}) {
             //let propertypool = await game.items.filter(y => y.type == "property" && y.system.attKey == attribute);
             //let property = propertypool[0];
             let property = game.system.customitemmaps.properties.get(attribute);
-            
+
             if (property != null) {
 
                 if (!hasProperty(attributes, attribute)) {
@@ -929,12 +964,12 @@ async update(data, options = {}) {
                     let toaddMod = duplicate(citemObj.mods[i]);
                     toaddMod.citem = ciID;
                     toaddMod.ciKey = citemIDs[n].ciKey;
-                    toaddMod.parentcitemname=citemObjBase.name;
+                    toaddMod.parentcitemname = citemObjBase.name;
                     let actorCiMod = citemIDs[n].mods.find(y => y.index == toaddMod.index);
-                    if(actorCiMod!=null){
-                      toaddMod.once = actorCiMod.once;
-                      toaddMod.exec = actorCiMod.exec;
-                      await mods.push(toaddMod);
+                    if (actorCiMod != null) {
+                        toaddMod.once = actorCiMod.once;
+                        toaddMod.exec = actorCiMod.exec;
+                        await mods.push(toaddMod);
                     }
                 }
             }
@@ -948,7 +983,7 @@ async update(data, options = {}) {
 
     async execITEMmods(mods, data) {         // data argument is an actor
         let result = {};
-        let citemIDs = data.system.citems;      
+        let citemIDs = data.system.citems;
         let newcitem = false;
         let updatecItem = true;
         const itemmods = mods.filter(y => y.type == "ITEM");
@@ -967,9 +1002,9 @@ async update(data, options = {}) {
             if (!hasProperty(_citem, "ciKey"))
                 _citem = _citemfinder._source.system;
 
-            if (typeof citemIDs == 'undefined'){
-              console.warn('Sandbox | execITEMmods | Citems not found for actor');
-            }    
+            if (typeof citemIDs == 'undefined') {
+                console.warn('Sandbox | execITEMmods | Citems not found for actor');
+            }
             let citem = citemIDs.find(y => y.id == mod.citem || y.ciKey == mod.ciKey);
             //console.log(citem);
             if (citem == null)
@@ -1001,21 +1036,21 @@ async update(data, options = {}) {
                     if ((_citem.usetype == "PAS" || citem.isactive) && !jumpmod) {
                         if (!ispresent && !_mod.exec && !_mod.once) {
                             let toadd = await auxMeth.getcItem(itemtoadd.id, itemtoadd.ciKey);
-                            if(typeof toadd == 'undefined'){
-                              // could not find the citem to add
-                              let errmsg='Sandbox | execITEMmods | Citem to add not found. Name:['+ itemtoadd.name + '] id:['+ itemtoadd.id +']' + ' ciKey:['+ itemtoadd.ciKey +']';
-                              console.error(errmsg);
-                              ui.notifications.error(errmsg);
-                              result.iterate = false;
-                            } else{
-                              citemIDs = await this.addcItem(toadd, mod.citem, data);
-                              result.iterate = true;
-                              if (typeof citemIDs == 'undefined'){
-                                console.warn('Sandbox | execITEMmods | Citems not found after addcItem');
-                              } else {
-                                console.log('Sandbox | execITEMmods | cItem:'+ citem.name +' Added cItem:' + toadd.name);
-                              }
-                            }                                                        
+                            if (typeof toadd == 'undefined') {
+                                // could not find the citem to add
+                                let errmsg = 'Sandbox | execITEMmods | Citem to add not found. Name:[' + itemtoadd.name + '] id:[' + itemtoadd.id + ']' + ' ciKey:[' + itemtoadd.ciKey + ']';
+                                console.error(errmsg);
+                                ui.notifications.error(errmsg);
+                                result.iterate = false;
+                            } else {
+                                citemIDs = await this.addcItem(toadd, mod.citem, data,null,null,_citem.usetype);
+                                result.iterate = true;
+                                if (typeof citemIDs == 'undefined') {
+                                    console.warn('Sandbox | execITEMmods | Citems not found after addcItem');
+                                } else {
+                                    console.log('Sandbox | execITEMmods | cItem:' + citem.name + ' Added cItem:' + toadd.name);
+                                }
+                            }
                             newcitem = true;
                             //Change for keeping added items when activated
                             _mod.exec = true;
@@ -1030,60 +1065,60 @@ async update(data, options = {}) {
                                 newcitem = true;
                                 let citemmod = citemIDs.find(y => y.id == itemtoadd.id);
                                 let cindex = citemIDs.indexOf(citemmod);
-                                
-                                console.log('Sandbox | execITEMmods | cItem:'+ citem.name +' Removing cItem:' + itemtoadd.name);
+
+                                console.log('Sandbox | execITEMmods | cItem:' + citem.name + ' Removing cItem:' + itemtoadd.name);
                                 let duplicanto = await this.deletecItem(itemtoadd.id, true, data);
                                 citemIDs = duplicanto.system.citems;
-                                if (typeof citemIDs == 'undefined'){
-                                  console.warn('Sandbox | execITEMmods | Citems not found after deletecItem');
+                                if (typeof citemIDs == 'undefined') {
+                                    console.warn('Sandbox | execITEMmods | Citems not found after deletecItem');
                                 }
                                 await mods.splice(mods.findIndex(e => e.citem === itemtoadd.id), 1);
                             }
 
-                            
+
                             // check if this is the last item in the item mod
-                            if(k==mod.items.length-1){
-                              _mod.exec = false; // R800  
-                            } else{
-                              // still more items
-                              _mod.exec = true; // R800
+                            if (k == mod.items.length - 1) {
+                                _mod.exec = false; // R800  
+                            } else {
+                                // still more items
+                                _mod.exec = true; // R800
                             }
                         }
                     }
-                  // end of for loop
+                    // end of for loop
                 }
             }
 
             else {
-              if (!jumpmod) {
-                
-                // item mod with SELECT>0
-                if (_citem.usetype == "PAS" || (_citem.usetype == "ACT" && citem.isactive)){
-                  if ( !_mod.exec && !_mod.once) {
-                    console.warn('here it should add')
-                  }
-                }
+                if (!jumpmod) {
 
-                if (!hasProperty(citem, "selection")) {
-                    setProperty(citem, "selection", []);
-                }
+                    // item mod with SELECT>0
+                    if (_citem.usetype == "PAS" || (_citem.usetype == "ACT" && citem.isactive)) {
+                        if (!_mod.exec && !_mod.once) {
+                           // console.warn('here it should add');
+                        }
+                    }
 
-                let selindex = citem.selection.find(y => y.index == mod.index);
+                    if (!hasProperty(citem, "selection")) {
+                        setProperty(citem, "selection", []);
+                    }
 
-                if (selindex == null) {
-                    let newindex = {};
-                    newindex.index = mod.index;
-                    newindex.selected = false;
-                    citem.selection.push(newindex);
-                    selector = true;
-                }
+                    let selindex = citem.selection.find(y => y.index == mod.index);
 
-                else {
-                    if (!selindex.selected) {
+                    if (selindex == null) {
+                        let newindex = {};
+                        newindex.index = mod.index;
+                        newindex.selected = false;
+                        citem.selection.push(newindex);
                         selector = true;
                     }
+
+                    else {
+                        if (!selindex.selected) {
+                            selector = true;
+                        }
+                    }
                 }
-              }
 
 
             }
@@ -1108,10 +1143,10 @@ async update(data, options = {}) {
                         const thismod = mods[i];
 
                         let charsheet;
-                        if (this.token == null) {                            
+                        if (this.token == null) {
                             charsheet = this.getActorSheetAppWindow();
                         }
-                        else {                            
+                        else {
                             charsheet = this.getTokenActorSheetAppWindow();
                         }
 
@@ -1227,7 +1262,7 @@ async update(data, options = {}) {
                     let citeminActor = await citemIDs.find(y => y.id == mycitemId || y.ciKey == mycitemiKey);
 
                     if (!citeminActor && mycitem != null) {
-                        citems = await this.addcItem(mycitem, 'Actor Template ' + _template.name, actorData);
+                        citems = await this.addcItem(mycitem, 'Actor Template ' + _template.name, actorData,null,null,'TEMPLATE');
                     }
                 }
             }
@@ -1338,7 +1373,7 @@ async update(data, options = {}) {
                     }
 
                     if (!hasProperty(mycitem.attributes, att)) {
-                        if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER|| this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
+                        if (this.ownership.default >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || this.ownership[game.user.id] >= CONST.DOCUMENT_OWNERSHIP_LEVELS.OBSERVER || game.user.isGM) {
                             setProperty(mycitem.attributes, att, {});
                             setProperty(mycitem.attributes[att], "value", newvalue);
                         }
@@ -1479,7 +1514,7 @@ async update(data, options = {}) {
         //console.log(mods);
         //actorData.data.citems = this.checkActorMods(actorData.data.citems,mods);
 
-        const citemIDs = actorData.system.citems;        
+        const citemIDs = actorData.system.citems;
         let originalcIDs = duplicate(citemIDs);
         //console.log(citemIDs);
 
@@ -1515,6 +1550,9 @@ async update(data, options = {}) {
             let attdata = attributes[attribute];
             //let property = await game.items.get(actorData.data.attributes[attribute].id);
             let property = await auxMeth.getTElement(actorData.system.attributes[attribute].id, "property", attribute);
+            if(property==null){
+              //debugger;
+            }
             const actorAtt = actorData.system.attributes[attribute];
 
             if (property != null) {
@@ -1589,20 +1627,20 @@ async update(data, options = {}) {
             }
 
             let citem = citemIDs.find(y => y.id == mod.citem);
-            if(citem==null){ //R800
-              // not found on actor, get it from system instead              
-              let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-              if(_citemfinder!=null){
-                citem = _citemfinder.system;                                                                        
-                console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor, using citem ['+ _citemfinder.name +'] from system :');                
-                // set missing attributes to default
-                citem.isactive=false;
-                citem.number=1;
-                citem.isreset=true;
-              } else{
-                // still not found                
-                console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor or system ');
-              }
+            if (citem == null) { //R800
+                // not found on actor, get it from system instead              
+                let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                if (_citemfinder != null) {
+                    citem = _citemfinder.system;
+                    console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor, using citem [' + _citemfinder.name + '] from system :');
+                    // set missing attributes to default
+                    citem.isactive = false;
+                    citem.number = 1;
+                    citem.isreset = true;
+                } else {
+                    // still not found                
+                    console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor or system ');
+                }
             }
 
             let jumpmod = false;
@@ -1694,20 +1732,20 @@ async update(data, options = {}) {
             //console.log(modAtt);
 
             let citem = await citemIDs.find(y => y.id == mod.citem);
-            if(citem==null){ //R800
-              // not found on actor, get it from system instead              
-              let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-              if(_citemfinder!=null){
-                citem = _citemfinder.system;                                                                        
-                console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor, using citem ['+ _citemfinder.name +'] from system :');                
-                // set missing attributes to default
-                citem.isactive=false;
-                citem.number=1;
-                citem.isreset=true;
-              } else{
-                // still not found                
-                console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor or system ');
-              }
+            if (citem == null) { //R800
+                // not found on actor, get it from system instead              
+                let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                if (_citemfinder != null) {
+                    citem = _citemfinder.system;
+                    console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor, using citem [' + _citemfinder.name + '] from system :');
+                    // set missing attributes to default
+                    citem.isactive = false;
+                    citem.number = 1;
+                    citem.isreset = true;
+                } else {
+                    // still not found                
+                    console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor or system ');
+                }
             }
 
             let jumpmod = false;
@@ -1742,12 +1780,12 @@ async update(data, options = {}) {
                                 finalvalue = await auxMeth.autoParser(value, attributes, citem.attributes, true, false, citem.number);
                             }
                             else {
-                              try{
-                                finalvalue = await auxMeth.autoParser(value, attributes, citem.attributes, false, false, citem.number);
-                              } catch(e){
-                                console.error('Sandbox | checkPropAuto | Error getting value for ADD mod :' + mod.name);
-                                console.error(e);
-                              }
+                                try {
+                                    finalvalue = await auxMeth.autoParser(value, attributes, citem.attributes, false, false, citem.number);
+                                } catch (e) {
+                                    console.error('Sandbox | checkPropAuto | Error getting value for ADD mod :' + mod.name);
+                                    console.error(e);
+                                }
                             }
                         }
                     }
@@ -1844,7 +1882,7 @@ async update(data, options = {}) {
                         if ((!citem.isreset || _citem.usetype == "PAS") && _mod.exec && ((citem.isactive && jumpmod) || !citem.isactive) && !myAtt.default && !citem.ispermanent) {
                             //console.log("removing add");
                             _mod.exec = false;
-                            if (seedprop!=null && seedprop.system.datatype == "list") {
+                            if (seedprop != null && seedprop.system.datatype == "list") {
                                 let options = seedprop.system.listoptions.split(",");
                                 let optIndex = options.indexOf(myAtt[attProp]);
                                 let newvalue = optIndex - finalvalue;
@@ -1889,22 +1927,22 @@ async update(data, options = {}) {
                 }
 
                 let citem = citemIDs.find(y => y.id == mod.citem);
-                if(citem==null){ //R800
-                  // not found on actor, get it from system instead              
-                  let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-                  if(_citemfinder!=null){
-                    citem = _citemfinder.system;                                                                        
-                    console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor, using citem ['+ _citemfinder.name +'] from system :');                
-                    // set missing attributes to default
-                    citem.isactive=false;
-                    citem.number=1;
-                    citem.isreset=true;
-                  } else{
-                    // still not found                
-                    console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor or system ');
-                  }
+                if (citem == null) { //R800
+                    // not found on actor, get it from system instead              
+                    let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                    if (_citemfinder != null) {
+                        citem = _citemfinder.system;
+                        console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor, using citem [' + _citemfinder.name + '] from system :');
+                        // set missing attributes to default
+                        citem.isactive = false;
+                        citem.number = 1;
+                        citem.isreset = true;
+                    } else {
+                        // still not found                
+                        console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor or system ');
+                    }
                 }
-                
+
                 let jumpmod = false;
                 if (mod.condop != "NON" && mod.condop != null) {
                     jumpmod = await this.checkModConditional(actorData, mod, citem);
@@ -2043,7 +2081,7 @@ async update(data, options = {}) {
         //console.log(attributes);
         //console.log(attributes);
         //return;
-        
+
         //ADD ROLLS
         const rollmods = mods.filter(y => y.type == "ROLL");
         //
@@ -2062,23 +2100,23 @@ async update(data, options = {}) {
             let rollvaluemod = mod.value;
             //console.log(mod);
             let citem = citemIDs.find(y => y.id == mod.citem);
-            if(citem==null){ //R800
-              // not found on actor, get it from system instead              
-              let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-              if(_citemfinder!=null){
-                citem = _citemfinder.system;                                                                        
-                console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor, using citem ['+ _citemfinder.name +'] from system :');                
-                // set missing attributes to default
-                citem.isactive=false;
-                citem.number=1;
-                citem.isreset=true;
-              } else{
-                // still not found                
-                console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor or system ');
-              }
+            if (citem == null) { //R800
+                // not found on actor, get it from system instead              
+                let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                if (_citemfinder != null) {
+                    citem = _citemfinder.system;
+                    console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor, using citem [' + _citemfinder.name + '] from system :');
+                    // set missing attributes to default
+                    citem.isactive = false;
+                    citem.number = 1;
+                    citem.isreset = true;
+                } else {
+                    // still not found                
+                    console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor or system ');
+                }
             }
-            
-                       
+
+
             //let _citem = game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
             let _citem = _citemfinder.system;
@@ -2130,23 +2168,23 @@ async update(data, options = {}) {
             //console.log(mod);
 
             let citem = citemIDs.find(y => y.id == mod.citem);
-            if(citem==null){ //R800
-              // not found on actor, get it from system instead              
-              let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
-              if(_citemfinder!=null){
-                citem = _citemfinder.system;                                                                        
-                console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor, using citem ['+ _citemfinder.name +'] from system :');                
-                // set missing attributes to default
-                citem.isactive=false;
-                citem.number=1;
-                citem.isreset=true;
-              } else{
-                // still not found                
-                console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:['+ mod.citem +'] in actor or system ');
-              }
+            if (citem == null) { //R800
+                // not found on actor, get it from system instead              
+                let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
+                if (_citemfinder != null) {
+                    citem = _citemfinder.system;
+                    console.log('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor, using citem [' + _citemfinder.name + '] from system :');
+                    // set missing attributes to default
+                    citem.isactive = false;
+                    citem.number = 1;
+                    citem.isreset = true;
+                } else {
+                    // still not found                
+                    console.error('Sandbox | checkPropAuto | Unable to find citem [' + mod.parentcitemname + '] id:[' + mod.citem + '] in actor or system ');
+                }
             }
-            
-            
+
+
             //let _citem = game.items.get(mod.citem).data.data;
             let _citemfinder = await auxMeth.getcItem(mod.citem, mod.ciKey);
             let _citem = _citemfinder.system;
@@ -2270,7 +2308,7 @@ async update(data, options = {}) {
                     let myMaxuses = await auxMeth.autoParser(citemObj.maxuses, attributes, citmAttr, false);
                     let finalmaxuses = parseInt(citmNum * myMaxuses);
                     citemIDs[n].maxuses = finalmaxuses;
-                   
+
                     if (citemIDs[n].uses > finalmaxuses)
                         citemIDs[n].uses = finalmaxuses;
 
@@ -2297,25 +2335,34 @@ async update(data, options = {}) {
                             let propKey = propdata.system.attKey;
                             let propauto = propdata.system.auto;
 
-                            if (propauto != "") {
-                               
+                            if (propauto != "") {                                
+                                propauto = await propauto.replace(/\@{name}/g, this.name);
                                 propauto = await propauto.replace(/\#{name}/g, citemIDs[n].name);
                                 propauto = await propauto.replace(/\#{active}/g, citemIDs[n].isactive);
                                 propauto = await propauto.replace(/\#{uses}/g, citemIDs[n].uses);
                                 propauto = await propauto.replace(/\#{maxuses}/g, citemIDs[n].maxuses);
+                                
                                 let rawvalue = await auxMeth.autoParser(propauto, attributes, citmAttr, false, false, citmNum);
+                                rawvalue = await game.system.api._extractAPIFunctions(rawvalue,attributes, citmAttr, false,false,citmNum);
+                                rawvalue = await game.system.api.mathParser(rawvalue); 
+                                
+                                
+                                
+                                
 
                                 if (isNaN(rawvalue) && propdata.system.datatype != "simpletext") {
                                     //console.log(rawvalue);
                                     let afinal = new Roll(rawvalue);
-                                    if(!afinal.isDeterministic){
-                                      // dont evaluate if not needed
-                                      await afinal.evaluate({ async: true });
-                                      if (!isNaN(afinal.total))
-                                        rawvalue = afinal.total;
+                                    if (!afinal.isDeterministic) {
+                                        // dont evaluate if not needed
+                                        await afinal.evaluate({ async: true });
+                                        if (!isNaN(afinal.total))
+                                            rawvalue = afinal.total;
                                     }
 
                                 }
+                                
+                                
                                 //console.log(propKey + " of " + citemIDs[n].name + " is " + rawvalue);
                                 citmAttr[propKey].value = rawvalue;
                             }
@@ -2424,16 +2471,16 @@ async update(data, options = {}) {
                 //TOTAL CALCULATION
 
                 let gcitems;
-                let tableHasValidFilter=null;
+                let tableHasValidFilter = null;
                 if (!tableObj.system.isfreetable) {
-                    gcitems = await citemIDs.filter(y => y.groups.some(x => x.ikey == totalGroupIKey)); 
-                    
-                    tableHasValidFilter=sb_property_has_valid_table_filter(tableObj); 
-                    if(tableHasValidFilter!=null){
-                      // for filtered tables, only sort by name(messes up the totals)
-                      //console.log(JSON.stringify(gcitems));
-                      gcitems =await gcitems.sort(auxMeth.dynamicSort("name"));
-                      //console.log(JSON.stringify(gcitems));
+                    gcitems = await citemIDs.filter(y => y.groups.some(x => x.ikey == totalGroupIKey));
+
+                    tableHasValidFilter = sb_property_has_valid_table_filter(tableObj);
+                    if (tableHasValidFilter != null) {
+                        // for filtered tables, only sort by name(messes up the totals)
+                        //console.log(JSON.stringify(gcitems));
+                        gcitems = await gcitems.sort(auxMeth.dynamicSort("name"));
+                        //console.log(JSON.stringify(gcitems));
                     }
                 }
                 else {
@@ -2444,23 +2491,23 @@ async update(data, options = {}) {
 
                 for (var propKey in t_Prop.totals) {
                     let newtotal = 0;
-                    let filter_passed_count=0;
+                    let filter_passed_count = 0;
                     for (let q = 0; q < gcitems.length; q++) {
                         let total_citem = gcitems[q].attributes[propKey];
-                        if (total_citem != null){
-                          if (!tableObj.system.isfreetable && tableHasValidFilter!=null ) {
-                            // check filter
-                            if(sb_table_filter_passed(tableHasValidFilter, gcitems[q], filter_passed_count)){
-                              // passsed
-                              filter_passed_count = filter_passed_count + 1;
-                              newtotal += Number(total_citem.value);
-                            } else{
-                              // skip this
-                              continue;
+                        if (total_citem != null) {
+                            if (!tableObj.system.isfreetable && tableHasValidFilter != null) {
+                                // check filter
+                                if (sb_table_filter_passed(tableHasValidFilter, gcitems[q], filter_passed_count)) {
+                                    // passsed
+                                    filter_passed_count = filter_passed_count + 1;
+                                    newtotal += Number(total_citem.value);
+                                } else {
+                                    // skip this
+                                    continue;
+                                }
+                            } else {
+                                newtotal += Number(total_citem.value);
                             }
-                          } else {
-                            newtotal += Number(total_citem.value);
-                          }
                         }
                     }
 
@@ -2661,68 +2708,28 @@ async update(data, options = {}) {
 
                     }
                 }
-
-                // ALONDAAR lookupj now works in auto properties !!
-                // TODO: I have no idea if this is optimal or in the correct location however... 
-                /*let getLookupJ = rawexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
-                if (getLookupJ != null) {
-                    for (let i = 0; i < getLookupJ.length; i++) {
-                        let tochange = "lookupj(" + getLookupJ[i] + ")";
-
-                        let blocks = getLookupJ[i].split(";");
-                        let parseprop = await auxMeth.autoParser(blocks[0], attributes, null, exprmode);
-                        let parseCol = await auxMeth.autoParser(blocks[1], attributes, null, exprmode);
-                        let parseRow = await auxMeth.autoParser(blocks[2], attributes, null, exprmode);
-                        let parseDefault = blocks[3];
-                        if (parseDefault == undefined)
-                            parseDefault = 0;
-                        else
-                            parseDefault = await auxMeth.autoParser(blocks[3], attributes, null, exprmode);
-                        let replaceValue = parseDefault;
-
-                        var myJournal = game.journal.getName(parseprop);
-                        if (myJournal != null) {
-                            var myContent = myJournal.data.content;
-                            var doc = new DOMParser().parseFromString(myContent, "text/html");
-                            let myTable = doc.getElementsByTagName("TABLE")[0];
-                            if (myTable != null) {
-                                if (myTable.rows.length > 1) {
-                                    let foundcol = null;
-
-                                    for (var j = 0, col; col = myTable.rows[0].cells[j]; j++) {
-                                        let colchecker = col.innerText.match(parseCol);
-                                        if (colchecker != null) {
-                                            foundcol = j;
-                                            break;
-                                        }
-                                    }
-
-                                    if (foundcol != null)
-                                        for (var k = 1, row; row = myTable.rows[k]; k++) {
-                                            let rowchecker = row.cells[0].innerText.match(parseRow);
-                                            if (rowchecker != null) {
-                                                replaceValue = row.cells[foundcol].innerText;
-                                                break;
-                                            }
-                                        }
-                                }
-                                else
-                                    ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" needs a table with at least 2 rows');
-                            }
-                            else
-                                ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" does not contain a valid HTML table.');
-                        } else
-                            ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" does not exist.');
-
-                        rawexp = rawexp.replace(tochange, replaceValue);
+                
+                // patch to allow lookup functions return empty string
+                let rawexpOrgLength=rawexp.length;
+                let allowEmpty=false;
+                if(rawexpOrgLength>0){
+                  rawexp = await game.system.api._extractAPIFunctions(rawexp,attributes, null, exprmode);                                
+                  // check for zero length
+                  if (rawexp.length==0){
+                    if(rawexpOrgLength>0){
+                      allowEmpty=true;
                     }
-                }*/
-
-                if (rawexp !== "") {
+                  }
+                }
+                
+                
+                
+                if (rawexp!=null && (rawexp !== "" || allowEmpty)) {
+                //if (rawexp !== "" ) {
                     //console.log(rawexp);
                     //console.log(exprmode);
                     let newvalue = actorAtt.value;
-                    rawexp = await this.expandPropsP(rawexp, attributes,property.system.datatype);
+                    rawexp = await this.expandPropsP(rawexp, attributes, property.system.datatype);
 
                     if (!actorAtt.isset) {
                         newvalue = await auxMeth.autoParser(rawexp, attributes, null, exprmode);
@@ -2731,9 +2738,6 @@ async update(data, options = {}) {
                             ithaschanged = true;
                         actorAtt.default = true;
                     }
-
-
-
 
                     //TEST TO REINSTATE
                     actorAtt.value = newvalue;
@@ -2755,7 +2759,7 @@ async update(data, options = {}) {
 
                     rawexp = property.system.automax;
 
-                    rawexp = await this.expandPropsP(rawexp, attributes,property.system.datatype);
+                    rawexp = await this.expandPropsP(rawexp, attributes, property.system.datatype);
 
                     let maxval = actorAtt.max;
 
@@ -2797,18 +2801,18 @@ async update(data, options = {}) {
         return ithaschanged;
     }
 
-    async expandPropsP(rawexp, attributes,targetpropertytype='') {
-        rawexp = await this.parseRegs(rawexp, attributes,targetpropertytype);
+    async expandPropsP(rawexp, attributes, targetpropertytype = '') {
+        rawexp = await this.parseRegs(rawexp, attributes, targetpropertytype);
 
         //console.log(attributes);
         var prop_check = rawexp.match(/(?<=\@\{).*?(?=\})/g);
         if (prop_check != null) {
             //console.log("expanding rawexp: " + rawexp);
-            let skipthis=false;
+            let skipthis = false;
             for (let n = 0; n < prop_check.length; n++) {
-                skipthis=false;
+                skipthis = false;
                 let _rawattname = prop_check[n];
-                let tochange = "@{" + _rawattname + "}"
+                let tochange = "@{" + _rawattname + "}";
                 let _attProp = "value";
                 let _attAuto = "auto";
                 let _attvalue;
@@ -2821,24 +2825,24 @@ async update(data, options = {}) {
 
                 // Skip over props with dots (table.totals, etc.) and CREATE mod properties. They won't be found anywhere here.
                 //if (_rawattname.match('.') != null || ('created' in attributes[_rawattname] && attributes[_rawattname].created)){
-                if(_rawattname.indexOf('.') !== -1){
-                  skipthis=true;
-                  //console.log('expandPropsP:' + _rawattname + ' has dot');
+                if (_rawattname.indexOf('.') !== -1) {
+                    skipthis = true;
+                    //console.log('expandPropsP:' + _rawattname + ' has dot');
                 }
-                if(!skipthis){
-                  if(attributes.hasOwnProperty(_rawattname)){
-                    if ( attributes[_rawattname].hasOwnProperty('created'))  {
-                      if (attributes[_rawattname].created){
-                        skipthis=true;                       
-                       }
-                    }                  
-                  } else{
-                      console.log('expandPropsP:' + _rawattname + ' not found in Attributes');
-                  }
+                if (!skipthis) {
+                    if (attributes.hasOwnProperty(_rawattname)) {
+                        if (attributes[_rawattname].hasOwnProperty('created')) {
+                            if (attributes[_rawattname].created) {
+                                skipthis = true;
+                            }
+                        }
+                    } else {
+                        console.log('expandPropsP:' + _rawattname + ' not found in Attributes');
+                    }
                 }
                 if (skipthis) {
-                  //console.warn('expandPropsP | Skipping _rawattname:' + _rawattname +' rawexp:' + rawexp);
-                  return rawexp;
+                    //console.warn('expandPropsP | Skipping _rawattname:' + _rawattname +' rawexp:' + rawexp);
+                    return rawexp;
                 }
                 //console.log("calculating auto " + _rawattname + " " + _attAuto + ' rawexp: ' + rawexp);
 
@@ -2852,17 +2856,17 @@ async update(data, options = {}) {
                 //console.log(property);
 
                 if (property != null && attributes[_rawattname] != null) {
-                    
+
                     let exchanger = attributes[_rawattname][_attProp];
                     let attAutoAdd = Number(attributes[_rawattname]["autoadd"]);
                     //console.log(property);
                     if (property.system[_attAuto] != "") {
                         //console.log("expanding: " + _rawattname + " = " + property.data.data[_attAuto]);
                         if (property.system[_attAuto].includes("$<"))
-                            rawexp = await this.parseRegs(rawexp, attributes,property.system.datatype);
+                            rawexp = await this.parseRegs(rawexp, attributes, property.system.datatype);
                         //console.log("isset?: " + this.data.data.attributes[_rawattname].isset);
                         if (!attributes[_rawattname].isset) {
-                            exchanger = await this.expandPropsP(property.system[_attAuto], attributes,property.system.datatype);
+                            exchanger = await this.expandPropsP(property.system[_attAuto], attributes, property.system.datatype);
                         }
                         else {
                             exchanger = attributes[_rawattname].value;
@@ -2870,24 +2874,24 @@ async update(data, options = {}) {
 
                     }
                     // Check if this value is returned from a property that is not a simpletext
-                    if (property.system.datatype != "simpletext"){
-                      //console.log('Sandbox | expandPropsP | exchanger | property:['+property.name+'] | datatype:' + typeof exchanger);
-                      let returneddatatypeof= typeof exchanger;
-                      if (attAutoAdd != null && attAutoAdd != 0){
-                        exchanger = "((" + exchanger + ")+(" + attAutoAdd + "))"; 
-                        returneddatatypeof='string';
-                      } else{
-                        // if target property is not simpletext
-                        if(targetpropertytype!='simpletext'){
-                          //add brackets to help with nested expressions
-                          exchanger = "(" + exchanger + ")"
+                    if (property.system.datatype != "simpletext") {
+                        //console.log('Sandbox | expandPropsP | exchanger | property:['+property.name+'] | datatype:' + typeof exchanger);
+                        let returneddatatypeof = typeof exchanger;
+                        if (attAutoAdd != null && attAutoAdd != 0) {
+                            exchanger = "((" + exchanger + ")+(" + attAutoAdd + "))";
+                            returneddatatypeof = 'string';
+                        } else {
+                            // if target property is not simpletext
+                            if (targetpropertytype != 'simpletext' && property.system.datatype!='list') {
+                                //add brackets to help with nested expressions
+                                exchanger = "(" + exchanger + ")";
+                            }
                         }
-                      }
-                      // if possible, evaluate the expression now
-                      if(returneddatatypeof!='number'){
-                        exchanger = this.evaluateExpression(exchanger);
-                      }
-                    }                        
+                        // if possible, evaluate the expression now
+                        if (returneddatatypeof != 'number') {
+                            exchanger = this.evaluateExpression(exchanger);
+                        }
+                    }
                     rawexp = rawexp.replace(tochange, exchanger);
                 }
             }
@@ -2896,23 +2900,23 @@ async update(data, options = {}) {
         //console.log(rawexp);
         return rawexp;
     }
-    
+
     // attepmts to calculate expression, if valid expression, calculated result id returned
     // if not, the original expression is returned
-    evaluateExpression(expr){
-      try {
-        //console.log('Sandbox | evaluateExpression | expr  [' + expr +']');
-        return Function("return " + expr)();
-      }
-      catch(err) {
-        //console.log('Sandbox | evaluateExpression | not evaluated | expr  [' + expr +']');
-        return expr;
-      }
+    evaluateExpression(expr) {
+        try {
+            //console.log('Sandbox | evaluateExpression | expr  [' + expr +']');
+            return Function("return " + expr)();
+        }
+        catch (err) {
+            //console.log('Sandbox | evaluateExpression | not evaluated | expr  [' + expr +']');
+            return expr;
+        }
 
     }
-    
 
-    async parseRegs(expr, attributes,targetpropertytype='') {
+
+    async parseRegs(expr, attributes, targetpropertytype = '') {
         let regArray = [];
         let expreg = expr.match(/(?<=\$\<).*?(?=\>)/g);
         if (expreg != null) {
@@ -2943,7 +2947,7 @@ async update(data, options = {}) {
                 //console.log(regobject.expr);
                 //TO REVERT HAS METIDO ESTO!!!!
 
-                regobject.expr = await this.expandPropsP(regobject.expr, attributes,targetpropertytype);
+                regobject.expr = await this.expandPropsP(regobject.expr, attributes, targetpropertytype);
                 regobject.expr = await auxMeth.autoParser(regobject.expr, attributes, null, false);
 
                 //                let parseexp = /\if\[|\bmax\(|\bmin\(|\bsum\(|\%\[|\bfloor\(|\bceil\(|\bcount[E|L|H]\(/g;
@@ -3046,8 +3050,8 @@ async update(data, options = {}) {
                             let dataType = "simpletext";
                             let propData = await auxMeth.getTElement(targetattributes[parseprop].id, "property", parseprop);
                             if (propData == null || propData == undefined) {
-                              if ('created' in targetattributes[parseprop]) { // Catch CREATE mod properties
-                                   if (targetattributes[parseprop].created)
+                                if ('created' in targetattributes[parseprop]) { // Catch CREATE mod properties
+                                    if (targetattributes[parseprop].created)
                                         ;
                                     else
                                         continue;
@@ -3055,9 +3059,9 @@ async update(data, options = {}) {
                                 else
                                     continue;
                             } else
-                                dataType = propData.system.datatype;  
-                            
-                                                                                                               
+                                dataType = propData.system.datatype;
+
+
                             if (dataType == "checkbox") {
                                 if (parsevalue != "false" && parsevalue != "0")
                                     attvalue = "true";
@@ -3093,6 +3097,10 @@ async update(data, options = {}) {
         }
     }
 
+  
+  
+
+
     // ALONDAAR - Extracts a specified expression, eg str = "add" extracts all "add(...)"s
     // And replaces found-exp with blanks, DO NOT USE FOR SUM() or in-line parsing at this time!
     async extractExpression(str, rollexp, rollformula) {
@@ -3106,121 +3114,120 @@ async update(data, options = {}) {
                 rollformula = rollformula.replace(tochange, "");
             }
         }
-
         return [expArray, rollexp, rollformula];
     }
-    
-    async getRollModeFromUI(){
-      let rtypevalue='';
-      // check for module DF Chat Enchancements
-      let isDFChatEnhanceUsed=false;
-      if (game.modules.get("df-chat-enhance")!=null){
-        if(game.modules.get("df-chat-enhance").active){
-          isDFChatEnhanceUsed=true;
-          // try to get the roll mode from the df ui
-          let btnrollmode;
-          btnrollmode=document.querySelector('#dfcp-rt-buttons > button[data-id="publicroll"]');
-          if(btnrollmode!=null){
-            if(btnrollmode.classList.contains('active')){
-              rtypevalue=CONST.DICE_ROLL_MODES.PUBLIC;
-            }
-          }
-          btnrollmode=document.querySelector('#dfcp-rt-buttons > button[data-id="gmroll"]');
-          if(btnrollmode!=null){
-            if(btnrollmode.classList.contains('active')){
-              rtypevalue=CONST.DICE_ROLL_MODES.PRIVATE;
-            }
-          }
-          btnrollmode=document.querySelector('#dfcp-rt-buttons > button[data-id="blindroll"]');
-          if(btnrollmode!=null){
-            if(btnrollmode.classList.contains('active')){
-              rtypevalue=CONST.DICE_ROLL_MODES.BLIND;
-            }
-          }
-          btnrollmode=document.querySelector('#dfcp-rt-buttons > button[data-id="selfroll"]');
-          if(btnrollmode!=null){
-            if(btnrollmode.classList.contains('active')){
-              rtypevalue=CONST.DICE_ROLL_MODES.SELF;
-            }
-          }
-        } 
-      }                                    
-      if(!isDFChatEnhanceUsed || rtypevalue==''){
-        // try to find the roll mode from standard UI
-        let rolltype = document.getElementsByClassName("roll-type-select");                
-        if(rolltype!=null){
-          if(rolltype.length>0){
-            rtypevalue = rolltype[0].value;            
-          }
-        }
-      }
-      if(rtypevalue==''){
-        // still no roll mode found
-        // set default to public roll in case modded UI does not have the default select
-        rtypevalue=CONST.DICE_ROLL_MODES.PUBLIC;
-      }
-      return rtypevalue;
-    }
-     
-    async showDice3DAnimation(roll,blindmode,gmmode,selfmode,rollModeFromUI){
-      
-      //console.warn('showDice3DAnimation | roll formula:' + roll.formula + ' =' + roll.result + ' rollModeFromUI:' + rollModeFromUI);
-      if (game.dice3d != null) {
-        // check that roll actually contains a roll, no need to trigger animation if not
-        if(roll.isDeterministic==false){
-          // check that the roll formula actually has some dice to roll
-          let showanimation=false;
-          for (let i = 0; i < roll.terms.length; i++) {
-            if(roll.terms[i].faces>0 && roll.terms[i].number>0 ){
-              showanimation=true;
-              break;
-            }
-          } 
-          if(showanimation){
-            //console.warn('showDice3DAnimation | Show');
-            let rtypevalue='';
-            // check if any roll mode flags have been set by roll expression/ids
-            if(gmmode || blindmode || selfmode ){
-              if(gmmode){
-                rtypevalue= CONST.DICE_ROLL_MODES.PRIVATE;
-              } else if(blindmode){
-                rtypevalue=CONST.DICE_ROLL_MODES.BLIND;
-              } else if(selfmode){
-                rtypevalue=CONST.DICE_ROLL_MODES.SELF;
-              }
-            } else {
-              // use roll mode from UI            
-              rtypevalue=rollModeFromUI;
-            }
-            const toGM=ChatMessage.getWhisperRecipients('GM');
-            switch(rtypevalue){      //roll, gmroll,blindroll,selfroll
-              case CONST.DICE_ROLL_MODES.PUBLIC:
-                //await game.dice3d.showForRoll(roll,user,synchronize,whisper,blindmode); 
-                await game.dice3d.showForRoll(roll,game.user,true,null,false);
-                break;
-              case CONST.DICE_ROLL_MODES.PRIVATE:
 
-                await game.dice3d.showForRoll(roll,game.user,true,toGM,false);
-                break;
-              case CONST.DICE_ROLL_MODES.BLIND:
-                if (game.user.isGM){
-                  await game.dice3d.showForRoll(roll,game.user,true,toGM,false);            
-                } else {
-                  await game.dice3d.showForRoll(roll,game.user,true,toGM,true);            
+    async getRollModeFromUI() {
+        let rtypevalue = '';
+        // check for module DF Chat Enchancements
+        let isDFChatEnhanceUsed = false;
+        if (game.modules.get("df-chat-enhance") != null) {
+            if (game.modules.get("df-chat-enhance").active) {
+                isDFChatEnhanceUsed = true;
+                // try to get the roll mode from the df ui
+                let btnrollmode;
+                btnrollmode = document.querySelector('#dfcp-rt-buttons > button[data-id="publicroll"]');
+                if (btnrollmode != null) {
+                    if (btnrollmode.classList.contains('active')) {
+                        rtypevalue = CONST.DICE_ROLL_MODES.PUBLIC;
+                    }
                 }
-                break;
-              case CONST.DICE_ROLL_MODES.SELF:    
-                const toSelf=ChatMessage.getWhisperRecipients(game.user.name);
-                await game.dice3d.showForRoll(roll,game.user,false,toSelf,false);
-                break;
-              default:    
+                btnrollmode = document.querySelector('#dfcp-rt-buttons > button[data-id="gmroll"]');
+                if (btnrollmode != null) {
+                    if (btnrollmode.classList.contains('active')) {
+                        rtypevalue = CONST.DICE_ROLL_MODES.PRIVATE;
+                    }
+                }
+                btnrollmode = document.querySelector('#dfcp-rt-buttons > button[data-id="blindroll"]');
+                if (btnrollmode != null) {
+                    if (btnrollmode.classList.contains('active')) {
+                        rtypevalue = CONST.DICE_ROLL_MODES.BLIND;
+                    }
+                }
+                btnrollmode = document.querySelector('#dfcp-rt-buttons > button[data-id="selfroll"]');
+                if (btnrollmode != null) {
+                    if (btnrollmode.classList.contains('active')) {
+                        rtypevalue = CONST.DICE_ROLL_MODES.SELF;
+                    }
+                }
             }
-          }
-        }        
-      }
-    } 
-    
-    async rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number = 1, isactive = null, ciuses = null,cimaxuses=1, target = null, rollcitemID = null, tokenID = null) {
+        }
+        if (!isDFChatEnhanceUsed || rtypevalue == '') {
+            // try to find the roll mode from standard UI
+            let rolltype = document.getElementsByClassName("roll-type-select");
+            if (rolltype != null) {
+                if (rolltype.length > 0) {
+                    rtypevalue = rolltype[0].value;
+                }
+            }
+        }
+        if (rtypevalue == '') {
+            // still no roll mode found
+            // set default to public roll in case modded UI does not have the default select
+            rtypevalue = CONST.DICE_ROLL_MODES.PUBLIC;
+        }
+        return rtypevalue;
+    }
+
+    async showDice3DAnimation(roll, blindmode, gmmode, selfmode, rollModeFromUI) {
+
+        //console.warn('showDice3DAnimation | roll formula:' + roll.formula + ' =' + roll.result + ' rollModeFromUI:' + rollModeFromUI);
+        if (game.dice3d != null) {
+            // check that roll actually contains a roll, no need to trigger animation if not
+            if (roll.isDeterministic == false) {
+                // check that the roll formula actually has some dice to roll
+                let showanimation = false;
+                for (let i = 0; i < roll.terms.length; i++) {
+                    if (roll.terms[i].faces > 0 && roll.terms[i].number > 0) {
+                        showanimation = true;
+                        break;
+                    }
+                }
+                if (showanimation) {
+                    //console.warn('showDice3DAnimation | Show');
+                    let rtypevalue = '';
+                    // check if any roll mode flags have been set by roll expression/ids
+                    if (gmmode || blindmode || selfmode) {
+                        if (gmmode) {
+                            rtypevalue = CONST.DICE_ROLL_MODES.PRIVATE;
+                        } else if (blindmode) {
+                            rtypevalue = CONST.DICE_ROLL_MODES.BLIND;
+                        } else if (selfmode) {
+                            rtypevalue = CONST.DICE_ROLL_MODES.SELF;
+                        }
+                    } else {
+                        // use roll mode from UI            
+                        rtypevalue = rollModeFromUI;
+                    }
+                    const toGM = ChatMessage.getWhisperRecipients('GM');
+                    switch (rtypevalue) {      //roll, gmroll,blindroll,selfroll
+                        case CONST.DICE_ROLL_MODES.PUBLIC:
+                            //await game.dice3d.showForRoll(roll,user,synchronize,whisper,blindmode); 
+                            await game.dice3d.showForRoll(roll, game.user, true, null, false);
+                            break;
+                        case CONST.DICE_ROLL_MODES.PRIVATE:
+
+                            await game.dice3d.showForRoll(roll, game.user, true, toGM, false);
+                            break;
+                        case CONST.DICE_ROLL_MODES.BLIND:
+                            if (game.user.isGM) {
+                                await game.dice3d.showForRoll(roll, game.user, true, toGM, false);
+                            } else {
+                                await game.dice3d.showForRoll(roll, game.user, true, toGM, true);
+                            }
+                            break;
+                        case CONST.DICE_ROLL_MODES.SELF:
+                            const toSelf = ChatMessage.getWhisperRecipients(game.user.name);
+                            await game.dice3d.showForRoll(roll, game.user, false, toSelf, false);
+                            break;
+                        default:
+                    }
+                }
+            }
+        }
+    }
+
+    async rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number = 1, isactive = null, ciuses = null, cimaxuses = 1, target = null, rollcitemID = null, tokenID = null) {
 
         //console.log(rollexp);
         //console.log(rollid);
@@ -3231,12 +3238,12 @@ async update(data, options = {}) {
         let initiative = false;
         let gmmode = false;
         let blindmode = false;
-        let selfmode=false;
+        let selfmode = false;
         let nochat = false;
         let initrollexp = rollexp;
         let showResult = true;
-        let secretconditional=false
-        const rollModeFromUI=await this.getRollModeFromUI();
+        let secretconditional = false;
+        const rollModeFromUI = await this.getRollModeFromUI();
         if (rollexp.includes("~secretconditional~"))
             secretconditional = true;
         if (rollexp.includes("~blind~"))
@@ -3277,65 +3284,36 @@ async update(data, options = {}) {
         let ToGM = false;
         let rolltotal = 0;
         let conditionalText = "";
-        let diff = await game.settings.get("sandbox", "diff");
-        if (diff == null)
-            diff = 0;
-        if (isNaN(diff))
-            diff = 0;
+        
         //console.log(diff);
         let rollformula = rollexp;
 
         //Roll modifiers generated by MODs of ROLL type
-        let actorrolls = this.system.rolls;
+        let actorrolls = await this.system.rolls;
 
         //Rolls defined by expression
         let subrolls = [];
 
         //Check roll mode
         let rollmode = this.system.rollmode;
+        
+
+        
         if (citemattributes != null) {
-            rollname = rollname.replace(/\#{actor}/g, this.name);
-            rollname = rollname.replace(/\#{actorname}/g, this.name);
-            rollname = rollname.replace(/\@{actor}/g, this.name);
             rollname = rollname.replace(/\#{name}/g, citemattributes.name);
             rollname = rollname.replace(/\#{active}/g, isactive);
             rollname = rollname.replace(/\#{uses}/g, ciuses);
             rollname = rollname.replace(/\#{maxuses}/g, cimaxuses);
-            // parse target(s) name
-            if(rollname.includes("#{targetname}")){
-              let targets = game.user.targets.ids;
-              if(targets.length>0){
-                let targetnames='';
-                let targettoken=null;
-                for (let i = 0; i < targets.length; i++) {
-                  targettoken = canvas.tokens.placeables.find(y => y.id == targets[i]);
-                  if(targettoken!=null){
-                    if(targetnames.length==0){
-                      targetnames=targettoken.name;
-                    } else{
-                      targetnames=targetnames + '&#44 ' + targettoken.name;
-                    }
-                  }
-
-                }
-                console.warn(targetnames)
-                rollname = await rollname.replace(/\#{targetname}/g, targetnames);
-              } else {  
-                rollname = await rollname.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
-              }
-            }
-            
-            
         }
 
 
-        //Parse roll difficulty in name, and general atts
-        rollname = rollname.replace(/\#{diff}/g, diff);
+        //Parse basics
+        rollname = await auxMeth.basicParser(rollname,this);
         rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number);
 
-        //Parse roll difficulty
-        rollexp = rollexp.replace(/\#{diff}/g, diff);
-        if (citemattributes != null) {
+        rollexp = await auxMeth.basicParser(rollexp,this);
+        
+        if (citemattributes != null) {            
             rollexp = await rollexp.replace(/\#{name}/g, citemattributes.name);
             rollexp = await rollexp.replace(/\#{active}/g, isactive);
             rollexp = await rollexp.replace(/\#{uses}/g, ciuses);
@@ -3402,14 +3380,15 @@ async update(data, options = {}) {
         if (rollexp.includes("~blind~"))
             blindmode = true;
         //
-        
+
         // Check and parse roll() expressions
         while (rollexp.match(/(?<=\broll\b\().*?(?=\))/g) != null) {
 
             let rollmatch = /\broll\(/g;
             var rollResultResultArray;
             var rollResult = [];
-
+/// 2023-12-05 Ramses800
+/// IS THIS A REAL ASSIGN(=)? Should it not be (==) ?????
             while (rollResultResultArray = rollmatch.exec(rollexp)) {
                 let suba = rollexp.substring(rollmatch.lastIndex, rollexp.length);
                 let subb = auxMeth.getParenthesString(suba);
@@ -3455,7 +3434,7 @@ async update(data, options = {}) {
                 if (game.dice3d != null && !nochat) {
                     //console.warn('A dice3d shown');
                     //await game.dice3d.showForRoll(partroll, game.user, true, ToGM, blindmode);
-                    await this.showDice3DAnimation(partroll,blindmode,gmmode,selfmode,rollModeFromUI);
+                    await this.showDice3DAnimation(partroll, blindmode, gmmode, selfmode, rollModeFromUI);
                 }
 
                 sRoll.results = finalroll;
@@ -3512,7 +3491,9 @@ async update(data, options = {}) {
             let rollmatch = /\brollp\(/g;
             var rollResultResultArray;
             var rollResult = [];
-
+///            
+/// 2023-12-05 Ramses800
+/// IS THIS A REAL ASSIGN(=)? Should it not be (==) ?????
             while (rollResultResultArray = rollmatch.exec(rollexp)) {
                 let suba = rollexp.substring(rollmatch.lastIndex, rollexp.length);
                 let subb = auxMeth.getParenthesString(suba);
@@ -3575,41 +3556,44 @@ async update(data, options = {}) {
 
             let finalroll = await partroll.evaluate({ async: true });
             finalroll.extraroll = true;
-            for (let i = 0; i < finalroll.dice.length; i++)
+            for (let i = 0; i < finalroll.dice.length; i++) {
+                if (keepImpMod[i] == undefined)
+                    continue;
                 if (keepImpMod[i].mod)
                     finalroll.dice[i].modifiers.push(keepImpMod[i].mod);
+            }
 
-            if (game.dice3d != null && !nochat){ //Dice So Nice Module
-              // An attempt to mark what dice that has exploded
-              // The DiceSoNice api only lets us set the design for the entire roll, not the individual dice that actually exploded
-              // so this is not useful, therefore disabled
-              const applyspecialdesignforalldicesrolledwithaexplodesomewhere=false;
-              if(applyspecialdesignforalldicesrolledwithaexplodesomewhere){
-                // check for eploded dice                            
-                for (let iDie = 0; iDie < partroll.dice.length; iDie++){
-                  // check results for exploded
-                  let dcount=partroll.dice[iDie].results.length;
-                  for (let iResults = 0; iResults < dcount-1; iResults++){                                  
-                    if(partroll.dice[iDie].results[iResults].hasOwnProperty('exploded')){
-                      if(partroll.dice[iDie].results[iResults].exploded){
-                        let dicedesign = {
-                          colorset: "custom",
-                          foreground: "#FFFFFF",
-                          background: game.user.color,
-                          outline: "#000000",
-                          edge: "#000000",
-                          //texture: "skulls",
-                          material: "metal",
-                          //font: "Arial Black",
-                          system: "standard"
-                        };                      
-                        partroll.dice[iDie].options.appearance=dicedesign;                     
-                      }
-                    }                                                                               
-                  }
+            if (game.dice3d != null && !nochat) { //Dice So Nice Module
+                // An attempt to mark what dice that has exploded
+                // The DiceSoNice api only lets us set the design for the entire roll, not the individual dice that actually exploded
+                // so this is not useful, therefore disabled
+                const applyspecialdesignforalldicesrolledwithaexplodesomewhere = false;
+                if (applyspecialdesignforalldicesrolledwithaexplodesomewhere) {
+                    // check for eploded dice                            
+                    for (let iDie = 0; iDie < partroll.dice.length; iDie++) {
+                        // check results for exploded
+                        let dcount = partroll.dice[iDie].results.length;
+                        for (let iResults = 0; iResults < dcount - 1; iResults++) {
+                            if (partroll.dice[iDie].results[iResults].hasOwnProperty('exploded')) {
+                                if (partroll.dice[iDie].results[iResults].exploded) {
+                                    let dicedesign = {
+                                        colorset: "custom",
+                                        foreground: "#FFFFFF",
+                                        background: game.user.color,
+                                        outline: "#000000",
+                                        edge: "#000000",
+                                        //texture: "skulls",
+                                        material: "metal",
+                                        //font: "Arial Black",
+                                        system: "standard"
+                                    };
+                                    partroll.dice[iDie].options.appearance = dicedesign;
+                                }
+                            }
+                        }
+                    }
                 }
-              }
-              await this.showDice3DAnimation(partroll,blindmode,gmmode,selfmode,rollModeFromUI);
+                await this.showDice3DAnimation(partroll, blindmode, gmmode, selfmode, rollModeFromUI);
             }
             sRoll.results = finalroll;
             await subrolls.push(sRoll);
@@ -3633,8 +3617,8 @@ async update(data, options = {}) {
                 let currentDice = sRoll.results.dice;
                 for (let j = 0; j < currentDice.length; j++) {
                     let dicearray = currentDice[j].results;
-                    let diceNumber = currentDice[j].number
-                    let diceMods = currentDice[j].modifiers
+                    let diceNumber = currentDice[j].number;
+                    let diceMods = currentDice[j].modifiers;
 
                     // Handle Implosions on natural 1, ignores exploded dice results
                     // Is there a way to use ".find()" method here?
@@ -3659,35 +3643,35 @@ async update(data, options = {}) {
                             subImplodingRoll.name = "Impl." + j;
                             //
                             // explode support
-                            let explodetheimplode='';
+                            let explodetheimplode = '';
                             for (let lookforexplode = 0; lookforexplode < diceMods.length; lookforexplode++) {
-                              if(diceMods[lookforexplode].includes("x")){
-                                explodetheimplode=diceMods[lookforexplode];
-                              }
+                                if (diceMods[lookforexplode].includes("x")) {
+                                    explodetheimplode = diceMods[lookforexplode];
+                                }
                             }
-                            if(explodetheimplode!=''){
-                              subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces + explodetheimplode;
+                            if (explodetheimplode != '') {
+                                subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces + explodetheimplode;
                             } else {
-                              subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces;
+                                subImplodingRoll.expr = implodeCount + "d" + currentDice[j].faces;
                             }
                             let impRoll = new Roll(subImplodingRoll.expr);
                             let impRollFinal = await impRoll.evaluate({ async: true });
-                            if (game.dice3d != null && !nochat){ //Dice So Nice Module
-                              // change color for imploding dice
-                              for (let impDie = 0; impDie < impRoll.dice.length; impDie++){
-                                impRoll.dice[impDie].options.appearance = {
-                                    colorset: "custom",
-                                    foreground: auxMeth.invertColor(game.user.color,true),
-                                    background: game.user.color,
-                                    outline: game.user.color,
-                                    edge: game.user.color,
-                                    texture: "cloudy",
-                                    //material: "metal",
-                                    //font: "Arial Black",
-                                    system: "standard"
-                                };                                                           
-                              }
-                              await this.showDice3DAnimation(impRoll,blindmode,gmmode,selfmode,rollModeFromUI);
+                            if (game.dice3d != null && !nochat) { //Dice So Nice Module
+                                // change color for imploding dice
+                                for (let impDie = 0; impDie < impRoll.dice.length; impDie++) {
+                                    impRoll.dice[impDie].options.appearance = {
+                                        colorset: "custom",
+                                        foreground: auxMeth.invertColor(game.user.color, true),
+                                        background: game.user.color,
+                                        outline: game.user.color,
+                                        edge: game.user.color,
+                                        texture: "cloudy",
+                                        //material: "metal",
+                                        //font: "Arial Black",
+                                        system: "standard"
+                                    };
+                                }
+                                await this.showDice3DAnimation(impRoll, blindmode, gmmode, selfmode, rollModeFromUI);
                             }
                             impRollFinal.extraroll = true;
                             subImplodingRoll.results = impRollFinal;
@@ -3742,18 +3726,18 @@ async update(data, options = {}) {
                 finalvalue = 0;
 
             //Subtract the imploded total at the end
-            if (finalvalue != 0 && impTotal != 0){              
-              finalvalue += ",-" + impTotal; // ???              
+            if (finalvalue != 0 && impTotal != 0) {
+                finalvalue += ",-" + impTotal; // ???              
             }
             //console.log(finalvalue);
 
             rollformula = rollformula.replace(re, sRoll.expr);
             rollexp = rollexp.replace(re, finalvalue);
             rollformula = rollformula.replace(reTotal, sRoll.expr);
-            if (impTotal != 0){                                          
-              rollexp = rollexp.replace(reTotal, sRoll.results.total - impTotal);
+            if (impTotal != 0) {
+                rollexp = rollexp.replace(reTotal, sRoll.results.total - impTotal);
             } else {
-              rollexp = rollexp.replace(reTotal, sRoll.results.total);
+                rollexp = rollexp.replace(reTotal, sRoll.results.total);
             }
             rollexp = await auxMeth.autoParser(rollexp, actorattributes, citemattributes, true, false, number);
             rollformula = rollexp;
@@ -3843,7 +3827,7 @@ async update(data, options = {}) {
 
                 if (parseid[j] == "blind") // TODO: This is checked early... Remove?
                     blindmode = true;
-                  
+
                 if (parseid[j] == "self") // TODO: This is checked early... Remove?
                     selfmode = true;
 
@@ -3889,7 +3873,13 @@ async update(data, options = {}) {
         //Parse Roll
         rollexp = await auxMeth.autoParser(rollexp, actorattributes, citemattributes, true, false, number);
 
+        
+        rollexp = await game.system.api._extractAPIFunctions(rollexp,actorattributes, citemattributes, true, false, number); 
+        rollformula = await game.system.api._extractAPIFunctions(rollformula,actorattributes, citemattributes, true, false, number);
+
+          
         //Remove conditionalexp and save it
+        rollexp = rollexp.replace(/\n|\r|\r\n/g, "<br>");
         let condid = rollexp.match(/(?<=\&\&)(.*?)(?=\&\&)/g);
         if (condid != null) {
             for (let j = 0; j < condid.length; j++) {
@@ -3897,9 +3887,9 @@ async update(data, options = {}) {
                 if (condidexpr.length > 2) {
                     //console.log(condidexpr);
                     let conddtoreplace = "&&" + condid[j] + "&&";
-                    let separador = ""
+                    let separador = "";
                     if (j < condid.length - 1)
-                        separador = "|"
+                        separador = "|";
                     conditionalText += condidexpr + separador;
 
                     rollexp = rollexp.replace(conddtoreplace, "");
@@ -3959,66 +3949,7 @@ async update(data, options = {}) {
 
         // Rollable Table from expression: table(table_name;optional_value)
         let tableArray = null;
-        [tableArray, rollexp, rollformula] = await this.extractExpression("table", rollexp, rollformula);
-
-        //ALONDAAR -- Table Lookup from expression: lookupj(journalName;column;row;optionalDefault)
-        // JOURNAL NAME SHOULD BE UNIQUE FROM OTHER JOURNALS!
-        // ONLY ONE TABLE PER JOURNAL!
-        // LIMIT: This only applies to rolls, not auto-calc props... Can use the same logic elsewehre though?
-        /*let getLookupJ = rollexp.match(/(?<=\blookupj\b\().*?(?=\))/g);
-        if (getLookupJ != null) {
-            for (let i = 0; i < getLookupJ.length; i++) {
-                let tochange = "lookupj(" + getLookupJ[i] + ")";
-
-                let blocks = getLookupJ[i].split(";");
-                let parseprop = await auxMeth.autoParser(blocks[0], actorattributes, citemattributes, true, false, number);
-                let parseCol = await auxMeth.autoParser(blocks[1], actorattributes, citemattributes, false, false, number);
-                let parseRow = await auxMeth.autoParser(blocks[2], actorattributes, citemattributes, false, false, number);
-                let parseDefault = blocks[3];
-                if (parseDefault == undefined)
-                    parseDefault = 0;
-                else
-                    parseDefault = await auxMeth.autoParser(blocks[3], actorattributes, citemattributes, false, false, number);
-                let replaceValue = parseDefault;
-
-                var myJournal = game.journal.getName(parseprop);
-                if (myJournal != null) {
-                    var myContent = myJournal.data.content;
-                    var doc = new DOMParser().parseFromString(myContent, "text/html");
-                    let myTable = doc.getElementsByTagName("TABLE")[0];
-                    if (myTable != null) {
-                        if (myTable.rows.length > 1) {
-                            let foundcol = null;
-
-                            for (var j = 0, col; col = myTable.rows[0].cells[j]; j++) {
-                                let colchecker = col.innerText.match(parseCol);
-                                if (colchecker != null) {
-                                    foundcol = j;
-                                    break;
-                                }
-                            }
-
-                            if (foundcol != null)
-                                for (var k = 1, row; row = myTable.rows[k]; k++) {
-                                    let rowchecker = row.cells[0].innerText.match(parseRow);
-                                    if (rowchecker != null) {
-                                        replaceValue = row.cells[foundcol].innerText;
-                                        break;
-                                    }
-                                }
-                        }
-                        else
-                            ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" needs a table with at least 2 rows');
-                    }
-                    else
-                        ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" does not contain a valid HTML table.');
-                } else
-                    ui.notifications.error('lookupj() -- Journal with the name "' + parseprop + '" does not exist.');
-
-                rollexp = rollexp.replace(tochange, replaceValue);
-                rollformula = rollformula.replace(tochange, replaceValue);
-            }
-        }*/
+        [tableArray, rollexp, rollformula] = await this.extractExpression("table", rollexp, rollformula);    
 
         //FIX FORMULA
         rollformula = await auxMeth.autoParser(rollformula, actorattributes, citemattributes, true, false, number);
@@ -4030,17 +3961,19 @@ async update(data, options = {}) {
         // some final adjustmets to get rid of surplus brackets 2   * 0)). NOPE, THAT WAS A BAD IDEA.
         // rollexp = rollexp.replace(/[()]/g, "");
         let partroll = new Roll(rollexp);
+        
         roll = await partroll.evaluate({ async: true });
         if (game.dice3d != null && !nochat) {
-//            let rollblind = blindmode;
-//            let noshow = true;
-//            if (game.user.isGM)
-//                rollblind = false;
-//            if (blindmode)
-//                noshow = false;
-            //console.warn('final dice3d shown');
-            //await game.dice3d.showForRoll(partroll, game.user, noshow, ToGM, rollblind);
-            await this.showDice3DAnimation(partroll,blindmode,gmmode,selfmode,rollModeFromUI);
+          //            let rollblind = blindmode;
+          //            let noshow = true;
+          //            if (game.user.isGM)
+          //                rollblind = false;
+          //            if (blindmode)
+          //                noshow = false;
+          //console.warn('final dice3d shown');
+          //await game.dice3d.showForRoll(partroll, game.user, noshow, ToGM, rollblind);
+          await this.showDice3DAnimation(partroll, blindmode, gmmode, selfmode, rollModeFromUI);
+          
         }
 
         rolltotal = roll.total;
@@ -4057,42 +3990,76 @@ async update(data, options = {}) {
         await this.parseAddSet(addSelfArray, "add", "SELF", actorattributes, citemattributes, number, rolltotal);
         await this.parseAddSet(setArray, "set", target, actorattributes, citemattributes, number, rolltotal);
         await this.parseAddSet(setSelfArray, "set", "SELF", actorattributes, citemattributes, number, rolltotal);
-
+        // ---------------------------------------------------------------------
         //CHECK CRITS AND FUMBLES TO COLOR THE ROLL
-        let hascrit = false;
-        let hasfumble = false;
+        // ---------------------------------------------------------------------
+        
+        
+        
+        let hascrit = true; // assume 
+        let hasfumble = true;
+        let hasCheckedForCriticalsAndFumbles=false;
         let rolldice;
         //console.log(multiroll);
         for (let j = 0; j < multiroll.length; j++) {
-            let multirolldice = multiroll[j].dice;
-            //console.log(multirolldice);
-            if (!hasProperty(multiroll[j], "extraroll") && multirolldice.length > 0) {
-                if (rolldice == null) {
-                    rolldice = multirolldice;
-                }
-                else {
-                    rolldice.push(multirolldice[0]);
-                }
-
-            }
-
-            for (let i = 0; i < multirolldice.length; i++) {
-                let maxres = multirolldice[i].faces;
-
-                let _hascrit = multirolldice[i].results.includes(maxres);
-                let _hasfumble = multirolldice[i].results.includes(1);
-
-                if (_hascrit)
-                    hascrit = true;
-                if (_hasfumble)
-                    hasfumble = true;
-
-            }
+          let multirolldice = multiroll[j].dice;
+          //console.log(multirolldice);
+          if (!hasProperty(multiroll[j], "extraroll") && multirolldice.length > 0) {
+              if (rolldice == null) {
+                  rolldice = multirolldice;
+              }
+              else {
+                  rolldice.push(multirolldice[0]);
+              }
+          }
         }
-
+        
+        const checkRollForCritAndFumbles=function(rollResult,hasCrit,hasFumble){          
+          for (let i = 0; i < rollResult.length; i++) {
+            let die=rollResult[i];
+            // check that it has results
+            if(die.hasOwnProperty('results')){
+              for (let j = 0; j < die.results.length; j++) {
+                // check that die is active(not discarded etc by a 4d6k3 etc)
+                if(die.results[j].active){
+                  if(die.results[j].result!=die.faces){
+                    hasCrit=false;
+                  } 
+                  if((die.results[j].result!=1)){
+                    hasFumble=false;
+                  } 
+                  if(!hasCrit && !hasFumble){
+                    break;
+                  }
+                }
+              }
+              if(!hasCrit && !hasFumble){
+                  break;
+              }
+            }
+          }
+          return [hasCrit, hasFumble];
+        };
+        
+        if(subrolls.length>0){       
+          // only check the first sub roll          
+          [hascrit, hasfumble] = checkRollForCritAndFumbles(subrolls[0].results.terms,hascrit,hasfumble);  
+          hasCheckedForCriticalsAndFumbles=true;
+        }
+        if(rolldice!=null){          
+          //console.log(JSON.stringify(rolldice));
+          [hascrit, hasfumble] = checkRollForCritAndFumbles(rolldice,hascrit,hasfumble);
+          hasCheckedForCriticalsAndFumbles=true;
+        }
+        if(!hasCheckedForCriticalsAndFumbles){
+          // no check performed,  blank markers
+          hascrit = false; 
+          hasfumble = false;
+        }
+        // ---------------------------------------------------------------------
         //TEXT MANAGMENET
         let convalue = "";
-        //console.log(conditionalText)
+        //console.log('conditionalText:' + conditionalText);
         if (conditionalText != "") {
             let blocks = conditionalText.split("|");
 
@@ -4101,7 +4068,10 @@ async update(data, options = {}) {
                 if (thiscond.length > 1) {
                     thiscond = thiscond.replace(/(?<=[\s|;|+|\-|*|\/\(|&|:])total(?=[\s|;|+|\-|*|\/\)])/g, rolltotal);
 
-                    let condblocks = thiscond.split(";");
+                    //Only split the first ;
+                    let condblocksregexp = /(?:;)(.*?$)/;
+                    let condblocks = thiscond.split(";", 1);
+                    condblocks.push(thiscond.match(condblocksregexp)[1]);
                     let checktype = condblocks[0];
                     let mycondition = 0;
                     checktype = checktype.replace(/(?<=[\s|;|+|\-|*|\/\(|&|:])total(?=[\s|;|+|\-|*|\/\)])/g, rolltotal);
@@ -4136,7 +4106,9 @@ async update(data, options = {}) {
                     var parmatch = /\(/g;
                     var parArray;
                     var parresult = [];
-
+                    
+/// 2023-12-05 Ramses800
+/// IS THIS A REAL ASSIGN(=)? Should it not be (==) ?????
                     while (parArray = parmatch.exec(finalevalvalue)) {
                         let suba = finalevalvalue.substring(parmatch.lastIndex, finalevalvalue.length);
                         let subb = auxMeth.getParenthesString(suba);
@@ -4189,7 +4161,7 @@ async update(data, options = {}) {
             subdice: subrolls,
             user: game.user.name,
             conditional: convalue,
-            secretconditional:secretconditional,
+            secretconditional: secretconditional,
             iscrit: hascrit,
             isfumble: hasfumble,
             blind: blindmode,
@@ -4204,43 +4176,43 @@ async update(data, options = {}) {
 
         if (!nochat) {
             let newhtml = await renderTemplate("systems/sandbox/templates/dice.html", rollData);
-            let rtypevalue='';
+            let rtypevalue = '';
             // check if any roll mode flags have been set by roll expression/ids
-            if(gmmode || blindmode || selfmode ){
-              if(gmmode){
-                rtypevalue= CONST.DICE_ROLL_MODES.PRIVATE;
-              } else if(blindmode){
-                rtypevalue=CONST.DICE_ROLL_MODES.BLIND;
-              } else if(selfmode){
-                rtypevalue=CONST.DICE_ROLL_MODES.SELF;
-              }
+            if (gmmode || blindmode || selfmode) {
+                if (gmmode) {
+                    rtypevalue = CONST.DICE_ROLL_MODES.PRIVATE;
+                } else if (blindmode) {
+                    rtypevalue = CONST.DICE_ROLL_MODES.BLIND;
+                } else if (selfmode) {
+                    rtypevalue = CONST.DICE_ROLL_MODES.SELF;
+                }
             } else {
-              // use roll mode from UI            
-              rtypevalue=rollModeFromUI;
+                // use roll mode from UI            
+                rtypevalue = rollModeFromUI;
             }
-            if(rtypevalue==''){
-              // still no roll mode found
-              // set default to public roll
-              rtypevalue=CONST.DICE_ROLL_MODES.PUBLIC;
+            if (rtypevalue == '') {
+                // still no roll mode found
+                // set default to public roll
+                rtypevalue = CONST.DICE_ROLL_MODES.PUBLIC;
             }
-            
+
             let rvalue = CONST.CHAT_MESSAGE_TYPES.OTHER;
-            switch(rtypevalue){      //roll, gmroll,blindroll,selfroll
-              case CONST.DICE_ROLL_MODES.PUBLIC:
-                rvalue = CONST.CHAT_MESSAGE_TYPES.IC;
-                break;
-              case CONST.DICE_ROLL_MODES.PRIVATE:
-                rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER;
-                break;
-              case CONST.DICE_ROLL_MODES.BLIND:
-                rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER
-                blindmode=true; 
-                break;
-              case CONST.DICE_ROLL_MODES.SELF:    
-                rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER;
-                break;
-              default:    
-            } 
+            switch (rtypevalue) {      //roll, gmroll,blindroll,selfroll
+                case CONST.DICE_ROLL_MODES.PUBLIC:
+                    rvalue = CONST.CHAT_MESSAGE_TYPES.IC;
+                    break;
+                case CONST.DICE_ROLL_MODES.PRIVATE:
+                    rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+                    break;
+                case CONST.DICE_ROLL_MODES.BLIND:
+                    rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+                    blindmode = true;
+                    break;
+                case CONST.DICE_ROLL_MODES.SELF:
+                    rvalue = CONST.CHAT_MESSAGE_TYPES.WHISPER;
+                    break;
+                default:
+            }
 
             var wrapper = document.createElement('div');
             wrapper.innerHTML = newhtml;
@@ -4258,12 +4230,12 @@ async update(data, options = {}) {
                 blind: blindmode
             };
 
-            if(rtypevalue==CONST.DICE_ROLL_MODES.PRIVATE || rtypevalue==CONST.DICE_ROLL_MODES.BLIND ){
-              messageData.whisper = ChatMessage.getWhisperRecipients('GM');
-            } 
-            else if(rtypevalue==CONST.DICE_ROLL_MODES.SELF){
-              // whisper to self  
-              messageData.whisper = ChatMessage.getWhisperRecipients(game.user.name);
+            if (rtypevalue == CONST.DICE_ROLL_MODES.PRIVATE || rtypevalue == CONST.DICE_ROLL_MODES.BLIND) {
+                messageData.whisper = ChatMessage.getWhisperRecipients('GM');
+            }
+            else if (rtypevalue == CONST.DICE_ROLL_MODES.SELF) {
+                // whisper to self  
+                messageData.whisper = ChatMessage.getWhisperRecipients(game.user.name);
 
             }
 
@@ -4379,7 +4351,7 @@ async update(data, options = {}) {
 
     }
 
-    async requestTransferToGM(actorID, ownerID, citemID, number,uses=null) {
+    async requestTransferToGM(actorID, ownerID, citemID, number, uses = null) {
         console.log("Sandbox | Requesting transfer to GM");
         game.socket.emit("system.sandbox", {
             op: SOCKETCONSTANTS.MSG.OPERATIONS.TRANSFER_EDIT,
@@ -4388,7 +4360,7 @@ async update(data, options = {}) {
             ownerID: ownerID,
             citemID: citemID,
             number: number,
-            uses:uses
+            uses: uses
         });
     }
 
@@ -4400,8 +4372,8 @@ async update(data, options = {}) {
         let ownercItems = duplicate(actorOwner.system.citems);
         let cItem = ownercItems.find(y => y.id == data.citemID);
         cItem.number -= data.number;
-        if(data.uses!=null){
-          cItem.uses -= data.uses;
+        if (data.uses != null) {
+            cItem.uses -= data.uses;
         }
 
         let actorReceiver = game.actors.get(data.actorID);
@@ -4417,8 +4389,8 @@ async update(data, options = {}) {
 
             if (cItemRec != null) {
                 cItemRec.number -= data.number;
-                if(data.uses!=null){
-                  cItemRec.uses -= data.uses;
+                if (data.uses != null) {
+                    cItemRec.uses -= data.uses;
                 }
             }
 
@@ -4476,7 +4448,7 @@ async update(data, options = {}) {
 
         }
 
-       
+
 
     }
 }

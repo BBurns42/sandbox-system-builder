@@ -95,13 +95,6 @@ export async function SBBugReport(){
       <label class="sb_bug_report_label" for="sb_bug_report_sys_info_client_name_not_correct"> Detected operating system/client is incorrect <i title="Some browser identify themselves as another browser, this can be on purpose or not. &#013;&#010;This client provided the following User Agent string: &#013;&#010; ${sys_info.useragent}" class="sb_bug_report_extrainfo far fa-question-circle"></i></label>
       <input class="sb_bug_report_hbo sb_bug_report_chk_incorrect_client" type="checkbox" id="sb_bug_report_sys_info_client_name_not_correct" name="sb_bug_report_sys_info_client_name_not_correct" onclick="sb_bug_report_toggle_display()" value="">
 
-
-
-      
-      
-
-
-
   </fieldset>
 
     <fieldset style="text-align: left;">
@@ -113,7 +106,7 @@ export async function SBBugReport(){
     </fieldset>
     <fieldset style="text-align: left;">
       <legend class="sb_bug_report_legend">Game World Information</legend> 
-      <textarea readonly class="sb_bug_report_text_area_game_world_info" id="sb_bug_report_game_world_info" name="sb_bug_report_game_world_info" rows="13" cols="40">`+game_world_info_txt+`</textarea>
+      <textarea readonly class="sb_bug_report_text_area_game_world_info" id="sb_bug_report_game_world_info" name="sb_bug_report_game_world_info" rows="11" cols="40">`+game_world_info_txt+`</textarea>
     </fieldset>  
     </form>
 
@@ -262,7 +255,7 @@ export async function SBBugReport(){
   else{
     // show it as dialog, after render update hidden id
     let d = new Dialog({
-      title: `Bug Report`,
+      title: `${game.system.title} Bug Report`,
       content: html_content,
       buttons: {},        
       render: html => document.getElementById(`sb_bug_report_appId`).setAttribute('value', d.appId),
@@ -307,21 +300,27 @@ export async function SBBugReport(){
 }
 
 function gameWorldInfoToTextArea(gameworldinfo){
-  let content=`
-                Game  Compendiums(2)
-Actors
-  Total         `+padWhiteSpace(5,gameworldinfo.game.actors.total.toString())+         `     `+padWhiteSpace(5,gameworldinfo.compendium.actors.total.toString())+`
-  Actors        `+padWhiteSpace(5,gameworldinfo.game.actors.actors.toString())+        `     `+padWhiteSpace(5,gameworldinfo.compendium.actors.total.toString())+`
-  Templates     `+padWhiteSpace(5,gameworldinfo.game.actors.actortemplates.toString())+`     `+padWhiteSpace(5,gameworldinfo.compendium.actors.total.toString())+`
-Items
-  Total         `+padWhiteSpace(5,gameworldinfo.game.items.total.toString())+          `     `+padWhiteSpace(5,gameworldinfo.compendium.items.total.toString())+`
-  Properties    `+padWhiteSpace(5,gameworldinfo.game.items.properties.toString())+     `     `+padWhiteSpace(5,gameworldinfo.compendium.items.properties.toString())+`
-  Panels        `+padWhiteSpace(5,gameworldinfo.game.items.panels.toString())+         `     `+padWhiteSpace(5,gameworldinfo.compendium.items.panels.toString())+`
-  Multipanels   `+padWhiteSpace(5,gameworldinfo.game.items.multipanels.toString())+    `     `+padWhiteSpace(5,gameworldinfo.compendium.items.multipanels.toString())+`
-  Sheettabs     `+padWhiteSpace(5,gameworldinfo.game.items.sheettabs.toString())+      `     `+padWhiteSpace(5,gameworldinfo.compendium.items.sheettabs.toString())+`
-  Groups        `+padWhiteSpace(5,gameworldinfo.game.items.groups.toString())+         `     `+padWhiteSpace(5,gameworldinfo.compendium.items.groups.toString())+`
-  Citems        `+padWhiteSpace(5,gameworldinfo.game.items.citems.toString())+         `     `+padWhiteSpace(5,gameworldinfo.compendium.items.citems.toString())+``;
+  let content='';
+  
+  content = buildRow('','Game','Compendium','','Game','Compendium');
+  content += buildRow('Actors','','','Items','','');
+  content += buildRow('Total',gameworldinfo.game.actors.total,gameworldinfo.compendium.actors.total,'Total',gameworldinfo.game.items.total,gameworldinfo.compendium.items.total);
+  content += buildRow('Actors',gameworldinfo.game.actors.actors,gameworldinfo.compendium.actors.actors,'Properties',gameworldinfo.game.items.properties,gameworldinfo.compendium.items.properties);
+  content += buildRow('Templates',gameworldinfo.game.actors.actortemplates,gameworldinfo.compendium.actors.actortemplates,'Panels',gameworldinfo.game.items.panels,gameworldinfo.compendium.items.panels);
+  content += buildRow('','','','Multipanels',gameworldinfo.game.items.multipanels,gameworldinfo.compendium.items.multipanels);
+  content += buildRow('','','','Sheettabs',gameworldinfo.game.items.sheettabs,gameworldinfo.compendium.items.sheettabs);
+  content += buildRow('','','','Groups',gameworldinfo.game.items.groups,gameworldinfo.compendium.items.groups);
+  content += buildRow('Compendiums',gameworldinfo.compendium.total,'','Lookups',gameworldinfo.game.items.lookups,gameworldinfo.compendium.items.lookups);
+  content += buildRow('Folders',gameworldinfo.folders.total,'','Citems',gameworldinfo.game.items.citems,gameworldinfo.compendium.items.citems);
   return content;
+}
+
+function buildRow(col1,col2,col3,col4,col5,col6){
+  return col(col1) + col(col2,6) + col(col3) + col(col4) + col(col5,6) + col(col6) +'\n';
+}
+
+function col(data,pad=12){
+  return padWhiteSpace(pad,data,false) + "  ";
 }
 
 function padWhiteSpace(spaces,str,padLeft=true){

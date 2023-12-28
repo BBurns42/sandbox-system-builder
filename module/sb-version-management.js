@@ -68,6 +68,12 @@ export async function versionManagement(){
     console.log('Sandbox | versionManagement | World last Foundry core used:' + WORLD_LAST_CORE_VERSION_USED);
     console.log('Sandbox | versionManagement | World last Sandbox system used:' + WORLD_LAST_SYSTEM_VERSION_USED);
     // for future migrations use this data
+    if (isNewerVersion(game.version, WORLD_LAST_CORE_VERSION_USED)) {
+      console.log('Sandbox | versionManagement | World started with newer version of Foundry:' + game.version);      
+    }
+    if (isNewerVersion(game.system.version, WORLD_LAST_SYSTEM_VERSION_USED)) {
+      console.log('Sandbox | versionManagement | World started with newer version of Sandbox:' + game.system.version);
+    }
   }
   
   // check if world has Sandbox extensions installed and actve

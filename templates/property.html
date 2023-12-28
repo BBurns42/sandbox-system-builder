@@ -580,6 +580,52 @@
                             {{/if}}
                         </div>
                     </div>
+                    <div class="new-row">
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Add options from Auto</label>
+                            <input class="check-listoptionsAutoUse" name="system.listoptionsAutoUse" id="check-listoptionsAutoUse" type="checkbox" {{checked item.system.listoptionsAutoUse}}/>
+                        </div>
+                    </div>
+                    {{#if item.system.listoptionsAutoUse}}
+                    <div class="new-row">
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Options Auto</label>  
+                            <input type="text"  class="sb-input-align-left"  name="system.listoptionsAuto" title="{{item.system.listoptionsAuto}}" value="{{item.system.listoptionsAuto}}"/>
+                            {{#if showhelpers}}
+                              <i id="sb-itemsheet-helper-dropdown-listauto-{{item.id}}" class="sb-itemsheet-helper-dropdown fa-solid fa-square-caret-down"></i>
+                            {{/if}}
+                        </div>
+                    </div>
+                    {{/if}}
+                    <div class="new-row">
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Add options from Lookup</label>
+                            <input class="check-listoptionsLookupUse" name="system.listoptionsLookupUse" id="check-listoptionsLookupUse" type="checkbox" {{checked item.system.listoptionsLookupUse}}/>
+                        </div>
+                    </div>
+                    {{#if item.system.listoptionsLookupUse}}
+                    <div class="new-row">
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Options Lookup</label>                            
+                            <select id="check-listoptionsLookupKey" name="system.listoptionsLookupKey"  data-type="String">                              
+                              {{#select item.system.listoptionsLookupKey}}
+                                {{#eachProperty lookupOptions}}
+                                  <option  value="{{value.value}}">{{value.name}}</option>
+                                {{/eachProperty }}                                                                
+                              {{/select}}
+                            </select>                            
+                            <label class="label-medlarge">Lookup Column</label>                            
+                            <select id="check-listoptionsLookupColumn" name="system.listoptionsLookupColumn"  data-type="String">                              
+                              {{#select item.system.listoptionsLookupColumn}}
+                                {{#eachProperty lookupOptionsColumns}}
+                                  <option  value="{{value.value}}">{{value.name}}</option>
+                                {{/eachProperty }}                                                                
+                              {{/select}}
+                            </select>
+                        </div>
+                        
+                    </div>
+                    {{/if}}
                 </div>
             </div>
             {{/ifCond}}

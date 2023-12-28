@@ -51,9 +51,10 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   static get defaultOptions() {
     const defaults = super.defaultOptions;  
     const overrides = {
+      classes: ["sandbox","tablefilter"],
       height: '600',
       width:'625',
-      id: 'sb-table-filter-editor-form',
+      //id: 'sb-table-filter-editor-form',
       template: `systems/sandbox/templates/sb-table-filter-editor-form.hbs`,
       title: _title,
       userId: game.userId,
@@ -64,6 +65,10 @@ export class SandboxTableFilterEditorForm extends FormApplication {
     const mergedOptions = foundry.utils.mergeObject(defaults, overrides);    
     return mergedOptions;
   }  
+  
+  get id() {
+    return `sb-table-filter-editor-form-${this.itemid}`;
+  }
   
   activateListeners(html) {
     super.activateListeners(html);
@@ -102,6 +107,7 @@ export class SandboxTableFilterEditorForm extends FormApplication {
     }        
     data={
       expression:filtertable,
+      itemid:this.itemid,
       itemname:this.itemname,
       itemtype:this.itemtype,
       itemlabel:this.itemlabel,               
@@ -275,8 +281,10 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   
   
   async _onUpdateTableFilterAndClose(event) {
-    document.querySelector('button[name="update-table-filter"]').click();
-    document.querySelector('button[name="close-editor"]').click(); 
+    //document.querySelector('button[name="update-table-filter"]').click();
+    //document.querySelector('button[name="close-editor"]').click(); 
+    this._onUpdateTableFilter(event);
+    this._onCloseEditor(event);    
   }  
   
   async _onUpdateTableFilter(event) { 
@@ -299,7 +307,7 @@ export class SandboxTableFilterEditorForm extends FormApplication {
       this.bringToTop();
     }    
     else{  
-      let sfilter=_assembleJSONFilter();
+      let sfilter=_assembleJSONFilter(this.itemid);
       target.value=sfilter;
       // trigger onchange event
       const event = new Event('change', { bubbles: true });  
@@ -320,11 +328,11 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   
   async _updateObject(event, formData) {
     const expandedData = foundry.utils.expandObject(formData);
-    console.log(expandedData);
+    //console.log(expandedData);
   }
  
   async _onCopyTableFilter(event){ 
-    let sfilter=_assembleJSONFilter();
+    let sfilter=_assembleJSONFilter(this.itemid);
     if (sfilter!=null){            
       navigator.clipboard.writeText(sfilter);
       ui.notifications.info('Table filter copied to Clipboard');
@@ -332,7 +340,7 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   }
   
   async _onCopyTableFilterPreFormatted(event){       
-    let sfilter=_assembleJSONFilter();
+    let sfilter=_assembleJSONFilter(this.itemid);
     if (sfilter!=null){
       sfilter=`\`\`\`tp\n` + sfilter + `\n` + `\`\`\``  ;      
       navigator.clipboard.writeText(sfilter);
@@ -345,9 +353,9 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   
 };
 
-function _assembleJSONFilter(){
+function _assembleJSONFilter(itemid){
   let sfilter='';
-  let filtertable=document.getElementById('sb-table-filter-editor-data-tbody');      
+  let filtertable=document.getElementById('sb-table-filter-editor-data-tbody-' + itemid);      
   if (filtertable!=null){
     let sLogic;
     let sType;
@@ -474,7 +482,7 @@ function _buildInputRow(condition,itemid){
     
   
   // add manipulators
-    htmlinput+='<td>';
+    htmlinput+='<td class="sb-table-filter-editor-table-tbody-td-manipulator">';
     htmlinput+=_build_manipulators();
     htmlinput+='</td>'
     // add row tags

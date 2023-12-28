@@ -10,6 +10,8 @@ import  {
         } from "./sb-itemsheet-constants.js";
 import { SOCKETCONSTANTS } from "./sb-socket-constants.js";
 import { showPlayer } from "./sb-socket-functions.js";
+import { SandboxActorPropertiesManagerForm } from "./sb-actor-properties-manager-form.js";
+
 
 
 
@@ -276,7 +278,11 @@ export function sb_sheet_display_id_in_window_caption(html, sheettype, appwindow
       // get window title
       let insertafterthis = html.find('.window-title');
       if (insertafterthis) {
-        insertafterthis.after('<a id="' + newelementid + '" title="' + sheettype + ' [' + appwindowinfo.id + ']' + foldername + '&#13;Click to show data in Console"><i class="fas fa-tag"></i> Info</a>');
+        let mgrlink='';
+        if(sheettype=='Actor'){
+          mgrlink='CTRL + Click to show Actor Properties Manager.';
+        }
+        insertafterthis.after('<a id="' + newelementid + '" data-tooltip="' + sheettype + ' [' + appwindowinfo.id + ']' + foldername + '<br>Click to show data in Console.<br>'+ mgrlink+'"><i class="fas fa-tag"></i> Info</a>');
         switch (sheettype) {
           case 'Actor':            
             // if token
@@ -284,24 +290,83 @@ export function sb_sheet_display_id_in_window_caption(html, sheettype, appwindow
             if (appwindowinfo.type=="Token") {                                                       
               html.find('#' + newelementid).click(ev => {
                 let token = canvas.tokens.placeables.find(y=>y.id==appwindowinfo.id); 
-                // output this to console on purpose
-                console.log(token.actor);
+                let actor=token.actor;
+                if (ev.ctrlKey) {                    
+                    console.log(actor.system.attributes);                    
+                    let options = {
+                      actor:{
+                        id:actor.id,
+                        name:actor.name,
+                      },
+                      token:{
+                        id:appwindowinfo.id,
+                        name:token.name
+                      },
+                      compendium:{
+                        type:null,
+                        name:null
+                      }
+                    };
+                    let f = new SandboxActorPropertiesManagerForm(options).render(true, { focus: true });                                      
+                  } else {
+                    // output this to console on purpose
+                    console.log(actor);
+                  }
               });                              
             } else {
               // check for compendium
               if (appwindowinfo.compendium.type==null){
                 // normal actor
                 html.find('#' + newelementid).click(ev => {
-                  // output this to console on purpose
-                  console.log(game.actors.get(appwindowinfo.id));
+                  let actor=game.actors.get(appwindowinfo.id);
+                  if (ev.ctrlKey) {                    
+                    console.log(actor.system.attributes);                    
+                    let options = {
+                      actor:{
+                        id:actor.id,
+                        name:actor.name,
+                      },
+                      token:{
+                        id:null,
+                        name:null
+                      },
+                      compendium:{
+                        type:null,
+                        name:null
+                      }
+                    };
+                    let f = new SandboxActorPropertiesManagerForm(options).render(true, { focus: true });                                      
+                  } else {
+                    // output this to console on purpose
+                    console.log(actor);
+                  }
                 });
               } else {
                 // compendium actor
                 html.find('#' + newelementid).click(async (ev) => {
                  const pack=game.packs.get(appwindowinfo.compendium.type + "." + appwindowinfo.compendium.name);
-                 const compendiumactor = await pack.getDocument(appwindowinfo.id);
-                 // output this to console on purpose
-                 console.log(compendiumactor);
+                 const actor = await pack.getDocument(appwindowinfo.id);
+                 if (ev.ctrlKey) {                    
+                    console.log(actor.system.attributes);                    
+                    let options = {
+                      actor:{
+                        id:actor.id,
+                        name:actor.name,
+                      },
+                      token:{
+                        id:null,
+                        name:null
+                      },
+                      compendium:{
+                        type:appwindowinfo.compendium.type,
+                        name:appwindowinfo.compendium.name
+                      }
+                    };
+                    let f = new SandboxActorPropertiesManagerForm(options).render(true, { focus: true });                                      
+                  } else {
+                    // output this to console on purpose
+                    console.log(actor);
+                  }
                  });
               }
             }                        
@@ -309,9 +374,9 @@ export function sb_sheet_display_id_in_window_caption(html, sheettype, appwindow
           case 'Item':
             if (appwindowinfo.compendium.type==null){
               // normal item
-              html.find('#' + newelementid).click(ev => {
+              html.find('#' + newelementid).click(async ev => {
                 // output this to console on purpose
-                console.log(game.items.get(appwindowinfo.id));
+                console.log(game.items.get(appwindowinfo.id));                                                                              
               });  
             } else {
               // compendium item
@@ -929,11 +994,18 @@ export function adaptItemSheetGeoMetrics (gItemSheet, html)  {
     // make room for details menu by  increasing the item sheet window height                    
     if (game.user.isGM) {      
       // for updates the return html is a form
-      if (html[0].nodeName !== 'FORM') {    
+      if (html[0].nodeName !== 'FORM') { 
+      }
+      
         let sheetheight=ITEM_SHEET_HEIGHT[typeClass.toUpperCase()]; 
         if (typeClass.toUpperCase() == 'PROPERTY') {
           const datatype = gItemSheet.item.system.datatype;
-          sheetheight = ITEM_SHEET_PROPERTY_HEIGHT[datatype.toUpperCase()];
+          if(datatype=="") {
+            // use simpletext as new default
+            sheetheight = ITEM_SHEET_PROPERTY_HEIGHT['SIMPLETEXT'];
+          } else {
+            sheetheight = ITEM_SHEET_PROPERTY_HEIGHT[datatype.toUpperCase()];
+          }
         }
         // center window
         let newtop = (window.innerHeight - (sheetheight)) / 2;
@@ -942,7 +1014,7 @@ export function adaptItemSheetGeoMetrics (gItemSheet, html)  {
         }
         gItemSheet.setPosition({top: newtop});
         gItemSheet.setPosition({height: sheetheight, width: ITEM_SHEET_DEFAULT_WIDTH});
-      }
+      
     }
   }
   const OPTION_SET_DEFAULT_ITEM_TAB = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_SET_DEFAULT_ITEM_TAB.ID); 

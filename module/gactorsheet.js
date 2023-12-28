@@ -6,11 +6,13 @@ import { sb_custom_dialog_confirm,
 import { sb_item_sheet_get_game_setting } from "./sb-setting-constants.js";
 import { sb_table_filter_passed } from "./sb-table-filters.js";
 import { sb_property_has_valid_table_filter } from "./sb-table-filters.js";
+import { lookupList } from "./sb-lookup-table.js";
 
 /**
  * Extend the basic ActorSheet with some very simple modifications
  * @extends {ActorSheet}
  */
+
 export class gActorSheet extends ActorSheet {
 
     /** @override */
@@ -30,14 +32,14 @@ export class gActorSheet extends ActorSheet {
     /** @override */
     async getData() {
         const actor = this.actor;
-        const data = super.getData();
+        const data = super.getData();        
         let secrets = this.actor.isOwner;
         
         if (game.user.isGM) secrets = true;
         data.enrichedBiography = await TextEditor.enrichHTML(this.actor.system.biography, {secrets:secrets, entities:true,async: true});
         const flags = actor.flags;
 
-        //console.log(data);
+        //console.log('getData',data);
 
         return data;
     }
@@ -50,7 +52,9 @@ export class gActorSheet extends ActorSheet {
     //    }
 
     async maximize() {
-        let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
+        //console.log('maximize')
+        //let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
+        let _mytemplate = await auxMeth.getActorTemplate(this.actor.system.gtemplate);
         if (_mytemplate != null)
             this.position.height = _mytemplate.system.setheight;
         super.maximize();
@@ -125,7 +129,7 @@ export class gActorSheet extends ActorSheet {
                 type: "image",
                 displayMode: "tiles",
                 current: this.actor.system.backg,
-                callback: imagePath => this.actor.update({ "system.backg": imagePath }),
+                callback: imagePath => this.actor.update({ "system.backg": imagePath })
             }).browse(this.actor.system.backg);
         });
 
@@ -262,7 +266,7 @@ export class gActorSheet extends ActorSheet {
             let attKey = $(ev.currentTarget).attr("attKey");
             let tableKey = ev.target.parentElement.getAttribute("tableKey");
             if (this.sortOption == null)
-                this.sortOption = {}
+                this.sortOption = {};
             this.sortOption[tableKey] = attKey;
             this.render(true);
 
@@ -274,7 +278,7 @@ export class gActorSheet extends ActorSheet {
             let attKey = $(ev.currentTarget).attr("attKey");
             let tableKey = ev.target.parentElement.getAttribute("tableKey");
             if (this.sortOption == null)
-                this.sortOption = {}
+                this.sortOption = {};
             this.sortOption[tableKey] = "name";
             this.render(true);
 
@@ -604,7 +608,7 @@ export class gActorSheet extends ActorSheet {
         let tag = propertyItem.system.tag;
         // If tag is blank, use the property key instead? could also use the item's name.
         if (tag == "")
-            tag = propertyItem.system.attKey
+            tag = propertyItem.system.attKey;
         let img = propertyItem.img;
 
         // Use cItem image and name + property tag
@@ -981,7 +985,7 @@ ${dialogPanel.system.title}
                     }
                     finalContent += `
 </select>
-`
+`;
                 }
 
                 else if (panelProperty.system.datatype == "label") {
@@ -993,7 +997,7 @@ ${dialogPanel.system.title}
                     if (panelProperty.system.auto != "")
                         isauto = "isauto";
                     if (panelProperty.system.arrows) {
-                        arrows = "hasarrows"
+                        arrows = "hasarrows";
                     }
                     finalContent += `
 <input class="rdialogInput ${inputwidth} ${panelProperty.system.inputgroup} ${isauto} ${defvalue} ${arrows}" attKey ="${panelProperty.system.attKey}" type="text" value="${panelProperty.system.defvalue}">	
@@ -1100,7 +1104,7 @@ ${dialogPanel.system.title}
             this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData);
         }
         else {
-            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, null, useData)
+            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, null, useData);
         }
 
 
@@ -1109,45 +1113,13 @@ ${dialogPanel.system.title}
     }
 
     async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses=1, rollcitemID, targets, dialogProps = null, useData = null) {
-
-        rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
-
-        rollname = await auxMeth.parseDialogProps(rollname, dialogProps);
-
         let tokenid;
-
-        //console.log(rollexp);
-
         let finalroll;
-
-        //PARSE actor name
-        rollexp = await rollexp.replace(/\#{actor}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\@{actor}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\#{actorname}/g, this.actor.name);
-        rollexp = await rollexp.replace(/\@{actorname}/g, this.actor.name);
-        // parse target(s) name
-        if(rollexp.includes("#{targetname}")){
-          if(targets.length>0){
-            let targetnames='';
-            
-            for (let i = 0; i < targets.length; i++) {
-              tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
-              if(tokenid!=null){
-                if(targetnames.length==0){
-                  targetnames=tokenid.name;
-                } else{
-                  targetnames=targetnames + '&#44 ' + tokenid.name;
-                }
-              }
-              
-            }
-            console.warn(targetnames)
-            rollexp = await rollexp.replace(/\#{targetname}/g, targetnames);
-          } else {  
-            rollexp = await rollexp.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
-          }
-        }
-
+        rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
+        rollexp = await auxMeth.basicParser(rollexp,this.actor);
+        rollname = await auxMeth.parseDialogProps(rollname, dialogProps);
+        rollname = await auxMeth.basicParser(rollname,this.actor);       
+        //console.log(rollexp);        
         if (targets.length > 0 && ((rollexp.includes("#{target|") || rollexp.includes("add(")) || rollexp.includes("set("))) {
             for (let i = 0; i < targets.length; i++) {
                 tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
@@ -1332,7 +1304,7 @@ ${dialogPanel.system.title}
           attribute = property.system.attKey;
         }
         catch(err){
-          console.error("Sandbox | Unable to find key for property "+ propName + " : " + err.message)
+          console.error("Sandbox | Unable to find key for property "+ propName + " : " + err.message);
           //debugger;
           // exit
           return;
@@ -1740,7 +1712,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.333;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1753,7 +1725,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.666;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1766,7 +1738,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.75;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1779,7 +1751,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.833;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1792,7 +1764,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.5;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1805,7 +1777,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.25;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1818,7 +1790,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.166;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1831,7 +1803,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.125;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1843,7 +1815,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.3;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1855,7 +1827,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.0625;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1867,7 +1839,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.625;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -1879,7 +1851,7 @@ ${dialogPanel.system.title}
             }
             else {
                 flags.multiwidth += 0.375;
-                div6.className = this.getmultiWidthClass(tabpanel.system.width)
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
             }
 
         }
@@ -2329,13 +2301,14 @@ ${dialogPanel.system.title}
 
                     //IM ON IT
                     var rawlist = property.system.listoptions;
-                    var listobjects = rawlist.split(',');
-
-                    for (var i = 0; i < listobjects.length; i++) {
-                        let n_option = deftemplate.createElement("OPTION");
-                        n_option.setAttribute("value", listobjects[i]);
-                        n_option.textContent = listobjects[i];
-                        sInput.appendChild(n_option);
+                    if(rawlist.length>0){
+                      var listobjects = rawlist.split(',');
+                      for (var i = 0; i < listobjects.length; i++) {
+                          let n_option = deftemplate.createElement("OPTION");
+                          n_option.setAttribute("value", listobjects[i]);
+                          n_option.textContent = listobjects[i];
+                          sInput.appendChild(n_option);
+                      }
                     }
 
 
@@ -2538,7 +2511,7 @@ ${dialogPanel.system.title}
                                 if(propTable.system.tag==''){
                                   switch(propTable.system.labelformat){
                                     case 'I':                                    
-                                      hCell.innerHTML='<i class="fas '+ propTable.system.icon +'"></i>'
+                                      hCell.innerHTML='<i class="fas '+ propTable.system.icon +'"></i>';
                                       hCell.title = propTable.system.tooltip;
                                       break;
                                     case 'D':                                    
@@ -2948,7 +2921,7 @@ ${dialogPanel.system.title}
         const flags = this.actor.flags;
         console.log("Sandbox | buildSheet | Building sheet for actor "+ actor.name);
         let newhtml = await auxMeth.buildSheetHML();
-        let stringHTML = new XMLSerializer().serializeToString(newhtml)
+        let stringHTML = new XMLSerializer().serializeToString(newhtml);
         //console.log(stringHTML);
         await this.actor.update({ "system._html": stringHTML });
 
@@ -3066,7 +3039,7 @@ ${dialogPanel.system.title}
                     let property = await auxMeth.getTElement(panelproperties[j].id, "property", panelproperties[j].ikey);
                     if (property != null) {
                         if (property.system.datatype == "table" && property.system.group.id == null) {
-                            compilationMsg += panelproperties[j].name + " table property lacks table group"
+                            compilationMsg += panelproperties[j].name + " table property lacks table group";
                             hasissue = true;
                         }
 
@@ -3143,7 +3116,7 @@ ${dialogPanel.system.title}
 
         //IF NOTHING WRONG
         if (!hasissue)
-            compilationMsg += " SUCCESFULLY REBUILT"
+            compilationMsg += " SUCCESFULLY REBUILT";
 
         myreturn.hasissue = hasissue;
         myreturn.checkerMsg = compilationMsg;
@@ -3452,7 +3425,7 @@ ${dialogPanel.system.title}
             }
         }
         catch (err) {
-            console.error("drop error")
+            console.error("drop error");
             console.error(event.dataTransfer.getData('text/plain'));
             console.error(err);
             return false;
@@ -3550,7 +3523,7 @@ ${dialogPanel.system.title}
             //await this.actor.update(this.actor.data);
             if (this.actor.isToken) {
                 let myToken = canvas.tokens.get(this.actor.token.id);
-                await myToken.document.update({ "actorData.system.citems": subitems });
+                await myToken.actor.update({ "system.citems": subitems });
             }
 
             else {
@@ -3636,27 +3609,23 @@ ${dialogPanel.system.title}
         for (let i = 0; i < totalTables.length; i++) {
             //console.log(totalTables[i]);
             let tableID = totalTables[i].tableID;
-            let table = html[i];
+            //create disconnected node, this will make appends to the DOM only occur at the final stage
+            // otherwise it would be slow as f*
+            let table = html[i].cloneNode(true);
             
             let inputgroup;
             let columncount=0;
 
-            //let table = html.find(y=>y.id==tableID);
-            //console.log(tableID);
-
             if (table != null) {
                 table.innerHTML = '';
-                inputgroup = await table.parentNode.getAttribute("inputgroup");
+                inputgroup = await html[i].parentNode.getAttribute("inputgroup");
                 if (inputgroup == null)
-                    inputgroup = await table.getAttribute("inputgroup");
+                    inputgroup = await html[i].getAttribute("inputgroup");
             }
 
             if (inputgroup == null)
                 inputgroup = "";
-
             const propTable = await propitems.find(y => y.id == tableID);
-
-            //const propTable = await propitems.find(y=>y.id == html[i].getAttribute("attid"));
             let group;
             let groupID;
             let tableKey;
@@ -3728,41 +3697,8 @@ ${dialogPanel.system.title}
                     }
                     
                     let ciTemplate;
-                    if (!isFree) {
-                        //ciTemplate = game.items.get(ciObject.id);
+                    if (!isFree) {                        
                         ciTemplate = await auxMeth.getcItem(ciObject.id, ciObject.ciKey);
-                        // if (ciTemplate == null) {
-                        //     //game.actors.importFromCompendium(<PACK>, <ID>, {}, {keepId: true})
-
-                        //     let locatedPack;
-                        //     let locatedId;
-                        //     for (let pack of game.packs) {
-                        //         const packContents = await pack.getDocuments();
-                        //         let citems = packContents.filter(y => Boolean(y.data.data));
-                        //         let is_here = citems.find(y => y.data.data.ciKey == ciObject.id);
-                        //         if (is_here) {
-                        //             locatedPack = pack;
-                        //             locatedId = is_here.id;
-                        //         }
-
-
-                        //     }
-
-                        //     if (locatedPack != null) {
-                        //         let importedobject = await game.items.importFromCompendium(locatedPack, locatedId, { folder: locatedPack.name, keepId: true });
-                        //         console.log(importedobject);
-                        //         ciTemplate = importedobject;
-                        //         ciObject.id = ciTemplate.id;
-                        //     }
-
-                        //     else {
-                        //         citems.splice(citems.indexOf(ciObject), 1);
-                        //         forceUpdate = true;
-                        //         continue;
-                        //     }
-
-
-                        // }
                     }
 
                     //console.log(ciObject.name);
@@ -3784,7 +3720,7 @@ ${dialogPanel.system.title}
                             let firstcell = document.createElement("TD");
                             firstcell.className = "input-free linkable tablenamecell " + propTable.system.attKey + "_namecell ";
                             if(!isFirstColumnSet){
-                              firstcell.className += " sb-table-row-first-column"
+                              firstcell.className += " sb-table-row-first-column";
                               isFirstColumnSet=true;
                             }
                             firstcell.className += " " + inputgroup;
@@ -3818,7 +3754,7 @@ ${dialogPanel.system.title}
                               let firstcell = document.createElement("TD");
                               firstcell.className = "input-free linkable tablenamecell " + propTable.system.attKey + "_namecell ";
                               if(!isFirstColumnSet){
-                                firstcell.className += " sb-table-row-first-column"
+                                firstcell.className += " sb-table-row-first-column";
                                 isFirstColumnSet=true;
                               }
                               firstcell.className += " " + inputgroup;
@@ -3841,7 +3777,7 @@ ${dialogPanel.system.title}
                                 activecell.className = "input-min centertext";
                                 activecell.className += " " + inputgroup;
                                 if(!isFirstColumnSet){
-                                  activecell.className += " sb-table-row-first-column"
+                                  activecell.className += " sb-table-row-first-column";
                                   isFirstColumnSet=true;
                                 }
                                 new_row.appendChild(activecell);
@@ -3923,7 +3859,7 @@ ${dialogPanel.system.title}
                                 numcell.className = "input-min centertext";
                                 numcell.className += " " + inputgroup;
                                 if(!isFirstColumnSet){
-                                  numcell.className += " sb-table-row-first-column"
+                                  numcell.className += " sb-table-row-first-column";
                                   isFirstColumnSet=true;
                                 }
                                 new_row.appendChild(numcell);
@@ -3948,7 +3884,7 @@ ${dialogPanel.system.title}
                                 usescell.className = "tabblock-center";
                                 usescell.className += " " + inputgroup;
                                 if(!isFirstColumnSet){
-                                  usescell.className += " sb-table-row-first-column"
+                                  usescell.className += " sb-table-row-first-column";
                                   isFirstColumnSet=true;
                                 }
                                 new_row.appendChild(usescell);
@@ -4034,7 +3970,7 @@ ${dialogPanel.system.title}
                                 new_cell.className += propKey;
                                 new_cell.className += " " + inputgroup;
                                 if(!isFirstColumnSet){
-                                  new_cell.className += " sb-table-row-first-column"
+                                  new_cell.className += " sb-table-row-first-column";
                                   isFirstColumnSet=true;
                                 }
 
@@ -4080,15 +4016,18 @@ ${dialogPanel.system.title}
                                                 let justexpr = true;
                                                 if (propdata.datatype == "simplenumeric")
                                                     justexpr = false;
-                                                //REDUNDANT MUCH LIKELY
-                                                if (checknonumsum) {
-                                                    
+                                                //
+                                                if (checknonumsum) {                                                    
+                                                    constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
                                                     constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
                                                     constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
                                                     constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
-                                                    constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);
-                                                    
+                                                    constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
                                                     constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                    constantvalue = await game.system.api._extractAPIFunctions(constantvalue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
+                                                    constantvalue = await game.system.api.mathParser(constantvalue);
+                                                    //constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                    
                                                 }
                                             }
                                             else {
@@ -4246,7 +4185,7 @@ ${dialogPanel.system.title}
                                             else if (propdata.datatype === "list") {
 
                                                 cellvalue = document.createElement("SELECT");
-                                                cellvalue.className = "table-input centertext";
+                                                cellvalue.className = "table-input";
 
                                                 cellvalue.className += " " + inputgroup;
 
@@ -4274,15 +4213,44 @@ ${dialogPanel.system.title}
                                                     cellvalue.className += "  table-free";
                                                 }
 
-                                                //IM ON IT
-                                                var rawlist = propdata.listoptions;
-                                                var listobjects = rawlist.split(',');
-                                                //console.log(ciObject.attributes[propKey].value);
-                                                for (let y = 0; y < listobjects.length; y++) {
-                                                    let n_option = document.createElement("OPTION");
-                                                    n_option.setAttribute("value", listobjects[y]);
-                                                    n_option.textContent = listobjects[y];
-                                                    cellvalue.appendChild(n_option);
+                                                // add options to list
+                                                let addList='';
+                                                let rawlist = propdata.listoptions;
+                                                if(rawlist.length>0){                                                  
+                                                   
+                                                  addList=rawlist.replaceAll(',','|');
+                                                }
+                                                // check for listauto
+                                                if(propdata.listoptionsAutoUse){
+                                                  let autoList=propdata.listoptionsAuto;
+                                                  autoList = await auxMeth.autoParser(autoList, this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                  autoList=autoList.replaceAll(',','|');
+                                                  autoList = await game.system.api._extractAPIFunctions(autoList,this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                  
+                                                  
+                                                  if(autoList.length>0){                                                                      
+                                                    if(addList.length>0){
+                                                      addList +='|' + autoList; 
+                                                    } else{
+                                                      addList +=autoList; 
+                                                    }                                                    
+                                                  } 
+                                                }
+                                                // check if to use lookup
+                                                if(propdata.listoptionsLookupUse){
+                                                  let lookupKey=propdata.listoptionsLookupKey;
+                                                  let returnColumn=propdata.listoptionsLookupColumn;
+                                                  let lookups=await lookupList(lookupKey,returnColumn,'|');
+                                                  if(lookups.length>0){
+                                                    if(addList.length>0){
+                                                      addList +='|' + lookups; 
+                                                    } else{
+                                                      addList +=lookups; 
+                                                    }
+                                                  }                  
+                                                }
+                                                if(addList.length>0){
+                                                  cellvalue=auxMeth.addOptionsToSelectFromList(cellvalue,addList,ciObject.attributes[propKey].value,'|',true)
                                                 }
 
                                             }
@@ -4374,7 +4342,9 @@ ${dialogPanel.system.title}
 //                                                 isfirstFree = false;
 //                                            }
                                             if (!isFree) {
-                                                new_cell.addEventListener("change", (event) => this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value));
+                                                new_cell.addEventListener("change", (event) => 
+                                                  this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value)
+                                                );
                                             }
                                             else {
                                                 let ischeck = false;
@@ -4383,6 +4353,10 @@ ${dialogPanel.system.title}
                                                 }
                                                 new_cell.addEventListener("change", (event) => this.saveNewFreeItem(ciObject.id, tableKey, propKey, event.target.value, ischeck, event.target.checked));
                                             }
+                                            cellvalue.setAttribute('data-property-key',propdata.attKey);
+                                            cellvalue.setAttribute('data-property-type',propdata.datatype);
+                                            cellvalue.setAttribute("data-property-value", cellvalue.value);
+                                            cellvalue.setAttribute('data-is-citem',true);
                                             new_cell.appendChild(cellvalue);
                                         }
                                     }
@@ -4398,10 +4372,15 @@ ${dialogPanel.system.title}
 
                             let wraptransferCell = document.createElement('i');
                             
-                            
+                            let isTransferable=true;
+                              if(ciObject.hasOwnProperty('addedBy')){
+                                if(ciObject.addedType=='PAS' || ciObject.addedType=='ACT' || ciObject.addedType=='TEMPLATE'){
+                                  isTransferable=false;
+                                }
+                              }
                             
                             //wraptransferCell.className += " " + inputgroup;
-                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                            if(isTransferable){ 
                               //wraptransferCell.className = "ci-transfer";
                               wraptransferCell.className = "fas fa-sack sb-citem-removable";
                               wraptransferCell.title = "Drag item";
@@ -4411,7 +4390,7 @@ ${dialogPanel.system.title}
                               wraptransferCell.title = "This item cannot transferred";
                             }
                             transferCell.appendChild(wraptransferCell);
-                            if(!ciObject.hasOwnProperty('addedBy')){ 
+                            if(isTransferable){ 
                               let tokenID;
                               if (this.token != null)
                                   tokenID = this.token.id;
@@ -4434,11 +4413,19 @@ ${dialogPanel.system.title}
 
                             if (!isFree) {
                               let wrapdeleteBton = document.createElement('i');
-                              if(!ciObject.hasOwnProperty('addedBy')){                                                                  
+                              let isDeletable=true;
+                              if(ciObject.hasOwnProperty('addedBy')){
+                                if(ciObject.addedType=='PAS' || ciObject.addedType=='ACT' || ciObject.addedType=='TEMPLATE'){
+                                  isDeletable=false;
+                                }
+                              }
+                              
+                              
+                              if(isDeletable){                                                                  
                                 wrapdeleteBton.className = "fas fa-times-circle";
                                 wrapdeleteBton.addEventListener('click', this.deleteCItem.bind(this, ciObject.id, false), false);                                                               
                               } else {
-                                // added by item momd, nondeleteable
+                                // added by item mod, nondeleteable
                                 wrapdeleteBton.className = "fas fa-times-circle sb-citem-non-removable";
                                 wrapdeleteCell.title = "This item can not be removed";
                                 
@@ -4511,7 +4498,7 @@ ${dialogPanel.system.title}
                     // get columns count of last row
                     const colcount = table.lastChild.cells.length;
                     // set colspan
-                    new_pluscell.colSpan=colcount
+                    new_pluscell.colSpan=colcount;
                     // add it
                     new_row.appendChild(new_pluscell);
                   
@@ -4671,12 +4658,18 @@ ${dialogPanel.system.title}
 
             }
 
+            //
+            // replace the original table node with the "disconnected" node
+            // DOM tree will be updated
+            html[i].parentNode.replaceChild(table, html[i]);
         }
 
         if (forceUpdate)
             await this.actor.update({ "system.citems": citems });
         //console.log("refreshcItem finished");
     }
+    
+    
     async dragcItem(ev, iD, number, originiD, tokenID = null) {
         ev.stopPropagation();
 
@@ -4753,11 +4746,11 @@ ${dialogPanel.system.title}
                           // calculate consumed uses
                           let consumeduses=(parseInt(cItem.number) * parseInt(cItemOrig.system.maxuses)) - cItem.uses 
                           if(transferConsumedFirst){
-                            myuses=(mynum * parseInt(cItemOrig.system.maxuses))-consumeduses 
-                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses))
+                            myuses=(mynum * parseInt(cItemOrig.system.maxuses))-consumeduses; 
+                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses));
                           } else{    
                             myuses=(mynum * parseInt(cItemOrig.system.maxuses))
-                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses))-consumeduses
+                            cItem.uses=((parseInt(cItem.number) - mynum)*parseInt(cItemOrig.system.maxuses))-consumeduses;
                           }
                           cItem.number -= mynum;
                           
@@ -5193,7 +5186,7 @@ ${dialogPanel.system.title}
       const tableproperty= game.system.customitemmaps.properties.get(tableKey);
       if(tableproperty!=null){
           
-        tablename=tableproperty.name; // use table´s group name    
+        tablename=tableproperty.name; // use tableï¿½s group name    
       }
       const rownr=id;
       let itemname=rownr;
@@ -5329,48 +5322,90 @@ ${dialogPanel.system.title}
 
         // await this._setScrollStates();
     }
+    
+    // modify non-citem list
     async modifyLists(basehtml) {
-        const attKeys = Object.keys(this.actor.system.attributes)
-
+        const attKeys = Object.keys(this.actor.system.attributes);
+        // check for lookups
+        // get all lists elements
+        let listElements=basehtml.find("[data-property-type='list']");
+        let propertyKey;
+        let property;
+        for (let i = 0; i < listElements.length; i++) {
+          propertyKey = listElements[i].getAttribute("data-property-key");
+          let listValue=listElements[i].value;
+          let isCitem=listElements[i].getAttribute("data-is-citem");
+          if(!isCitem){  
+            if(propertyKey!=''){              
+              let property=await auxMeth.getTElement(null, "property", propertyKey);
+              if (property!=null){ 
+                let addList='';
+                // check for listauto
+                if(property.system.listoptionsAutoUse){
+                  let autoList=property.system.listoptionsAuto;
+                  autoList = await auxMeth.autoParser(autoList, this.actor.system.attributes, null, false);
+                  autoList=autoList.replaceAll(',','|');
+                  autoList = await game.system.api._extractAPIFunctions(autoList,this.actor.system.attributes, null, false); 
+                  
+                  
+                  if(autoList.length>0){                  
+                    addList +=autoList;
+                  } 
+                }
+                // check for list lookup
+                if(property.system.listoptionsLookupUse){
+                  let lookupKey=property.system.listoptionsLookupKey;
+                  let returnColumn=property.system.listoptionsLookupColumn;
+                  let lookups=await lookupList(lookupKey,returnColumn,'|');
+                  if(lookups.length>0){
+                    if(addList.length>0){
+                      addList +='|' + lookups; 
+                    } else{
+                      addList +=lookups; 
+                    }
+                  }                  
+                }
+                if(addList.length>0){
+                  let value=this.actor.system.attributes[propertyKey].value;
+                  
+                  listElements[i]=auxMeth.addOptionsToSelectFromList(listElements[i],addList,value,'|',true);
+                }
+                
+              }
+            }
+          }
+        }
+        // look for any mod that changes list
         attKeys.forEach((key, index) => {
-
             let aProp = this.actor.system.attributes[key];
-
             if (aProp.listedit != null) {
                 let mytag = "." + key;
                 let myhtmllist = basehtml.find(mytag);
-
                 if (aProp.listedit.add != null)
                     for (let i = 0; i < aProp.listedit.add.length; i++) {
-
                         let addoption = aProp.listedit.add[i];
-
                         var option = document.createElement("option");
                         option.value = option.text = addoption;
-
                         if ($(myhtmllist[0]).has('option[value="' & addoption & '"]'))
+                          try {
                             myhtmllist[0].add(option);
-
-
+                          }
+                          catch(err) {
+                            console.log('modifyLists',err.message);
+                          }
                     }
-
                 if (aProp.listedit.remove != null)
                     for (let j = 0; j < aProp.listedit.remove.length; j++) {
                         let removeoption = aProp.listedit.remove[j];
-
                         for (var n = 0; n < myhtmllist[0].options.length; n++) {
                             if (myhtmllist[0].options[n].value === removeoption) {
                                 myhtmllist[0].remove(n);
                                 break;
                             }
                         }
-
-
-
                     }
                 myhtmllist[0].value = aProp.value;
             }
-
         });
 
     }
@@ -5501,15 +5536,11 @@ ${dialogPanel.system.title}
         //await this.actor.actorUpdater();
         //await this.actor.update({"data.attributes":attributes}, {diff: false});
         if (clickValue > 0) {
-            target.className = "fas fa-circle";
-            //target.style = "font-size:14px;";
-            if (radiotype == "S") {
-                //target.style = "font-size:16px;";
-                target.className = "fas fa-square";
-            }
-        }
+            target.className = "fas " + radiotype;
+        } 
+          
 
-        //await this.scrollbarSet();
+       
 
     }
     async displaceTabs2(next = null, newhtml) {
@@ -5639,16 +5670,41 @@ ${dialogPanel.system.title}
         })
 
     }
-    async setSheetStyle() {
+    async upDateTabBodiesHeight(){
+      let basehtml = this.element;
+      if(!basehtml.hasOwnProperty('length')) 
+         return 
+      //let bground = basehtml.find(".window-content");
+      let sheader = await basehtml.find(".sheet-header");
+      let wheader = await basehtml.find(".window-header");
+      let stabs = await basehtml.find(".atabs");
+      let tabhandler = await basehtml.find(".tab");
+      for (let j = 0; j < tabhandler.length; j++) {
+          let mytab = tabhandler[j];
+
+          let totalheight = parseInt(basehtml[0].style.height) - parseInt(wheader[0].clientHeight) - parseInt(sheader[0].clientHeight) - parseInt(stabs[0].clientHeight) - 15;
+          mytab.style.height = totalheight + "px";
+      } 
+      this.sheetHasBeenResized=true; 
+    }
+    
+    async setSheetStyle(actor=null,callerFnName='') {
+        
         //console.log(this.actor.data.data.gtemplate);
 
-        let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
+        //let _mytemplate = await game.actors.find(y => y.system.istemplate && y.system.gtemplate == this.actor.system.gtemplate);
+        let _mytemplate = await auxMeth.getActorTemplate(this.actor.system.gtemplate);
+        
         if (_mytemplate == null)
             return;
         let basehtml = this.element;
-
+        if(!basehtml.hasOwnProperty('length')) 
+          return
+        
         if (this.actor.system.gtemplate == "Default")
             return;
+
+        //console.log('Sandbox | setSheetStyle by ' + callerFnName);
 
         let bground = await basehtml.find(".window-content");
         let sheader = await basehtml.find(".sheet-header");
@@ -5657,7 +5713,7 @@ ${dialogPanel.system.title}
 
         //Set Height
         //if (_mytemplate.system.setheight != "" && !_mytemplate.system.resizable) {
-        if (_mytemplate.system.setheight != "" && !_mytemplate.system.resizable) {
+        if (_mytemplate.system.setheight != "" && !this.hasOwnProperty('sheetHasBeenResized')) {
             basehtml[0].style.height = _mytemplate.system.setheight + "px";
             let tabhandler = await basehtml.find(".tab");
             for (let j = 0; j < tabhandler.length; j++) {
@@ -5764,8 +5820,33 @@ ${dialogPanel.system.title}
         return mytoken;
     }
 
+    
     async _updateObject(event, formData) {
+        //console.log(this)
         event.preventDefault();
+        const expandedData = foundry.utils.expandObject(formData);
+        // data correction for dynamic LIST element, sometimes(chrome/foundry bug?) the dynamically created options(from MODs/lookup) fall of the DOM before the _updateObject
+        // check if any submitted attributes are LIST properties
+        for (const actorProperty in expandedData.system.attributes) {          
+          let property=game.items.find(y=>y.type=="property" && y.system.attKey==actorProperty && y.system.datatype=='list');
+          if (property!=null){ 
+            //console.log(property);
+            // get this form doc
+            let listElement=document.querySelector(`[data-property-type="list"][data-property-key="${actorProperty}"]`);
+            if(listElement!=null){
+              let isCitem=listElement.getAttribute("data-is-citem");
+              // check the actual value
+              if(listElement.value!=expandedData.system.attributes[actorProperty].value){
+                //console.log("Not correct value",listElement);
+                let correctedData=await listElement.value;
+                if(correctedData!=null)
+                formData[`system.attributes.${actorProperty}.value`]=correctedData;
+              }
+            }
+          }          
+        }
+        
+        
         //console.log("updateObject");
         //console.log(event);
         //console.log(event.target.name);
@@ -5809,73 +5890,52 @@ ${dialogPanel.system.title}
             if (target.includes(".max")) {
                 modmax = true;
             }
-            if (target != null) {
-
-
+            if (target != null && target!='name') {
                 target = target.replace(".value", "");
                 target = target.replace(".max", "");
-
-
-                let attri = target.split(".")[2];
-                //console.log(attri);
-                //property = game.items.find(y => y.data.type == "property" && y.data.data.attKey == attri);
-                property = await auxMeth.getTElement("NONE", "property", attri);
-                //console.log(property);
+                let targetSplit=target.split(".");
+                if(targetSplit.length>1){
+                  let attri = targetSplit[2];
+                  //console.log(attri);
+                  //property = game.items.find(y => y.data.type == "property" && y.data.data.attKey == attri);
+                  property = await auxMeth.getTElement("NONE", "property", attri);
+                  //console.log(property);
+                }
             }
-
-
-
             if (property != null) {
                 if (property.system.datatype != "checkbox") {
                     formData[event.target.name] = event.target.value;
                 }
                 else {
-
                     formData[event.target.name] = event.target.checked;
                 }
-
                 let attrimodified = target + ".modified";
                 let attrimodmax = target + ".modmax";
                 if (!modmax) {
-
                     formData[attrimodified] = true;
-
                 }
                 else {
-
                     formData[attrimodmax] = true;
                 }
-
             }
             else {
                 if (target == "system.biovisible") {
                     formData["system.biovisible"] = event.target.checked;
                 }
-
                 else if (target == "system.resizable") {
                     formData["system.resizable"] = event.target.checked;
                 }
-
                 else if (target == "system.istemplate") {
                     formData["system.istemplate"] = event.target.checked;
                 }
-
                 else {
                     formData[event.target.name] = event.currentTarget.value;
                 }
-
             }
-
-
-
-
         }
-
         //console.log(formData);
         //console.log("updating form");
-
         await super._updateObject(event, formData);
-
     }
 
     /* -------------------------------------------- */
