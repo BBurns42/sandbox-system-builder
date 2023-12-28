@@ -2214,7 +2214,7 @@ if(!useMathParser){
                                     //                                    let newroll = new Roll(thiscondition);
                                     //                                    await newroll.evaluate({async: true});
                                     //                                    thiscondition = newroll.total;
-                                    checker = eval(checker);
+                                    thiscondition = eval(thiscondition);
                                 }
                                 catch (err) {
                                     dontparse = true;
