@@ -30,6 +30,8 @@ ALSO IMPORTANT: Rolls in sandbox only return numerical values! Always make sure 
 
 `$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expresion after the semicolon as $1. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
 
+Using Registration Helpers are a great way to hide information about a roll(or any contributing property values) from players.
+
 ## Roll definition/functions
 
 Roll definitions can be as simple as a string with `1d20` to using a function call like rollp().

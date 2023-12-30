@@ -964,7 +964,8 @@ export class sItemSheet extends ItemSheet {
                                     let addList='';
                                     let rawlist = property.listoptions;
 
-                                    if(rawlist.length>0){                                                  
+                                    if(rawlist.length>0){ 
+                                      rawlist=rawlist.replaceAll(',','|');
                                       addList +=rawlist;
                                     }
                                     // check for listauto

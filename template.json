@@ -140,6 +140,9 @@
                 "fourth":{
                     "value":"1/4"
                 },
+                "fifth":{
+                    "value":"1/5"
+                },
                 "sixth":{
                     "value":"1/6"
                 },
@@ -233,6 +236,9 @@
                 "fourth":{
                     "value":"1/4"
                 },
+                "fifth":{
+                    "value":"1/5"
+                },
                 "sixth":{
                     "value":"1/6"
                 },
@@ -276,6 +282,7 @@
             "uniqueGID":"",
             "usetype":"PAS",
             "selfdestruct":false,
+            "removeAfterLastUse":false,
             "effectpath":"",
             "ispermanent":false,
             "maxuses":1,

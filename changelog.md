@@ -1,5 +1,11 @@
 # Sandbox Change Log
-## Version 0.14.2(2023-12-xx)
+## Version 0.14.2.1(2023-12-30)
+- Added flag for cItems 'Remove after last use'
+- Added panel width 1/5
+- FIX: Table in invivisble panel
+- FIX: For cItems, a LIST property with only Options was not rendered correctly 
+
+## Version 0.14.2(2023-12-28)
 - Added Actor Properties Manager(CTRL + Click the Info on a actor sheet title bar)
   - Enables to remove unused properties from an actor. Useful for cleaning up actor from abandoned properties
 - Added new item type LOOKUP

@@ -696,6 +696,10 @@ export class gActorSheet extends ActorSheet {
                 multiClassName = 'multi-col-1-4';
 
             }
+            else if (dialogPanel.system.width === "1/5") {
+                multiClassName = 'multi-col-1-5';
+
+            }
 
             else if (dialogPanel.system.width === "1/6") {
                 multiClassName = 'multi-col-1-6';
@@ -832,6 +836,10 @@ export class gActorSheet extends ActorSheet {
 
         else if (dialogPanel.system.width === "1/4") {
             divclassName = 'col-1-4';
+
+        }
+        else if (dialogPanel.system.width === "1/5") {
+            divclassName = 'col-1-5';
 
         }
 
@@ -1781,6 +1789,18 @@ ${dialogPanel.system.title}
             }
 
         }
+        else if (tabpanel.system.width === "1/5") {
+            if ((firstmrow && multiID == null) || (multiID != null))
+                div6.className = 'col-1-5';
+            if (multiID == null) {
+                flags.rwidth += 0.2;
+            }
+            else {
+                flags.multiwidth += 0.2;
+                div6.className = this.getmultiWidthClass(tabpanel.system.width);
+            }
+
+        }
 
         else if (tabpanel.system.width === "1/6") {
             if ((firstmrow && multiID == null) || (multiID != null))
@@ -2594,8 +2614,10 @@ ${dialogPanel.system.title}
                             arrContainer.setAttribute("attKey", property.system.attKey);
                             let arrUp = deftemplate.createElement("I");
                             arrUp.className = "arrup";
+                            //arrUp.className = "arrup fas fa-caret-up";
                             let arrDown = deftemplate.createElement("I");
                             arrDown.className = "arrdown";
+                            //arrDown.className = "arrdown fas fa-caret-down";
 
                             if (!property.system.editable) {
                                 arrContainer.setAttribute("arrlock", true);
@@ -3611,8 +3633,14 @@ ${dialogPanel.system.title}
             let tableID = totalTables[i].tableID;
             //create disconnected node, this will make appends to the DOM only occur at the final stage
             // otherwise it would be slow as f*
-            let table = html[i].cloneNode(true);
-            
+            let table;
+            try {
+              if(html[i]!=null)
+                table = html[i].cloneNode(true);
+            }
+            catch (err){
+              console.error('refreshCItems | ' + err.message );
+            }
             let inputgroup;
             let columncount=0;
 
@@ -3797,12 +3825,15 @@ ${dialogPanel.system.title}
                                 else if (ciObject.usetype == "CON" && !isFree) {
                                     let inputwrapper = document.createElement('a');
                                     let torecharge = false;
-
-                                    if (ciObject.uses > 0 || ciObject.maxuses == 0) {
-                                        inputwrapper.addEventListener("click", (event) => this.useCIIcon(ciObject.id, ciObject.ciKey, false, true));
+                                    let isUsable=true;
+                                    if (ciObject.uses > 0 || ciObject.maxuses == 0) {   
+                                      isUsable=true;
+                                      inputwrapper.addEventListener("click", (event) => this.useCIIcon(ciObject.id, ciObject.ciKey, false, true));
                                     }
 
                                     else {
+                                        isUsable=false;
+                                        
                                         if (ciObject.rechargable) {
                                             torecharge = true;
                                         }
@@ -3814,7 +3845,13 @@ ${dialogPanel.system.title}
                                     }
 
                                     inputwrapper.className = "consumable-button";
-                                    inputwrapper.title = "Use item";
+                                    if(isUsable) {
+                                      inputwrapper.title = "Use item";
+                                    } else {
+                                      inputwrapper.title = "No uses left";
+                                    }
+                                    
+                                    
                                     activecell.appendChild(inputwrapper);
 
                                     let activeinput = document.createElement('i');
@@ -3840,6 +3877,8 @@ ${dialogPanel.system.title}
                                         break;
                                     }
                                     
+                                    if(!isUsable)
+                                      activeinput.className += ' sb-citem-non-removable';
                                     
 
                                     if (torecharge) {
@@ -4661,7 +4700,13 @@ ${dialogPanel.system.title}
             //
             // replace the original table node with the "disconnected" node
             // DOM tree will be updated
-            html[i].parentNode.replaceChild(table, html[i]);
+            try {
+              if(html[i]!=null)
+                html[i].parentNode.replaceChild(table, html[i]);
+            }
+            catch (err){
+              console.error('refreshCItems | ' + err.message );
+            }
         }
 
         if (forceUpdate)
@@ -5080,7 +5125,7 @@ ${dialogPanel.system.title}
             if (citem.uses > 0 && citemObj.usetype == "CON") {
                 let actualItems = Math.ceil(parseInt(objectUses) / (thismaxuses / citem.number));
 
-                if (!citemObj.rechargable) {
+                if (!citemObj.rechargable && citemObj.removeAfterLastUse) {
                     citem.number = actualItems;
                     if (objectUses == 0)
                         citem.number = 0;

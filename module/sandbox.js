@@ -594,7 +594,7 @@ Hooks.once('ready', async () => {
         //header.textContent = "DC";
         let incDC = document.createElement("I");
         incDC.setAttribute( "class", "sb-dc-btn sb-dc-increase fas fa-square-plus" );
-        incDC.setAttribute( "data-tooltip", "Decrease Difficulty Class(CTRL+CLICK to change by 10)" );        
+        incDC.setAttribute( "data-tooltip", "Increase Difficulty Class(CTRL+CLICK to change by 10)" );        
         incDC.setAttribute( "data-tooltip-direction", "UP" );
         incDC.addEventListener("click", async (event) => {
           event.preventDefault();
@@ -610,7 +610,7 @@ Hooks.once('ready', async () => {
         
         let decDC = document.createElement("I");
         decDC.setAttribute( "class", "sb-dc-btn sb-dc-decrease fas fa-square-minus" );
-        decDC.setAttribute( "data-tooltip", "Increase Difficulty Class(CTRL+CLICK to change by 10)" );
+        decDC.setAttribute( "data-tooltip", "Decrease Difficulty Class(CTRL+CLICK to change by 10)" );
         decDC.setAttribute( "data-tooltip-direction", "UP" );
         decDC.addEventListener("click", async (event) => {
           event.preventDefault();
