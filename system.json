@@ -50,6 +50,6 @@
   "secondaryTokenAttribute": "power",
   "url":       "https://gitlab.com/rolnl/sandbox-system-builder/",
   "manifest":  "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/master/system.json",
-  "download":  "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/v0.14.2/sandbox-system-builder-v0.14.2.zip",
-  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/v0.14.2/changelog.md"
+  "download":  "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/v0.14.2.1/sandbox-system-builder-v0.14.2.1.zip",
+  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/v0.14.2.1/changelog.md"
 }
