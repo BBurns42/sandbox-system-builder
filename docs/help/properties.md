@@ -94,12 +94,6 @@ The width of the input.
 
 Text to display as tooltip for the property
 
-### Auto
-
-A valid Common Expression, see [Expressions](sandbox_expressions.md)
-
-A property with an Auto will rendered as read-only.
-
 ## Item Helpers
 
 Next to most attributes are a down arrow that drops down that attributes Item Helpers.

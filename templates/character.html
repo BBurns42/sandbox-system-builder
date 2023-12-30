@@ -15,7 +15,7 @@
                         {{/advShow}}
 
                         {{#showRoller}}
-                        <a class="roll-free" title="Roll mode"><i class="fas fa-dice-d20"></i></a>
+                        <a class="roll-free" title="Show quick roller"><i class="fas fa-dice-d20"></i></a>
                         {{/showRoller}}
 
                         {{#if actor.system.selector}}
@@ -24,7 +24,7 @@
 
                         {{#rollMod}}
                         <label class="label-mod">MOD</label>
-                        <input class="input-mod" type="text" name="system.mod" value="{{actor.system.mod}}"/>
+                        <input class="input-mod" type="number" name="system.mod" value="{{actor.system.mod}}"/>
                         {{/rollMod}}
 
                     </div>

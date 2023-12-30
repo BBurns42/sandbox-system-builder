@@ -2383,7 +2383,7 @@ export class gActor extends Actor {
                             }
 
                             if (!citemIDs[n].rechargable && citemIDs[n].number <= 0) {
-                                //console.log("deleting " + citemIDs[n].name);
+                                console.log("deleting " + citemIDs[n].name);
                                 actorData = await this.deletecItem(citemIDs[n].id, true, actorData);
                             }
 
