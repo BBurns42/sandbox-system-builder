@@ -46,6 +46,8 @@ Enable Rolls for this property.  For more information, see [Rollable Properties]
 
 This is the initial value that the property will have in the actor. A empty field for numerical properties means 0.
 
+This field accepts [Expressions](sandbox_expressions.md)
+
 ### Editable
 
 Makes a property read only for players
@@ -93,12 +95,6 @@ The width of the input.
 ### Tooltip
 
 Text to display as tooltip for the property
-
-### Auto
-
-A valid Common Expression, see [Expressions](sandbox_expressions.md)
-
-A property with an Auto will rendered as read-only.
 
 ## Item Helpers
 

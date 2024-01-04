@@ -591,6 +591,14 @@ Fonts faces
     vertical-align:top;
 }
 
+.sandbox.sheet .col-1-5 {
+    width: 20%;
+    max-width:120px;
+    padding: 0px 3px;
+    display:inline-block;
+    vertical-align:top;
+}
+
 .sandbox.sheet .col-1-6 {
     width: 16.66%;
     max-width:100px;
@@ -1792,6 +1800,9 @@ Fonts faces
 .sandbox.sheet .att-input-label{
     white-space: nowrap;
 }
+.sandbox.sheet .sb-nowrap{
+    white-space: nowrap;
+}
 
 .roll-free{
     padding: 5px 15px;
@@ -2485,6 +2496,11 @@ div.dmtk-tooltip.visible {
 
 .dialog .multi-col-1-4 {
     width:154px;
+    padding: 0px 1px;
+}
+
+.dialog .multi-col-1-5 {
+    width:124px;
     padding: 0px 1px;
 }
 
@@ -3418,4 +3434,37 @@ td.sb-table-scrollable-table-tbody-td-key{
 }
 
 
+span.sb-vertical-middle{
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 15px;
+}
 
+input[type="checkbox"].sb-vertical-middle {
+  display: inline-block;
+  vertical-align: top;
+}
+
+label.sb-vertical-middle{
+  display: inline-block;
+  vertical-align: top;
+  margin-right: 15px;
+  width: unset !important;
+}
+
+
+table.sb-table-invisible,
+tr.sb-table-invisible{
+  background: rgba(0,0,0,0)!important;
+  border-style:none!important;
+}
+
+table.sb-table-invisible > tbody > tr > td:nth-child(1){
+  width:20%;
+}
+table.sb-table-invisible > tbody > tr > td:nth-child(2){
+  width:40%;
+}
+table.sb-table-invisible > tbody > tr > td:nth-child(3){
+  width:40%;
+}

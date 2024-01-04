@@ -81,21 +81,97 @@
     {{/if}}
         {{!-- Mods Tab --}}
         <div class="tab mods  scrollable" data-group="primary" data-tab="mods">
-            <div class="flexblock">
-                <div class="col-1-1">
-                    <div class="flexblock-center-nopad">
-                      <label class="label-medlarge">Use Type</label>
-                        <select  name="system.usetype"  data-type="String">
+          <table class="sb-table-invisible">
+            <tbody class="sb-table-invisible">
+            <tr class="sb-table-invisible">
+              <td>
+                <label class="label-medlarge">Use Type</label>
+              </td>
+              <td>
+                <select  name="system.usetype"  data-type="String">
                             {{#select item.system.usetype}}
                             <option  value="PAS">PASSIVE</option>
                             <option  value="ACT">ACTIVATION</option>
                             <option  value="CON">CONSUMABLE</option>
                             {{/select}}
                         </select>
-                        {{#ifCond item.system.usetype "PAS"}}
-                        <label class="label-free" title ="If checked, all MODS that are not from the SET type will be permanently executed and the cItem will self destroy" id="check-selfdestruct">Self-destruct</label>
-                        <input class="check-selfdestruct" name="system.selfdestruct"  type="checkbox" {{checked item.system.selfdestruct}}/>
-                        {{/ifCond}}
+                        
+              </td>
+              <td>
+                {{#ifCond item.system.usetype "PAS"}}
+                <span class="sb-vertical-middle">
+                        <label class="sb-vertical-middle label-small" title ="If checked, all MODS that are not from the SET type will be permanently executed and the cItem will self destroy" id="check-selfdestruct">Self-destruct</label>
+                        <input class="sb-vertical-middle check-selfdestruct" name="system.selfdestruct"  type="checkbox" {{checked item.system.selfdestruct}}/>
+                </span>
+                {{/ifCond}}
+                {{#ifCond item.system.usetype "CON"}}
+                <span class="sb-vertical-middle">
+                  <label class="sb-vertical-middle label-small">Permanent</label>
+                  <input class="sb-vertical-middle check-ispermanent" name="system.ispermanent" id="check-ispermanent" type="checkbox" {{checked item.system.ispermanent}}/>
+                </span>
+                {{/ifCond}}
+              </td>
+            </tr>
+            {{#ifCond item.system.usetype "CON"}}
+            <tr class="sb-table-invisible">
+              <td>
+                
+              </td>
+              <td>
+                <span class="sb-vertical-middle">
+                
+
+                <label class="sb-vertical-middle label-small">Icon</label>
+                        
+                {{#if showiconselector}}
+                  <input type="hidden" name="system.icon" value="{{item.system.icon}}" ><div id="citem-consume-icon" class="sb-icon-displayframe"><i  class="sb-icon-displayicon fa-solid {{item.system.icon}}"></i></div>
+                {{else}}
+                  <select  name="system.icon"  data-type="String">
+                     {{#select item.system.icon}}
+                     <option  value="BOOK">BOOK</option>
+                     <option  value="VIAL">VIAL</option>
+                     <option  value="STAR">STAR</option>
+                     {{/select}}
+                  </select> 
+                {{/if}}
+                
+                </span>
+              </td>
+              <td>
+                <span class="sb-vertical-middle">
+                <label class="sb-vertical-middle label-small">Rechargable</label>
+                <input class="sb-vertical-middle check-rechargable" name="system.rechargable" id="check-rechargable" type="checkbox" {{checked item.system.rechargable}}/> 
+                </span>
+              </td>
+            </tr>
+            <tr class="sb-table-invisible">
+              <td></td>
+              <td>
+                <span class="sb-vertical-middle">
+                <label class="sb-vertical-middle label-small">Uses</label>
+                <input class="input-tiny centertext" type="number" min="0"  name="system.maxuses" value="{{item.system.maxuses}}"/>
+                
+                </span>
+              </td>
+              <td>
+                <span class="sb-vertical-middle">
+                <label class="sb-vertical-middle sb-nowrap label-small">Remove after last use</label>
+                <input class="check-removeAfterLastUse" name="system.removeAfterLastUse" id="check-removeAfterLastUse" type="checkbox" {{checked item.system.removeAfterLastUse}}/>
+                </span>
+              </td>
+            </tr>
+            {{/ifCond}}
+            
+            </tbody>
+          </table>  
+          
+          
+          
+            <div class="flexblock">
+                <div class="col-1-1">
+                    <div class="flexblock-center-nopad">
+                      
+                        
                     </div>
                     {{#if showctalink}}
                       <fieldset>
@@ -111,35 +187,18 @@
                         </div>
                       </fieldset>
                     {{/if}}
+                    
+                    
                     {{#ifNot item.system.usetype "PAS"}}
                     <div class="flexblock-center-nopad">
                         {{#ifCond item.system.usetype "CON"}}
-                        <label class="label-free">Permanent</label>
-                        <input class="check-ispermanent" name="system.ispermanent" id="check-ispermanent" type="checkbox" {{checked item.system.ispermanent}}/>
 
-                        <label class="label-small">Icon</label>
                         
-                        {{#if showiconselector}}
-                        <input type="hidden" name="system.icon" value="{{item.system.icon}}" ><div id="citem-consume-icon" class="sb-icon-displayframe"><i  class="sb-icon-displayicon fa-solid {{item.system.icon}}"></i></div>
-                                                    
-                          
-                        {{else}}
-                          <select  name="system.icon"  data-type="String">
-                             {{#select item.system.icon}}
-                             <option  value="BOOK">BOOK</option>
-                             <option  value="VIAL">VIAL</option>
-                             <option  value="STAR">STAR</option>
-                             {{/select}}
-                          </select> 
-                        {{/if}}
-                        <label class="label-med righttext">Rechargable</label>
-                        <input class="check-rechargable" name="system.rechargable" id="check-rechargable" type="checkbox" {{checked item.system.rechargable}}/>
                         {{/ifCond}}
                     </div>
                     <div class="flexblock-center-nopad">
                         {{#ifCond item.system.usetype "CON"}}
-                        <label class="label-small">Uses</label>
-                        <input class="input-medlarge" type="text" name="system.maxuses" value="{{item.system.maxuses}}"/>
+                        
                         {{/ifCond}}
                     </div>
                     <div class="new-row">
@@ -172,6 +231,8 @@
                         </div>
                     </div>
                     {{/ifNot}}
+                    
+                    
                     <div class="new-row">
                         <div class="flexblock-center">
                             <div class="modtitle centertext">NEW MOD</div>

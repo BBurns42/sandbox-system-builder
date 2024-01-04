@@ -7,4 +7,8 @@ Text controller symbols(linebreaks, tabs etc) will not be shown in the generated
 
 ## Specific Attributes
 
-The SimpleText has no specific attributes beyond the common attributes.
+### Auto
+
+A valid Common Expression, see [Expressions](sandbox_expressions.md)
+
+A property with an Auto will rendered as read-only.

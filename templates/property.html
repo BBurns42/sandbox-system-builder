@@ -96,6 +96,15 @@
                             <input class="check-hasroll" name="system.hasroll" id="check-hasroll" type="checkbox" {{checked item.system.hasroll}}/>
                         </div>
                     </div>
+                    
+                    {{#ifCond item.system.datatype "radio"}}
+                    <div class="new-row">
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Totalize</label>
+                            <input class="check-totalize" name="system.totalize" id="check-totalize" type="checkbox" {{checked item.system.totalize}}/>
+                        </div>
+                    </div>
+                    {{/ifCond}}
                     {{#ifCond item.system.datatype "simplenumeric"}}
                     <div class="new-row">
                         <div class="flexblock-left">
