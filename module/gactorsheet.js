@@ -4065,15 +4065,17 @@ ${dialogPanel.system.title}
                                                     constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
                                                     constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
                                                     constantvalue = await game.system.api._extractAPIFunctions(constantvalue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
-                                                    constantvalue = await game.system.api.mathParser(constantvalue);                                                                                                        
+                                                    constantvalue = await game.system.api.mathParser(constantvalue); 
+                                                    
+                                                    
                                                 }
+                                                
                                                 if(propdata.datatype === "radio"){
                                                   maxValue = propdata.automax;
                                                   cvalueToString = maxValue.toString();
                                                   checknonumsum = cvalueToString.match(nonumsum);
                                                   if (checknonumsum) { 
-                                                    maxValue = await maxValue.replace(/\@{name}/g, this.actor.name);
-                                                    maxValue = await maxValue.replace(/\#{name}/g, ciObject.name);
+                                                    
                                                     maxValue = await maxValue.replace(/\#{active}/g, ciObject.isactive);
                                                     maxValue = await maxValue.replace(/\#{uses}/g, ciObject.uses);
                                                     maxValue = await maxValue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
@@ -4085,7 +4087,22 @@ ${dialogPanel.system.title}
                                                 
                                             }
                                             else {
-                                                constantvalue = propdata.defvalue;
+                                              // for free tables
+                                              if(propdata.datatype === "radio"){
+                                                maxValue = propdata.automax;
+                                                maxValue = await maxValue.replace(/\#{active}/g, 0);
+                                                maxValue = await maxValue.replace(/\#{uses}/g, 1);
+                                                maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
+                                                maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
+                                                maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
+                                                maxValue = await game.system.api.mathParser(maxValue);
+                                              }
+                                              constantvalue = propdata.defvalue;
+                                            }
+                                            if (constantvalue == "") {
+                                              if (propdata.datatype === "simplenumeric" || propdata.datatype === "radio") {                                        
+                                                constantvalue = '0';
+                                              }                                    
                                             }
                                         //AUTO FOR CITEMS CHANGED!!!
                                         // if (propdata.auto != "")
@@ -4375,7 +4392,12 @@ ${dialogPanel.system.title}
                                                 readOnly=true;
                                               if (propdata.auto!='')
                                                 readOnly=true;
-                                              let cellvalue=await this.createRadioInputsForcItem(ciObject,propObj,ciObject.attributes[propKey].value,maxValue,propdata.radiotype,propdata.radiotype,readOnly);
+                                              let cellvalue;
+                                              if(isFree){
+                                                cellvalue= await this.createRadioInputsForcItem(ciObject,propObj,ciObject.attributes[propKey].value,maxValue,propdata.radiotype,propdata.radiotype,readOnly,ciObject.id,tableKey,true);
+                                              } else{
+                                                cellvalue= await this.createRadioInputsForcItem(ciObject,propObj,ciObject.attributes[propKey].value,maxValue,propdata.radiotype,propdata.radiotype,readOnly);
+                                              }
                                               new_cell.appendChild(cellvalue);                                                  
                                             } 
                                             else
@@ -4742,7 +4764,7 @@ ${dialogPanel.system.title}
         //console.log("refreshcItem finished");
     }
     
-    async createRadioInputsForcItem(citem,property,value,maxValue,onIcon,offIcon,readOnly){
+    async createRadioInputsForcItem(citem,property,value,maxValue,onIcon,offIcon,readOnly,freeId=null,tableKey='',isFreeTable=false){
       let radioInput=document.createElement("DIV");
       radioInput.setAttribute('class',`radio-input-citem ${property.system.attKey} ${property.system.inputgroup}`);
       radioInput.setAttribute('data-property-key',property.system.attKey);
@@ -4755,10 +4777,14 @@ ${dialogPanel.system.title}
         anchor.setAttribute('data-property-key',property.system.attKey);
         anchor.setAttribute('data-radio-element-value','0');
         let radio=document.createElement('I');
-        radio.setAttribute('class','far fa-times-circle');
-        anchor.addEventListener("click", (event) => 
-          this.saveNewCIAtt(citem.id, property.id, property.system.attKey, '0')
-        );
+        radio.setAttribute('class','far ' + property.system.radioResetIcon);
+        anchor.addEventListener("click", (event) =>{ 
+          if(isFreeTable){
+            this.saveNewFreeItem(freeId, tableKey, property.system.attKey, '0', false, null)
+          } else{
+            this.saveNewCIAtt(citem.id, property.id, property.system.attKey, '0')
+          }
+        });
         
         anchor.appendChild(radio);
         radioInput.appendChild(anchor);
@@ -4779,9 +4805,13 @@ ${dialogPanel.system.title}
           anchor.setAttribute('data-property-key',property.system.attKey);
           anchor.setAttribute('data-radio-element-value',i);
           anchor.appendChild(radio);
-          anchor.addEventListener("click", (event) => 
-            this.saveNewCIAtt(citem.id, property.id, property.system.attKey, i)
-          );
+          anchor.addEventListener("click", (event) =>{ 
+            if(isFreeTable){
+              this.saveNewFreeItem(freeId, tableKey, property.system.attKey, i, false, null)
+            } else{
+              this.saveNewCIAtt(citem.id, property.id, property.system.attKey, i)
+            }
+          });
           radioInput.appendChild(anchor);
         } else {
           radioInput.appendChild(radio);
@@ -5287,7 +5317,37 @@ ${dialogPanel.system.title}
                         //let propTemplate = game.items.get(groupProps[i].id);
                         let propTemplate = await auxMeth.getTElement(groupProps[i].id, "property", groupProps[i].ikey);
                         newItem.attributes[propTemplate.system.attKey] = {};
-                        newItem.attributes[propTemplate.system.attKey].value = propTemplate.system.defvalue;
+                        let defaultValue='';
+                        defaultValue = propTemplate.system.defvalue;
+                        
+                        if (propTemplate.system.datatype === "simplenumeric") {
+                          defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, false);
+                          defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, false); 
+                        } 
+                        else if (propTemplate.system.datatype === "list") {
+                          if(propTemplate.system.defvalue!=''){
+                            defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, true);
+                            defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, true); 
+                          } else{
+                            // use the first entry of the list as value
+                            defaultValue = await auxMeth.getListPropertyFirstOption(propTemplate,this.actor.attributes, null);
+                          }
+                        }
+                        else {
+                          defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, true);
+                          defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, true); 
+                        }
+                        
+                        
+                        if (defaultValue == null) {
+                          defaultValue = "";
+                        }
+                        if (defaultValue == "") {
+                          if (propTemplate.system.datatype === "simplenumeric" || propTemplate.system.datatype === "radio") {                                        
+                            defaultValue = '0';
+                          }                                    
+                        }
+                        newItem.attributes[propTemplate.system.attKey].value = defaultValue;
                     }
                 }
             }
@@ -5556,7 +5616,14 @@ ${dialogPanel.system.title}
 
                     radioNode.innerHTML = '';
                     //console.log(value);
+                    let centeringTable=document.createElement('TABLE');
+                    centeringTable.setAttribute('class','sb-centering-table')
+                    let centeringRow=document.createElement('TR');
+                    centeringRow.setAttribute('class','sb-centering-table')
+                    let centeringCell=document.createElement('TD');
+                    centeringCell.setAttribute('class','sb-centering-table')
                     if (maxRadios > 0) {
+                        
                         for (let j = 0; j <= parseInt(maxRadios); j++) {
                             let radiocontainer = document.createElement('a');
                             let clickValue = j;
@@ -5564,6 +5631,8 @@ ${dialogPanel.system.title}
                             radiocontainer.className = "radio-element";
                             radiocontainer.setAttribute('data-property-key',property.system.attKey);
                             radiocontainer.setAttribute('data-radio-element-value',clickValue);
+                            radiocontainer.setAttribute( "data-tooltip", "Reset" ); 
+                            radiocontainer.setAttribute( "title", "Reset" ); 
                             //radiocontainer.style = "font-size:14px;";
                             //if (radiotype == "S")
                             //radiocontainer.style = "font-size:16px;";
@@ -5572,7 +5641,7 @@ ${dialogPanel.system.title}
                             let radiobutton = document.createElement('i');
 
                             if (j == 0) {
-                                radiobutton.className = "far fa-times-circle";
+                                radiobutton.className = "far " + property.system.radioResetIcon;
                                 // if this is an auto calculated radio, or (non-editable and not gm) hide the reset icon
                                 if(!property.system.auto=='' || (!property.system.editable && !game.user.isGM) ){
                                   radiocontainer.style.display = "none";; 
@@ -5594,11 +5663,16 @@ ${dialogPanel.system.title}
                               // add class to indicated non-clickable
                               radiocontainer.className +=" sb-radio-element-non-clickable";
                             }
-                            await radioNode.appendChild(radiocontainer);
-
+                            //await radioNode.appendChild(radiocontainer);
+                            await centeringCell.appendChild(radiocontainer);
                         }
 
+                    } else{
+                      centeringCell.innerText='No MAX defined';
                     }
+                    await centeringRow.appendChild(centeringCell);
+                    await centeringTable.appendChild(centeringRow);
+                    await radioNode.appendChild(centeringTable);
                 }
 
             }

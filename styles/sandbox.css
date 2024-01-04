@@ -34,6 +34,7 @@
   --sb-font-size-headers:14px; /* 14px */
   --sb-font-size-tabs:14px;    /* 14px */
   --sb-font-size-tableheaders:14px; /* 14px */
+  --sb-font-size-input-radios:var(--sb-font-size-inputs);
 
   /* Colors used */
   --sb-color-inputs:#191813;
@@ -2021,9 +2022,24 @@ Fonts faces
 }
 
 .sandbox.sheet .radio-input{
-    padding:5px 2px;
-    vertical-align:middle;
+  padding:0px 2px 0px 2px;  
+  font-size: var(--sb-font-size-input-radios);
+    
+}
 
+
+
+.sandbox.sheet .radio-input-citem{
+  padding:0px 2px 0px 2px;  
+  font-size: var(--sb-font-size-input-radios);
+  
+  
+    
+}
+
+.sandbox.sheet a.radio-element {    
+  vertical-align:middle; 
+  font-size: var(--sb-font-size-input-radios);
 }
 
 .sandbox.sheet .sb-radio-element-non-clickable{
@@ -3467,4 +3483,14 @@ table.sb-table-invisible > tbody > tr > td:nth-child(2){
 }
 table.sb-table-invisible > tbody > tr > td:nth-child(3){
   width:40%;
+}
+
+.sandbox.sheet .sb-centering-table{
+  vertical-align:middle;
+  background: rgba(0,0,0,0)!important;
+  border-style:none!important;
+  border: 0px;
+    padding:0; 
+    margin:0;
+    border-collapse: collapse;
 }

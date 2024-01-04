@@ -709,6 +709,12 @@
                               </select>
                             {{/if}}
                         </div>
+                        <div class="flexblock-left">
+                            <label class="label-medlarge">Reset icon</label>
+                            {{#if showiconselector}}
+                              <input type="hidden" name="system.radioResetIcon" value="{{item.system.radioResetIcon}}" ><div id="property-radioreseticon" class="sb-icon-displayframe" title="Open Icon Picker"><i  class="sb-icon-displayicon far {{item.system.radioResetIcon}}"></i></div>
+                            {{/if}}
+                        </div>    
                     </div>
                 </div>
             </div>

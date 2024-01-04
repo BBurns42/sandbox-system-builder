@@ -1,6 +1,10 @@
 # Sandbox Change Log
 ## Version 0.14.3(2024-01-xx)
-- Feature: Using RADIO properties in cItem/tables
+- Feature: Using RADIO properties in cItem/tables(standard/free)
+- Added selectable reset icon for RADIO properties
+- CSS Info: If you have used CSS to style radio elements, changes have been made to the document structure that might require som adjustments to your CSS
+- FIX: When adding a group to a cItem, LIST properties where not initialized correctly
+- FIX: For free tables, correct default values when adding new row
 - REGRESSION: Handling of ;:, in && now back to needing HTML codes(see documentation)
 
 ## Version 0.14.2.1(2023-12-30)

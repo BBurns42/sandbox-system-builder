@@ -1762,7 +1762,7 @@ async function fontAwesomeIconPicker(selectedclass='',defaultclass='', addToTitl
   
   
     function iconPickerLoadStandardIcons(){
-      const standardicons=['fa-book','fa-vial','fa-star','fa-dice-d20','fa-dice-d12','fa-dice-d10','fa-dice-d8','fa-dice-d6','fa-dice-d4','fa-circle','fa-square','fa-file-alt'];
+      const standardicons=['fa-book','fa-vial','fa-star','fa-dice-d20','fa-dice-d12','fa-dice-d10','fa-dice-d8','fa-dice-d6','fa-dice-d4','fa-circle','fa-square','fa-file-alt','fa-times-circle'];
       let iconshtml='';
       for (let i = 0; i < standardicons.length; i++) {
           iconshtml+= '<div class="sb-icon-picker-displayframe" title="' + standardicons[i] +'" dataitem="' + standardicons[i] +'"  onclick="iconPickerSelectIcon();"><i dataitem="' + standardicons[i] +'" class="sb-icon-picker-displayicon fas ' + standardicons[i] +'"  ></i></div>';

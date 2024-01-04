@@ -305,6 +305,14 @@ export class sItemSheet extends ItemSheet {
           }
         });
         
+        html.find('#property-radioreseticon').click(async(ev) => {
+          let api=game.system.api;
+          let selectedicon = await api.fontAwesomeIconPicker(this.item.system.radioResetIcon,'fa-times-circle' , ' for radio reset icon for property ' + this.item.name);
+          if(selectedicon!=''){
+            this.item.update({ "system.radioResetIcon": selectedicon })
+          }
+        });
+        
         html.find('#property-radiotype').click(async(ev) => {
           let api=game.system.api;
           let selectedicon = await api.fontAwesomeIconPicker(this.item.system.radiotype,'fa-circle' , ' for radiotype for property ' + this.item.name);
@@ -903,7 +911,7 @@ export class sItemSheet extends ItemSheet {
                                   attribute.value = "";
                                 }
                                 
-                                if (attribute.value == "" || attribute.value == null) {
+                                if (attribute.value == "") {
                                   if (property.datatype === "simplenumeric" || property.datatype === "radio") {                                        
                                     attribute.value = 0;
                                   }                                    
@@ -1116,7 +1124,7 @@ export class sItemSheet extends ItemSheet {
         anchor.setAttribute('data-property-key',property.system.attKey);
         anchor.setAttribute('data-radio-element-value','0');
         let radio=document.createElement('I');
-        radio.setAttribute('class','far fa-times-circle');
+        radio.setAttribute('class','far ' + property.system.radioResetIcon);
         anchor.addEventListener("click",async (event) =>                     
           await this.item.update({ [`system.attributes.${property.system.attKey}.value`]: '0' })
         );
