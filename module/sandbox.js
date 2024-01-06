@@ -940,11 +940,18 @@ Hooks.on("hoverToken", (token, hovered) => {
 });
 
 //Hooks.on("updateActor", async (actor, updateData, options, userId) => {
-//  console.log('updateActor',JSON.stringify(updateData));
+//  const updateDataJSON=JSON.stringify(updateData);
+//  const expandedUpdateData = JSON.parse(updateDataJSON);
+//  console.log('updateActor - updateData',expandedUpdateData);
+//  console.log('updateActor - actor',actor);
 //});
 
 Hooks.on("preUpdateActor", async (actor, updateData, options, userId) => {
-    //console.log(JSON.stringify(updateData));
+    
+//    const updateDataJSON=JSON.stringify(updateData);
+//    const expandedUpdateData = JSON.parse(updateDataJSON);
+//    console.log('preUpdateActor - updateData',expandedUpdateData);
+//    console.log('preUpdateActor - actor',actor);
     //console.log(actor);
     //console.log('preUpdateActor')
     //console.log(updateData);
@@ -1277,7 +1284,8 @@ function titleToTooltip(_app, [...html],useFoundryStandard=false) {
 }
 
 function replaceTitleWithToolTip(element,useFoundryStandard=false){
-  const title = element.title;  
+  let title = element.title;  
+  title=title.replaceAll('\n','<br>')
   if(title!=null && title!=''){
     if(useFoundryStandard){
       element.dataset.tooltip = title;
@@ -1374,7 +1382,7 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
         await app.refreshCItems(html);
         app.handleGMinputs(html);
         app.refreshBadge(html);
-        app.populateRadioInputs(html);
+        await app.populateRadioInputs(html);
         app.modifyLists(html);
         app.setImages(html);
         app.setCheckboxImages(html);

@@ -94,6 +94,8 @@
             "macroid":"",
             "icon":"",
             "tableoptions":{
+              "showGroupProperties":true,
+              "groupPropertiesToHide":"",
               "showicons":false,
               "columnheaderlabels":{
                 "active":"Active",

@@ -119,6 +119,7 @@ Fonts faces
   color:var(--sb-color-tooltip);
   font-family: var(--sb-font-family-tooltip);
   font-size: var(--sb-font-size-tooltip);
+  text-align: left;
 }
 
 .sandbox.sheet .window-content {
@@ -470,6 +471,17 @@ Fonts faces
 .sandbox.sheet.item .label-medlarge {
     max-width: 100px;
     min-width: 100px;
+}
+
+.sandbox.sheet .label-medlargeplus {
+    margin: 0;
+    padding: 5px 5px;
+    width: 170px;
+    font-size:var(--sb-font-size-labels);
+}
+.sandbox.sheet.item .label-medlargeplus {
+    max-width: 120px;
+    min-width: 120px;
 }
 
 
@@ -874,6 +886,9 @@ Fonts faces
     font-family: var(--sb-font-family-general);
     font-size: var(--sb-font-size-primary);
     padding: 10px 0px;
+}
+.sandbox.sheet.item .flexblock {    
+    padding: 2px 0px;
 }
 
 .sandbox.sheet .flexblock-simple {
@@ -3291,6 +3306,10 @@ input.sb-table-filter-editor-key
 {
   background-color:var(--sb-background-color-inputs);
   color: var(--sb-color-inputs);
+}
+select.sb-table-filter-editor-value{
+    width: calc(100% - 2px);
+    min-width: 20px;
 }
 
 .sb-table-filter-editor-table-tbody-td-manipulator{

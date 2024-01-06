@@ -209,8 +209,8 @@ export function sb_settings_registration() {
       name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_ACTIVATE_ITEM_DELETE_PROTECTION.ID}.Name`,
       default: `${SETTINGATTRIBUTE.OPTION_ACTIVATE_ITEM_DELETE_PROTECTION.DEFAULT}`,
       type: Boolean,
-      scope: 'world',
-      config: false,
+      scope: 'client',
+      config: true,
       hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_ACTIVATE_ITEM_DELETE_PROTECTION.ID}.Hint`,
       category: `sandbox.settings.categories.SHEET_OPTIONS`,
       requireshardrender:true

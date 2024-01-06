@@ -2395,8 +2395,8 @@ if(!useMathParser){
     }
     return result;  
   }
-  
-  static async getListPropertyOptions(property,actorattributes, citemattributes){
+  // returns pipe-separated string
+  static async getListPropertyOptions(property,actorattributes=null, citemattributes=null){
     let addList='';
     let rawlist = property.system.listoptions;
 
