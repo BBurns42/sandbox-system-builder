@@ -86,6 +86,7 @@
             "dialogName":"",
             "dialogID":"",
             "radiotype":"",
+            "radioResetIcon":"fa-times-circle",
             "group":{},
             "totalize":false,
             "arrows":false,
@@ -93,6 +94,8 @@
             "macroid":"",
             "icon":"",
             "tableoptions":{
+              "showGroupProperties":true,
+              "groupPropertiesToHide":"",
               "showicons":false,
               "columnheaderlabels":{
                 "active":"Active",

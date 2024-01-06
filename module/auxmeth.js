@@ -6,6 +6,7 @@ import {
     sb_custom_dialog_duplicate_handling
 } from "./sb-custom-dialogs.js";
 
+
 export class auxMeth {
 
     /** Gets Sheets */
@@ -1127,7 +1128,7 @@ export class auxMeth {
     
     
 
-    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) {
+    static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) {      
         const initialexp = expr;
         var toreturn = expr;
         //console.log("autoParser | ", expr);
@@ -1456,7 +1457,7 @@ if(!useMathParser){
 
                 }
             }
-            }
+}
             //console.log(expr);
 if(!useMathParser){
             //PARSE FLOOR
@@ -1940,15 +1941,28 @@ if(!useMathParser){
                     let nonvalidscalecheck = scaleresult[i].match(nonvalidscale);
                     //console.log(scaleresult[i]);
                     if (!nonvalidscalecheck) {
+                        // ----------------------------------------------------------------
+                        // This fix to get Improved handling of ;:, in && broke the parsing, needs more research to get it right
                         //Only split on the last comma (,) before the next scale (:), looking ahead for a parenthesis, number, or math symbol
-                        let limitsregexp = /,(?=\s*[0-9()+\-*.\/]*:)/g;
-                        let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
+                        //let limitsregexp = /,(?=\s*[0-9()+\-*.\/]*:)/g;
+                        //let limits = scaleresult[i].split(limitsregexp).filter(e => e !== ",");
+                        // ----------------------------------------------------------------
+                        let limits = scaleresult[i].split(",");
+
+                        
                         //console.log(limits);
                         let value = limits[0];
                         if (isNaN(value) && !value.includes("$") && !value.includes("min") && !value.includes("max")) {
                             let roll = new Roll(limits[0]);
-                            await roll.evaluate({ async: true });
-                            value = roll.total;
+                            try{
+                              await roll.evaluate({ async: true });
+                              value = roll.total;
+                            } catch(err){
+                              console.error('autoparser scale | ' + err.message);
+                              console.error('autoparser scale | initial expression\n',initialexp);
+                              console.error('autoparser scale | failed expression\n',expr);
+                            }
+                            
                         }
 
                         let valuemod = 0;
@@ -1956,10 +1970,15 @@ if(!useMathParser){
                         let limitArray = [];
 
                         for (let j = 1; j < limits.length; j++) {
+                            // ----------------------------------------------------------------
+                            // This fix to get Improved handling of ;:, in && broke the parsing, needs more research to get it right
                             //Only split the first :
-                            let splitterregexp = /(?::)(.*?$)/;
-                            let splitter = limits[j].split(":", 1);
-                            splitter.push(limits[j].match(splitterregexp)[1]);
+                            //let splitterregexp = /(?::)(.*?$)/;
+                            //let splitter = limits[j].split(":", 1);
+                            //splitter.push(limits[j].match(splitterregexp)[1]);
+                            // ----------------------------------------------------------------
+                            
+                            let splitter = limits[j].split(":");
                             let scale = splitter[0];
                             //console.log(scale);
 
@@ -2215,6 +2234,7 @@ if(!useMathParser){
                                     //                                    await newroll.evaluate({async: true});
                                     //                                    thiscondition = newroll.total;
                                     thiscondition = eval(thiscondition);
+                                    checker = eval(checker);
                                 }
                                 catch (err) {
                                     dontparse = true;
@@ -2222,9 +2242,15 @@ if(!useMathParser){
                             }
 
                             //console.log(thiscondition + " " + checker);
-
-                            if (thiscondition.toString() === checker.toString()) {
+                            try{
+                              if (thiscondition.toString() === checker.toString()) {
                                 finalvalue = truevalue;
+                              }
+                            }
+                            catch(err){
+                              console.error('autoparser IF | \n' + err.message);
+                              console.error('autoparser IF | initial expression\n',initialexp);
+                              console.error('autoparser IF | failed expression\n',expr);
                             }
                         }
 
@@ -2360,7 +2386,55 @@ if(!useMathParser){
         
         return toreturn;
     }
-    static async  useAPIFunction(functionName,expr){
+  static async getListPropertyFirstOption(property,actorattributes, citemattributes){
+    let result='';
+    let list=await auxMeth.getListPropertyOptions(property,actorattributes, citemattributes);
+    if(list.length>0){      
+      let options=list.split('|');
+      result = options[0];
+    }
+    return result;  
+  }
+  // returns pipe-separated string
+  static async getListPropertyOptions(property,actorattributes=null, citemattributes=null){
+    let addList='';
+    let rawlist = property.system.listoptions;
+
+    if(rawlist.length>0){ 
+      rawlist=rawlist.replaceAll(',','|');
+      addList +=rawlist;
+    }
+    // check for listauto
+    if(property.system.listoptionsAutoUse){
+      let autoList=property.system.listoptionsAuto;
+      autoList = await auxMeth.autoParser(autoList, actorattributes, citemattributes, false); 
+      autoList=autoList.replaceAll(',','|');
+      autoList = await game.system.api._extractAPIFunctions(autoList,actorattributes, citemattributes, false); 
+      if(autoList.length>0){                                                                      
+        if(addList.length>0){
+          addList +='|' + autoList; 
+        } else{
+          addList +=autoList; 
+        }                                                    
+      } 
+    }
+    // check if to use lookup
+    if(property.system.listoptionsLookupUse){
+      let lookupKey=property.system.listoptionsLookupKey;
+      let returnColumn=property.system.listoptionsLookupColumn;
+      let lookups=await game.system.api.lookupList(lookupKey,returnColumn,'|');
+      if(lookups.length>0){
+        if(addList.length>0){
+          addList +='|' + lookups; 
+        } else{
+          addList +=lookups; 
+        }
+      }                  
+    }
+    return addList;
+  }  
+    
+  static async  useAPIFunction(functionName,expr){
     let replaceValue;
     let blocks = expr.split(";");
     let args = [];

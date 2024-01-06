@@ -1447,7 +1447,7 @@ export class gActor extends Actor {
     }
 
     async checkPropAuto(actorData, repeat = false) {
-        //console.log("checking auto properties");
+        console.log("checking auto properties");
         //        await this.update({"flags.ischeckingauto":true});
         //        this.data.flags.ischeckingauto = true;
         //        this.data.flags.hasupdated = false;
@@ -2458,6 +2458,15 @@ export class gActor extends Actor {
                         if (propauto != "") {
                             for (let d = 0; d < t_Prop.tableitems.length; d++) {
                                 freevalue = await auxMeth.autoParser(propauto, attributes, t_Prop.tableitems[d].attributes, false, false);
+                                freevalue = await game.system.api._extractAPIFunctions(freevalue,attributes, t_Prop.tableitems[d].attributes, false); 
+                                if (freevalue == "") {
+                                  if (tableProp.system.datatype === "simplenumeric" || tableProp.system.datatype === "radio") {                                        
+                                    freevalue = '0';
+                                  }                                    
+                                }
+                                if(!t_Prop.tableitems[d].attributes.hasOwnProperty(freepropKey)){
+                                  t_Prop.tableitems[d].attributes[freepropKey]={};
+                                }
                                 t_Prop.tableitems[d].attributes[freepropKey].value = freevalue;
                             }
 

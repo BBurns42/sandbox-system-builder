@@ -282,7 +282,7 @@ export function sb_sheet_display_id_in_window_caption(html, sheettype, appwindow
         if(sheettype=='Actor'){
           mgrlink='CTRL + Click to show Actor Properties Manager.';
         }
-        insertafterthis.after('<a id="' + newelementid + '" data-tooltip="' + sheettype + ' [' + appwindowinfo.id + ']' + foldername + '<br>Click to show data in Console.<br>'+ mgrlink+'"><i class="fas fa-tag"></i> Info</a>');
+        insertafterthis.after('<a id="' + newelementid + '" title="' + sheettype + ' [' + appwindowinfo.id + ']' + foldername + '<br>Click to show data in Console.<br>'+ mgrlink+'"><i class="fas fa-tag"></i> Info</a>');
         switch (sheettype) {
           case 'Actor':            
             // if token

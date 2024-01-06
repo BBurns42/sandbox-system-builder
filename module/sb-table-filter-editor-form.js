@@ -2,6 +2,7 @@ const _title="Sandbox Table Filter Editor";
 import { SandboxKeyValidate } from "./sb-key-validate.js";
 import { SystemSettingsForm } from "./system-settings-form.js";
 import { sb_string_is_valid_table_filter } from "./sb-table-filters.js";
+import { auxMeth } from "./auxmeth.js";
 export class SandboxTableFilterEditorForm extends FormApplication {
   static expression='';
   static item=''; 
@@ -94,16 +95,16 @@ export class SandboxTableFilterEditorForm extends FormApplication {
   
   
   
-  getData(options) {     
+  async getData(options) {     
     let data; 
     // build table rows from expression
     let filtertable='';    
     let filter = sb_string_is_valid_table_filter(this.expression); 
     let itemid=this.itemid;
-    if (filter!=null){
-      filter.conditions.forEach(function (condition) {
-        filtertable += _buildInputRow(condition,itemid);      
-      });
+    if (filter!=null){      
+      for(const condition of filter.conditions){
+        filtertable += await _buildInputRow(condition,itemid); 
+      }      
     }        
     data={
       expression:filtertable,
@@ -159,7 +160,7 @@ export class SandboxTableFilterEditorForm extends FormApplication {
               break;
             case 'list':
               // get option list
-              let list= property.system.listoptions;
+              let list =await auxMeth.getListPropertyOptions(property);
               value_td_for_this_row.innerHTML=_build_table_value_select_from_list(list,'');  
               //value_td_for_this_row.innerHTML=_build_table_value_datalist_from_list(key,list,'');
               break;
@@ -389,7 +390,7 @@ function _assembleJSONFilter(itemid){
   return sfilter;
 }
 
-function _buildInputRow(condition,itemid){
+async function _buildInputRow(condition,itemid){
     let returnvalue='';
     let htmlinput='';
     // add for logic
@@ -466,7 +467,7 @@ function _buildInputRow(condition,itemid){
             break;
           case 'list':
             // get option list
-            let list= property.system.listoptions;
+            let list =await auxMeth.getListPropertyOptions(property);
             htmlinput+=_build_table_value_select_from_list(list,condition.value); 
             //htmlinput+=_build_table_value_datalist_from_list(condition.key,list,condition.value)
             break;
@@ -595,12 +596,13 @@ function _buildInputRow(condition,itemid){
     returnvalue += '</select>';
     return returnvalue;
   }
+    
   
   function _build_table_value_select_from_list(list,currentvalue) {
     let returnvalue = '';
     returnvalue += `<select class="sb-table-filter-editor-value">`;
     // convert to array
-    let listArr = list.split(',');
+    let listArr = list.split('|');
     for (let i = 0; i < listArr.length; i++) {      
       returnvalue += _buildOption(listArr[i], currentvalue);
     }    

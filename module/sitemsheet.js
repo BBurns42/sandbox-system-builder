@@ -305,6 +305,14 @@ export class sItemSheet extends ItemSheet {
           }
         });
         
+        html.find('#property-radioreseticon').click(async(ev) => {
+          let api=game.system.api;
+          let selectedicon = await api.fontAwesomeIconPicker(this.item.system.radioResetIcon,'fa-times-circle' , ' for radio reset icon for property ' + this.item.name);
+          if(selectedicon!=''){
+            this.item.update({ "system.radioResetIcon": selectedicon })
+          }
+        });
+        
         html.find('#property-radiotype').click(async(ev) => {
           let api=game.system.api;
           let selectedicon = await api.fontAwesomeIconPicker(this.item.system.radiotype,'fa-circle' , ' for radiotype for property ' + this.item.name);
@@ -869,14 +877,28 @@ export class sItemSheet extends ItemSheet {
                                   label.textContent = property.tag;
                                 }
                                 let input;
+                                /// check if this citem has this property 
                                 if (!hasProperty(attributes, property.attKey)) {
                                     setProperty(attributes, property.attKey, {});
+                                    let value='';
                                     if (property.datatype === "simplenumeric") {
-                                        attributes[property.attKey].value = await auxMeth.autoParser(property.defvalue, null, attributes, false);
+                                      value = await auxMeth.autoParser(property.defvalue, null, attributes, false);
+                                      value = await game.system.api._extractAPIFunctions(value,null, attributes, false); 
+                                    } 
+                                    else if (property.datatype === "list") {
+                                      if(property.defvalue!=''){
+                                        value = await auxMeth.autoParser(property.defvalue, null, attributes, true);
+                                        value = await game.system.api._extractAPIFunctions(value,null, attributes, true); 
+                                      } else{
+                                        // use the first entry of the list as value
+                                        value = await auxMeth.getListPropertyFirstOption(ppObj,null, attributes);
+                                      }
                                     }
                                     else {
-                                        attributes[property.attKey].value = await auxMeth.autoParser(property.defvalue, null, attributes, true);
+                                      value = await auxMeth.autoParser(property.defvalue, null, attributes, true);
+                                      value = await game.system.api._extractAPIFunctions(value,null, attributes, true); 
                                     }
+                                    attributes[property.attKey].value = value;
                                     tosave = true;
                                 }
                                 let attribute = attributes[property.attKey];
@@ -884,24 +906,21 @@ export class sItemSheet extends ItemSheet {
                                     attribute.ishidden = false;
                                     tosave = true;
                                 }
-                                if (attribute.value == "" || attribute.value == null) {
-                                    if (property.datatype === "simplenumeric") {
-                                        //BUG FIXER
-                                        //                                        let newPObj = {};
-                                        //                                        newPObj.value = 0;
-                                        //                                        await this.item.update({[`data.attributes.${property.attKey}`] : newPObj});
-
-                                        attribute.value = 0;
-                                    }
-                                    else {
-                                        attribute.value = property.defvalue;
-                                    }
+                                
+                                if (attribute.value == null) {
+                                  attribute.value = "";
+                                }
+                                
+                                if (attribute.value == "") {
+                                  if (property.datatype === "simplenumeric" || property.datatype === "radio") {                                        
+                                    attribute.value = 0;
+                                  }                                    
                                 }
 
                                 if (property.datatype != "list") {
                                     //console.log("editando");
 
-                                    if (property.datatype == "textarea") {
+                                    if (property.datatype === "textarea") {
                                         input = document.createElement("TEXTAREA");
                                         input.setAttribute("name", property.attKey);
                                         input.textContent = attribute.value;
@@ -915,6 +934,21 @@ export class sItemSheet extends ItemSheet {
                                         else {
                                             input.className = "texteditor-med";
                                         }
+                                    } 
+                                    else if (property.datatype === "radio") {
+                                      let readOnly=false;
+                                      if (!property.editable && !game.user.isGM)
+                                        readOnly=true;
+                                      if (property.auto!=''){
+                                        readOnly=true;
+                                      } 
+                                    
+                                      let maxValue=await auxMeth.autoParser(property.automax, null, attributes, false);;                                      
+                                      let value=this.item.system.attributes[property.attKey].value;
+                                      if(maxValue<value){ 
+                                        maxValue=value;
+                                      }
+                                      input=await this.createRadioInputsForcItem(this.item,ppObj,value,maxValue,ppObj.system.radiotype,ppObj.system.radiotype,readOnly);
                                     }
                                     else {
                                         input = document.createElement("INPUT");
@@ -957,61 +991,27 @@ export class sItemSheet extends ItemSheet {
                                 }
                                 //LIST
                                 else {
-                                    input = document.createElement("SELECT");
-                                    input.className = "input-med";
-                                    input.setAttribute("name", property.attKey);
-                                    // add options to list
-                                    let addList='';
-                                    let rawlist = property.listoptions;
-
-                                    if(rawlist.length>0){ 
-                                      rawlist=rawlist.replaceAll(',','|');
-                                      addList +=rawlist;
-                                    }
-                                    // check for listauto
-                                    if(property.listoptionsAutoUse){
-                                      let autoList=property.listoptionsAuto;
-                                      autoList = await auxMeth.autoParser(autoList, null, attributes, false); 
-                                      autoList=autoList.replaceAll(',','|');
-                                      autoList = await game.system.api._extractAPIFunctions(autoList,null, attributes, false); 
-                                      
-                                      
-                                      if(autoList.length>0){                                                                      
-                                        if(addList.length>0){
-                                          addList +='|' + autoList; 
-                                        } else{
-                                          addList +=autoList; 
-                                        }                                                    
-                                      } 
-                                    }
-                                    // check if to use lookup
-                                    if(property.listoptionsLookupUse){
-                                      let lookupKey=property.listoptionsLookupKey;
-                                      let returnColumn=property.listoptionsLookupColumn;
-                                      let lookups=await lookupList(lookupKey,returnColumn,'|');
-                                      if(lookups.length>0){
-                                        if(addList.length>0){
-                                          addList +='|' + lookups; 
-                                        } else{
-                                          addList +=lookups; 
-                                        }
-                                      }                  
-                                    }
-                                    if(addList.length>0){
-                                      input=auxMeth.addOptionsToSelectFromList(input,addList,attribute.value,'|',true)
-                                    }
+                                  input = document.createElement("SELECT");
+                                  input.className = "input-med";
+                                  input.setAttribute("name", property.attKey);
+                                  // add options to list
+                                  let addList=await auxMeth.getListPropertyOptions(ppObj,null, attributes);                                                                                                      
+                                  
+                                  if(addList.length>0){
+                                    input=auxMeth.addOptionsToSelectFromList(input,addList,attribute.value,'|',true)
+                                  }
                                 }
-
-                                input.className += " att-input";
-                                input.addEventListener("change", (event) => this.updateFormInput(event.target.name, event.target.value, propertyId, propertyIds[i].ikey));
 
                                 label.className += " att-input-label";
-
-                                if (!game.user.isGM) {
+                                
+                                if (property.datatype != "radio") {
+                                  input.className += " att-input";
+                                  input.addEventListener("change", (event) => this.updateFormInput(event.target.name, event.target.value, propertyId, propertyIds[i].ikey));                                                                
+                                  if (!game.user.isGM) {
                                     input.setAttribute("readonly", "true");
+                                  }
                                 }
 
-                                //await new_row.appendChild(label);
                                 tbl_cell = tbl_row.insertCell(-1);
                                 tbl_cell.className='sb-citem-attribute-list-entry-label';
                                 
@@ -1021,10 +1021,7 @@ export class sItemSheet extends ItemSheet {
                                 } else {
                                    cell_label= property.tag;
                                 }
-//                                let cell_content=`<div class="sb-two-col-card-wrapper" title="${cell_label}">
-//                                  <div class="sb-two-col-card-image-in-table"><img src="${ppObj.img}" class="sb-citem-table-icon"> </div>  
-//                                  <div class="sb-two-col-card-name">${cell_label}</div>
-//                                </div>`
+
                                 
                                 let cell_content=auxMeth.sb_two_col_card(`<img title="${cell_label}" src="${ppObj.img}" class="sb-citem-table-icon" /> `,  cell_label);
                             
@@ -1035,17 +1032,14 @@ export class sItemSheet extends ItemSheet {
                                   if(item!=null){
                                     item.sheet.render(true,{focus:true});
                                   }
-                                })
+                                });
                                 
-                                
-                                //tbl_cell.appendChild(label);
+                                                                
                                 
                                 tbl_cell = tbl_row.insertCell(-1);
                                 if (property.datatype != "label")
                                     tbl_cell.appendChild(input);
-                                    //await new_row.appendChild(input);
-
-                                //await new_container.appendChild(new_row);
+                                    
 
                                 
 
@@ -1116,6 +1110,55 @@ export class sItemSheet extends ItemSheet {
 
 
     }
+
+    async createRadioInputsForcItem(citem,property,value,maxValue,onIcon,offIcon,readOnly){
+      let radioInput=document.createElement("DIV");
+      radioInput.setAttribute('class',`radio-input-citem ${property.system.attKey} ${property.system.inputgroup}`);
+      radioInput.setAttribute('data-property-key',property.system.attKey);
+      radioInput.setAttribute('data-property-type','radio');
+      radioInput.setAttribute('attid',property.id);
+      if (!readOnly){
+        let anchor=document.createElement('A');
+        anchor.setAttribute('clickvalue','0');
+        anchor.setAttribute('class','radio-element');
+        anchor.setAttribute('data-property-key',property.system.attKey);
+        anchor.setAttribute('data-radio-element-value','0');
+        let radio=document.createElement('I');
+        radio.setAttribute('class','far ' + property.system.radioResetIcon);
+        anchor.addEventListener("click",async (event) =>                     
+          await this.item.update({ [`system.attributes.${property.system.attKey}.value`]: '0' })
+        );
+        
+        anchor.appendChild(radio);
+        radioInput.appendChild(anchor);
+      }
+      
+      for (let i = 1; i <= maxValue; i++) {
+        let radio=document.createElement('I');
+        if(value>=i){
+          radio.setAttribute('class','fas ' + onIcon);
+        } else{
+          radio.setAttribute('class','far ' + offIcon);
+        }
+        
+        if(!readOnly){
+          let anchor=document.createElement('A');
+          anchor.setAttribute('clickvalue','i');
+          anchor.setAttribute('class','radio-element');
+          anchor.setAttribute('data-property-key',property.system.attKey);
+          anchor.setAttribute('data-radio-element-value',i);
+          anchor.appendChild(radio);
+          anchor.addEventListener("click", async (event) =>             
+            await this.item.update({ [`system.attributes.${property.system.attKey}.value`]: i.toString() })
+          );
+          radioInput.appendChild(anchor);
+        } else {
+          radioInput.appendChild(radio);
+        }                
+      }      
+      return radioInput;
+    }
+
 
     async updateAttVisibility(name, value) {
 

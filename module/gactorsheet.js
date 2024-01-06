@@ -2323,11 +2323,22 @@ ${dialogPanel.system.title}
                     var rawlist = property.system.listoptions;
                     if(rawlist.length>0){
                       var listobjects = rawlist.split(',');
+                      let addedEmpty=false;
+                      
                       for (var i = 0; i < listobjects.length; i++) {
+                        let addThis=true;
+                        if(listobjects[i]==''){
+                          if(addedEmpty){
+                            addThis=false;
+                          } 
+                          addedEmpty=true;
+                        }
+                        if(addThis){
                           let n_option = deftemplate.createElement("OPTION");
                           n_option.setAttribute("value", listobjects[i]);
                           n_option.textContent = listobjects[i];
                           sInput.appendChild(n_option);
+                        }
                       }
                     }
 
@@ -2477,14 +2488,21 @@ ${dialogPanel.system.title}
                             header_row.appendChild(husesCell);
                         }
 
-                        if (group != null) {
-
+                        if (group != null && property.system.tableoptions.showGroupProperties) {
+                            
+                            let hideProperties=property.system.tableoptions.groupPropertiesToHide.split(",");
+                             
                             const groupprops = group.system.properties;
                             //let isfirstFree = true;
                             for (let i = 0; i < groupprops.length; i++) {
                                 //console.log(groupprops[i].id + " key:" + groupprops[i].ikey + " name:" + groupprops[i].name);
 
                                 //let propTable = game.items.get(groupprops[i].id);
+                                if (hideProperties.includes(groupprops[i].ikey)){
+                                  continue;
+                                }
+                                
+                                
                                 let propTable = await auxMeth.getTElement(groupprops[i].id, "property", groupprops[i].ikey);
                                 if (propTable == null)
                                     break;
@@ -3705,7 +3723,9 @@ ${dialogPanel.system.title}
                     }
                 }
                 let filter_passed_count=0;
+                let hideProperties=propTable.system.tableoptions.groupPropertiesToHide.split(",");
                 for (let n = 0; n < groupcitems.length; n++) {
+                    
                     let ciObject = groupcitems[n];
                     if (!isFree) {
                     // check for filter                    
@@ -3995,312 +4015,281 @@ ${dialogPanel.system.title}
                             }
 
                             let isfirstFree = true;
+                            if(propTable.system.tableoptions.showGroupProperties){
+                                // check hide list
+                                for (let k = 0; k < groupprops.length; k++) {
+                                    if (hideProperties.includes(groupprops[k].ikey)){
+                                      continue;
+                                    }
+                                    let propRef = groupprops[k].id;
+                                    //let propObj = game.items.get(groupprops[k].id);
+                                    let propObj = await auxMeth.getTElement(groupprops[k].id, "property", groupprops[k].ikey);
+                                    let propdata = propObj.system;
+                                    let propKey = propObj.system.attKey;
+                                    let new_cell = document.createElement("TD");
+                                    let isconstant = groupprops[k].isconstant;
 
-                            for (let k = 0; k < groupprops.length; k++) {
-                                let propRef = groupprops[k].id;
-                                //let propObj = game.items.get(groupprops[k].id);
-                                let propObj = await auxMeth.getTElement(groupprops[k].id, "property", groupprops[k].ikey);
-                                let propdata = propObj.system;
-                                let propKey = propObj.system.attKey;
-                                let new_cell = document.createElement("TD");
-                                let isconstant = groupprops[k].isconstant;
-
-                                new_cell.className = "centertext ";
-                                new_cell.className += propKey;
-                                new_cell.className += " " + inputgroup;
-                                if(!isFirstColumnSet){
-                                  new_cell.className += " sb-table-row-first-column";
-                                  isFirstColumnSet=true;
-                                }
-
-                                if (((ciObject.attributes[propKey] != null && propdata.datatype != "label") || (propdata.datatype == "label")) && !propdata.ishidden) {
-                                    if (propdata.datatype == "textarea") {
-                                        let textiContainer = document.createElement('a');
-                                        let textSymbol = document.createElement('i');
-                                        textSymbol.className = "far fa-file-alt";
-                                        textiContainer.appendChild(textSymbol);
-                                        new_cell.appendChild(textiContainer);
-                                        new_row.appendChild(new_cell);
-                                        let isdisabled = false;
-                                        if (isconstant)
-                                            isdisabled = true;
-                                        textiContainer.addEventListener("click", (event) => {
-                                            if (isFree) {
-                                                this.showFreeTextAreaDialog(ciObject.id, tableKey, propKey, isdisabled);
-                                            }
-                                            else {
-                                                this.showTextAreaDialog(ciObject.id, propKey, isdisabled);
-                                            }
-                                        });
+                                    new_cell.className = "centertext ";
+                                    new_cell.className += propKey;
+                                    new_cell.className += " " + inputgroup;
+                                    if(!isFirstColumnSet){
+                                      new_cell.className += " sb-table-row-first-column";
+                                      isFirstColumnSet=true;
                                     }
 
-                                    else if (propdata.datatype != "radio" && propdata.datatype != "table") {
-                                        let constantvalue;
-                                        let constantauto = false;
-                                        if (propdata.datatype != "label")
-                                            if (!isFree) {
-                                                if (ciTemplate.system.attributes[propKey] == null) {
-                                                    ui.notifications.warn("Inconsistent cItem. Please remove and readd cItem " + ciTemplate.name + " to Actor");
-                                                    console.warn(propKey + " not found in cItem:" + ciTemplate.name);
-                                                }
-                                                //REDUNDANT MUCH LIKELY - CONSTANTVALUE MIGHT NOT BE NEEDED
-                                                constantvalue = ciTemplate.system.attributes[propKey].value;
-                                                if (propdata.auto != "") {
-                                                    constantauto = true;
-                                                    constantvalue = propdata.auto;
-                                                }
-                                                let cvalueToString = constantvalue.toString();
-                                                let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
-                                                let checknonumsum = cvalueToString.match(nonumsum);
-                                                let justexpr = true;
-                                                if (propdata.datatype == "simplenumeric")
-                                                    justexpr = false;
-                                                //
-                                                if (checknonumsum) {                                                    
-                                                    constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
-                                                    constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
-                                                    constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
-                                                    constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
-                                                    constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
-                                                    constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
-                                                    constantvalue = await game.system.api._extractAPIFunctions(constantvalue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
-                                                    constantvalue = await game.system.api.mathParser(constantvalue);
-                                                    //constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
-                                                    
-                                                }
-                                            }
-                                            else {
-                                                constantvalue = propdata.defvalue;
-                                            }
-                                        //AUTO FOR CITEMS CHANGED!!!
-                                        // if (propdata.auto != "")
-                                        //     constantvalue = ciObject.attributes[propKey].value;
-                                        if (isconstant) {
-                                            let cContent = constantvalue;
-                                            //console.log(propdata);
-                                            if (propdata.datatype == "label") {
-                                                if (propdata.labelformat == "D" || propdata.labelformat == "I") {
-                                                    cContent = "";
-                                                    //console.log("adding roll");
-                                                    let dieContainer = document.createElement("DIV");
-                                                    dieContainer.setAttribute("title", propdata.tag);
-                                                    dieContainer.className = "";
-                                                    if (propdata.labelsize == "S") {
-                                                        dieContainer.className += "label-small";
-                                                    }
-
-                                                    else if (propdata.labelsize == "T") {
-                                                        dieContainer.className += "label-tiny";
-                                                    }
-
-                                                    else if (propdata.labelsize == "M") {
-                                                        dieContainer.className += "label-med";
-                                                    }
-
-                                                    else if (propdata.labelsize == "L") {
-                                                        dieContainer.className += "label-large";
-                                                    }
-
-                                                    let dieSymbol = document.createElement('i');
-                                                    if(propdata.labelformat == "D"){
-                                                      dieSymbol.className = "fas fa-dice-d20";
-                                                    } else {
-                                                      if(propdata.icon == ""){
-                                                        dieSymbol.className = "fas fa-dice-d20";
-                                                      } else {
-                                                        dieSymbol.className = "fas " + propdata.icon;
-                                                      }
-                                                    }
-                                                    dieContainer.appendChild(dieSymbol);
-
-                                                    new_cell.appendChild(dieContainer);
+                                    if (((ciObject.attributes[propKey] != null && propdata.datatype != "label") || (propdata.datatype == "label")) && !propdata.ishidden) {
+                                        if (propdata.datatype == "textarea") {
+                                            let textiContainer = document.createElement('a');
+                                            let textSymbol = document.createElement('i');
+                                            textSymbol.className = "far fa-file-alt";
+                                            textiContainer.appendChild(textSymbol);
+                                            new_cell.appendChild(textiContainer);
+                                            new_row.appendChild(new_cell);
+                                            let isdisabled = false;
+                                            if (isconstant)
+                                                isdisabled = true;
+                                            textiContainer.addEventListener("click", (event) => {
+                                                if (isFree) {
+                                                    this.showFreeTextAreaDialog(ciObject.id, tableKey, propKey, isdisabled);
                                                 }
                                                 else {
-                                                    cContent = propdata.tag;
-                                                    new_cell.textContent = cContent;
+                                                    this.showTextAreaDialog(ciObject.id, propKey, isdisabled);
+                                                }
+                                            });
+                                        }
+
+                                        else if (propdata.datatype != "table") {
+                                            let constantvalue;
+                                            let maxValue;
+                                            let constantauto = false;
+                                            if (propdata.datatype != "label")
+                                                if (!isFree) {
+                                                    if (ciTemplate.system.attributes[propKey] == null) {
+                                                        ui.notifications.warn("Inconsistent cItem. Please remove and readd cItem " + ciTemplate.name + " to Actor");
+                                                        console.warn(propKey + " not found in cItem:" + ciTemplate.name);
+                                                    }
+
+                                                    constantvalue = ciTemplate.system.attributes[propKey].value;
+                                                    if (propdata.auto != "") {
+                                                        constantauto = true;
+                                                        constantvalue = propdata.auto;
+                                                    }
+                                                    let cvalueToString = constantvalue.toString();
+                                                    let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
+                                                    let checknonumsum = cvalueToString.match(nonumsum);
+                                                    let justexpr = true;
+                                                    if (propdata.datatype == "simplenumeric")
+                                                        justexpr = false;
+                                                    //
+                                                    if (checknonumsum) {                                                    
+                                                        constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
+                                                        constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
+                                                        constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
+                                                        constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
+                                                        constantvalue = await constantvalue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
+                                                        constantvalue = await auxMeth.autoParser(constantvalue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                        constantvalue = await game.system.api._extractAPIFunctions(constantvalue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
+                                                        constantvalue = await game.system.api.mathParser(constantvalue); 
+
+
+                                                    }
+
+                                                    if(propdata.datatype === "radio"){
+                                                      maxValue = propdata.automax;
+                                                      cvalueToString = maxValue.toString();
+                                                      checknonumsum = cvalueToString.match(nonumsum);
+                                                      if (checknonumsum) { 
+
+                                                        maxValue = await maxValue.replace(/\#{active}/g, ciObject.isactive);
+                                                        maxValue = await maxValue.replace(/\#{uses}/g, ciObject.uses);
+                                                        maxValue = await maxValue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
+                                                        maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                        maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses); 
+                                                        maxValue = await game.system.api.mathParser(maxValue);
+                                                      }
+                                                    }
+
+                                                }
+                                                else {
+                                                  // for free tables
+                                                  if(propdata.datatype === "radio"){
+                                                    maxValue = propdata.automax;
+                                                    maxValue = await maxValue.replace(/\#{active}/g, 0);
+                                                    maxValue = await maxValue.replace(/\#{uses}/g, 1);
+                                                    maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
+                                                    maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
+                                                    maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
+                                                    maxValue = await game.system.api.mathParser(maxValue);
+                                                  }
+                                                  constantvalue = propdata.defvalue;
+                                                }
+                                                if (constantvalue == "") {
+                                                  if (propdata.datatype === "simplenumeric" || propdata.datatype === "radio") {                                        
+                                                    constantvalue = '0';
+                                                  }                                    
+                                                }
+                                            //AUTO FOR CITEMS CHANGED!!!
+                                            // if (propdata.auto != "")
+                                            //     constantvalue = ciObject.attributes[propKey].value;
+                                            if (isconstant) {
+                                                let cContent = constantvalue;
+                                                //console.log(propdata);
+                                                if (propdata.datatype == "label") {
+                                                    if (propdata.labelformat == "D" || propdata.labelformat == "I") {
+                                                        cContent = "";
+                                                        //console.log("adding roll");
+                                                        let dieContainer = document.createElement("DIV");
+                                                        dieContainer.setAttribute("title", propdata.tag);
+                                                        dieContainer.className = "";
+                                                        if (propdata.labelsize == "S") {
+                                                            dieContainer.className += "label-small";
+                                                        }
+
+                                                        else if (propdata.labelsize == "T") {
+                                                            dieContainer.className += "label-tiny";
+                                                        }
+
+                                                        else if (propdata.labelsize == "M") {
+                                                            dieContainer.className += "label-med";
+                                                        }
+
+                                                        else if (propdata.labelsize == "L") {
+                                                            dieContainer.className += "label-large";
+                                                        }
+
+                                                        let dieSymbol = document.createElement('i');
+                                                        if(propdata.labelformat == "D"){
+                                                          dieSymbol.className = "fas fa-dice-d20";
+                                                        } else {
+                                                          if(propdata.icon == ""){
+                                                            dieSymbol.className = "fas fa-dice-d20";
+                                                          } else {
+                                                            dieSymbol.className = "fas " + propdata.icon;
+                                                          }
+                                                        }
+                                                        dieContainer.appendChild(dieSymbol);
+
+                                                        new_cell.appendChild(dieContainer);
+                                                    }
+                                                    else {
+                                                        cContent = propdata.tag;
+                                                        new_cell.textContent = cContent;
+                                                    }
+
                                                 }
 
+                                                else {
+
+                                                    if (propdata.datatype === "checkbox") {
+                                                        //console.log("checkbox");
+                                                        let cellvalue = document.createElement("INPUT");
+                                                        //cellvalue.className = "table-input centertext";
+
+
+                                                        cellvalue = document.createElement("INPUT");
+                                                        cellvalue.className = "input-small";
+                                                        if (propdata.labelsize == "T")
+                                                            cellvalue.className = "input-tiny";
+                                                        cellvalue.setAttribute("type", "checkbox");
+                                                        let setvalue = false;
+                                                        //console.log(ciObject.attributes[propKey].value);
+                                                        if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
+                                                            setvalue = true;
+                                                        }
+
+                                                        if (ciObject.attributes[propKey].value === false || ciObject.attributes[propKey].value === "false") {
+                                                            ciObject.attributes[propKey].value = false;
+                                                        }
+
+                                                        //console.log(setvalue);
+
+                                                        cellvalue.checked = setvalue;
+                                                        cellvalue.setAttribute("disabled", "disabled");
+                                                        cellvalue.disabled=true;
+                                                        //console.log("lol");
+                                                        new_cell.appendChild(cellvalue);
+
+                                                    } else if(propdata.datatype === "radio"){
+
+                                                      let cellvalue=await this.createRadioInputsForcItem(ciObject,propObj,constantvalue,maxValue,propdata.radiotype,propdata.radiotype,true);
+                                                      new_cell.appendChild(cellvalue);
+
+                                                    }
+                                                    else {
+                                                        new_cell.textContent = cContent;
+                                                    }
+
+
+
+                                                }
+
+                                                if (propdata.labelsize == "F") {
+                                                    new_cell.className += " label-free";
+                                                }
+
+                                                else if (propdata.labelsize == "S") {
+                                                    new_cell.className += " label-small";
+                                                }
+
+                                                else if (propdata.labelsize == "T") {
+                                                    new_cell.className += " label-tiny";
+                                                }
+
+                                                else if (propdata.labelsize == "M") {
+                                                    new_cell.className += " label-med";
+                                                }
+
+                                                else if (propdata.labelsize == "L") {
+                                                    new_cell.className += " label-large";
+                                                }
+
+                                                if (propdata.hasroll) {
+                                                    // Alondaar Drag events for macros.
+                                                    if (this.actor.isOwner) {
+                                                        let handler = ev => this._onDragStart(ev, groupprops[k].id, propdata.attKey, ciObject.id, ciObject.ciKey, false, isFree, tableKey, null);
+                                                        new_cell.setAttribute("draggable", true);
+                                                        new_cell.addEventListener("dragstart", handler, false);
+                                                    }
+                                                    new_cell.className += " rollable";
+                                                    new_cell.addEventListener('click', this._onRollCheck.bind(this, groupprops[k].id, propdata.attKey, ciObject.id, ciObject.ciKey, false, isFree, tableKey, null), false);
+                                                }
                                             }
 
                                             else {
-
+                                                // -----------------------
+                                                // not constant properties
+                                                // ----------------------- 
+                                                //console.log(propdata);
+                                                let cellvalue = document.createElement("INPUT");
+                                                //cellvalue.className = "table-input centertext";
                                                 if (propdata.datatype === "checkbox") {
-                                                    //console.log("checkbox");
-                                                    let cellvalue = document.createElement("INPUT");
-                                                    //cellvalue.className = "table-input centertext";
-
 
                                                     cellvalue = document.createElement("INPUT");
                                                     cellvalue.className = "input-small";
                                                     if (propdata.labelsize == "T")
                                                         cellvalue.className = "input-tiny";
+                                                    cellvalue.className += " " + inputgroup;
                                                     cellvalue.setAttribute("type", "checkbox");
+                                                    if(propdata.auto!='' || (!propdata.editable && !game.user.isGM) ){
+                                                      // has auto expression, disable this
+                                                      cellvalue.disabled=true;  
+                                                    }
                                                     let setvalue = false;
-                                                    //console.log(ciObject.attributes[propKey].value);
+
                                                     if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
                                                         setvalue = true;
                                                     }
 
-                                                    if (ciObject.attributes[propKey].value === false || ciObject.attributes[propKey].value === "false") {
-                                                        ciObject.attributes[propKey].value = false;
-                                                    }
-
-                                                    //console.log(setvalue);
-
-                                                    cellvalue.checked = setvalue;
-                                                    cellvalue.setAttribute("disabled", "disabled");
-                                                    cellvalue.disabled=true;
-                                                    //console.log("lol");
-                                                    new_cell.appendChild(cellvalue);
-
-                                                }
-                                                else {
-                                                    new_cell.textContent = cContent;
-                                                }
+                                                } 
 
 
+                                                else if (propdata.datatype === "list") {
 
-                                            }
+                                                    cellvalue = document.createElement("SELECT");
+                                                    cellvalue.className = "table-input";
 
-                                            if (propdata.labelsize == "F") {
-                                                new_cell.className += " label-free";
-                                            }
+                                                    cellvalue.className += " " + inputgroup;
 
-                                            else if (propdata.labelsize == "S") {
-                                                new_cell.className += " label-small";
-                                            }
-
-                                            else if (propdata.labelsize == "T") {
-                                                new_cell.className += " label-tiny";
-                                            }
-
-                                            else if (propdata.labelsize == "M") {
-                                                new_cell.className += " label-med";
-                                            }
-
-                                            else if (propdata.labelsize == "L") {
-                                                new_cell.className += " label-large";
-                                            }
-
-                                            if (propdata.hasroll) {
-                                                // Alondaar Drag events for macros.
-                                                if (this.actor.isOwner) {
-                                                    let handler = ev => this._onDragStart(ev, groupprops[k].id, propdata.attKey, ciObject.id, ciObject.ciKey, false, isFree, tableKey, null);
-                                                    new_cell.setAttribute("draggable", true);
-                                                    new_cell.addEventListener("dragstart", handler, false);
-                                                }
-                                                new_cell.className += " rollable";
-                                                new_cell.addEventListener('click', this._onRollCheck.bind(this, groupprops[k].id, propdata.attKey, ciObject.id, ciObject.ciKey, false, isFree, tableKey, null), false);
-                                            }
-                                        }
-
-                                        else {
-                                            // -----------------------
-                                            // not constant properties
-                                            // ----------------------- 
-                                            //console.log(propdata);
-                                            let cellvalue = document.createElement("INPUT");
-                                            //cellvalue.className = "table-input centertext";
-                                            if (propdata.datatype === "checkbox") {
-                                              
-                                                cellvalue = document.createElement("INPUT");
-                                                cellvalue.className = "input-small";
-                                                if (propdata.labelsize == "T")
-                                                    cellvalue.className = "input-tiny";
-                                                cellvalue.className += " " + inputgroup;
-                                                cellvalue.setAttribute("type", "checkbox");
-                                                if(propdata.auto!='' || (!propdata.editable && !game.user.isGM) ){
-                                                  // has auto expression, disable this
-                                                  cellvalue.disabled=true;  
-                                                }
-                                                let setvalue = false;
-
-                                                if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
-                                                    setvalue = true;
-                                                }
-
-                                            }
-
-                                            else if (propdata.datatype === "list") {
-
-                                                cellvalue = document.createElement("SELECT");
-                                                cellvalue.className = "table-input";
-
-                                                cellvalue.className += " " + inputgroup;
-
-                                                if (propdata.inputsize == "F") {
-                                                    cellvalue.className += "  table-free";
-                                                }
-
-                                                else if (propdata.inputsize == "S") {
-                                                    cellvalue.className += " input-small";
-                                                }
-
-                                                else if (propdata.inputsize == "T") {
-                                                    cellvalue.className += " input-tiny";
-                                                }
-
-                                                else if (propdata.inputsize == "M") {
-                                                    cellvalue.className += " input-med";
-                                                }
-
-                                                else if (propdata.inputsize == "L") {
-                                                    cellvalue.className += " input-large";
-                                                }
-
-                                                else {
-                                                    cellvalue.className += "  table-free";
-                                                }
-
-                                                // add options to list
-                                                let addList='';
-                                                let rawlist = propdata.listoptions;
-                                                if(rawlist.length>0){                                                  
-                                                   
-                                                  addList=rawlist.replaceAll(',','|');
-                                                }
-                                                // check for listauto
-                                                if(propdata.listoptionsAutoUse){
-                                                  let autoList=propdata.listoptionsAuto;
-                                                  autoList = await auxMeth.autoParser(autoList, this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
-                                                  autoList=autoList.replaceAll(',','|');
-                                                  autoList = await game.system.api._extractAPIFunctions(autoList,this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
-                                                  
-                                                  
-                                                  if(autoList.length>0){                                                                      
-                                                    if(addList.length>0){
-                                                      addList +='|' + autoList; 
-                                                    } else{
-                                                      addList +=autoList; 
-                                                    }                                                    
-                                                  } 
-                                                }
-                                                // check if to use lookup
-                                                if(propdata.listoptionsLookupUse){
-                                                  let lookupKey=propdata.listoptionsLookupKey;
-                                                  let returnColumn=propdata.listoptionsLookupColumn;
-                                                  let lookups=await lookupList(lookupKey,returnColumn,'|');
-                                                  if(lookups.length>0){
-                                                    if(addList.length>0){
-                                                      addList +='|' + lookups; 
-                                                    } else{
-                                                      addList +=lookups; 
-                                                    }
-                                                  }                  
-                                                }
-                                                if(addList.length>0){
-                                                  cellvalue=auxMeth.addOptionsToSelectFromList(cellvalue,addList,ciObject.attributes[propKey].value,'|',true)
-                                                }
-
-                                            }
-
-                                            else if (propdata.datatype === "simpletext" || propdata.datatype === "label") {
-                                                cellvalue = document.createElement("INPUT");
-                                                cellvalue.setAttribute("type", "text");
-
-                                                cellvalue.className = "table-input";
-                                                cellvalue.className += " " + inputgroup;
-                                                if (propdata.inputsize != null && (((k > 0) && !isFree) || isFree)) {
                                                     if (propdata.inputsize == "F") {
                                                         cellvalue.className += "  table-free";
                                                     }
@@ -4324,82 +4313,175 @@ ${dialogPanel.system.title}
                                                     else {
                                                         cellvalue.className += "  table-free";
                                                     }
+
+                                                    // add options to list
+                                                    let addList='';
+                                                    let rawlist = propdata.listoptions;
+                                                    if(rawlist.length>0){                                                  
+
+                                                      addList=rawlist.replaceAll(',','|');
+                                                    }
+                                                    // check for listauto
+                                                    if(propdata.listoptionsAutoUse){
+                                                      let autoList=propdata.listoptionsAuto;
+                                                      autoList = await auxMeth.autoParser(autoList, this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+                                                      autoList=autoList.replaceAll(',','|');
+                                                      autoList = await game.system.api._extractAPIFunctions(autoList,this.actor.system.attributes, ciObject.attributes, false, false, ciObject.number, ciObject.uses,ciObject.maxuses);
+
+
+                                                      if(autoList.length>0){                                                                      
+                                                        if(addList.length>0){
+                                                          addList +='|' + autoList; 
+                                                        } else{
+                                                          addList +=autoList; 
+                                                        }                                                    
+                                                      } 
+                                                    }
+                                                    // check if to use lookup
+                                                    if(propdata.listoptionsLookupUse){
+                                                      let lookupKey=propdata.listoptionsLookupKey;
+                                                      let returnColumn=propdata.listoptionsLookupColumn;
+                                                      let lookups=await lookupList(lookupKey,returnColumn,'|');
+                                                      if(lookups.length>0){
+                                                        if(addList.length>0){
+                                                          addList +='|' + lookups; 
+                                                        } else{
+                                                          addList +=lookups; 
+                                                        }
+                                                      }                  
+                                                    }
+                                                    if(addList.length>0){
+                                                      cellvalue=auxMeth.addOptionsToSelectFromList(cellvalue,addList,ciObject.attributes[propKey].value,'|',true)
+                                                    }
+
                                                 }
 
-                                                if (propdata.datatype === "label") {
-                                                    cellvalue.setAttribute("readonly", "true");
+                                                else if (propdata.datatype === "simpletext" || propdata.datatype === "label") {
+                                                    cellvalue = document.createElement("INPUT");
+                                                    cellvalue.setAttribute("type", "text");
+
+                                                    cellvalue.className = "table-input";
+                                                    cellvalue.className += " " + inputgroup;
+                                                    if (propdata.inputsize != null && (((k > 0) && !isFree) || isFree)) {
+                                                        if (propdata.inputsize == "F") {
+                                                            cellvalue.className += "  table-free";
+                                                        }
+
+                                                        else if (propdata.inputsize == "S") {
+                                                            cellvalue.className += " input-small";
+                                                        }
+
+                                                        else if (propdata.inputsize == "T") {
+                                                            cellvalue.className += " input-tiny";
+                                                        }
+
+                                                        else if (propdata.inputsize == "M") {
+                                                            cellvalue.className += " input-med";
+                                                        }
+
+                                                        else if (propdata.inputsize == "L") {
+                                                            cellvalue.className += " input-large";
+                                                        }
+
+                                                        else {
+                                                            cellvalue.className += "  table-free";
+                                                        }
+                                                    }
+
+                                                    if (propdata.datatype === "label") {
+                                                        cellvalue.setAttribute("readonly", "true");
+                                                    }
+
                                                 }
 
+                                                else if (propdata.datatype === "simplenumeric") {
+                                                    cellvalue = document.createElement("INPUT");
+                                                    cellvalue.setAttribute("type", "text");
+                                                    cellvalue.className = "table-input centertext";
+                                                    cellvalue.className += " " + propTable.system.inputgroup;
+                                                    if (propdata.inputsize == "M") {
+                                                        cellvalue.className += " input-med";
+                                                    }
+                                                    else if (propdata.inputsize == "T") {
+                                                        cellvalue.className += " table-tiny";
+                                                    }
+                                                    else {
+                                                        cellvalue.className += " table-small";
+                                                    }
+                                                }
+
+                                                if(propdata.datatype === "radio"){  
+                                                  let readOnly=false;
+                                                  if (!propdata.editable && !game.user.isGM)
+                                                    readOnly=true;
+                                                  if (propdata.auto!='')
+                                                    readOnly=true;
+                                                  let cellvalue;
+                                                  if(isFree){
+                                                    cellvalue= await this.createRadioInputsForcItem(ciObject,propObj,ciObject.attributes[propKey].value,maxValue,propdata.radiotype,propdata.radiotype,readOnly,ciObject.id,tableKey,true);
+                                                  } else{
+                                                    cellvalue= await this.createRadioInputsForcItem(ciObject,propObj,ciObject.attributes[propKey].value,maxValue,propdata.radiotype,propdata.radiotype,readOnly);
+                                                  }
+                                                  new_cell.appendChild(cellvalue);                                                  
+                                                } 
+                                                else
+                                                {
+                                                  if (!propdata.editable && !game.user.isGM)
+                                                      cellvalue.setAttribute("readonly", true);
+                                                  if (propdata.datatype != "checkbox") {
+                                                      //if (ciObject.attributes[propKey].value == "" || constantauto) {
+                                                      if (constantauto) {  
+                                                          ciObject.attributes[propKey].value = constantvalue;
+                                                      }
+                                                      cellvalue.value = ciObject.attributes[propKey].value;
+                                                      // Set attribute value to the actual value for css selector functionality
+                                                      cellvalue.setAttribute("value", cellvalue.value);
+                                                      if (propdata.auto != "") {
+
+                                                          cellvalue.setAttribute("readonly", true);
+                                                      }
+                                                  }
+                                                  else {
+                                                      let setvalue = false;
+                                                      //console.log(ciObject.attributes[propKey].value);
+                                                      if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
+                                                          setvalue = true;
+                                                      }
+                                                      cellvalue.checked = setvalue;
+                                                  }
+                                                  cellvalue.className += " " + propdata.attKey;
+      //                                            if (isfirstFree) {                                          
+      //                                                 new_cell.className += " sb-table-row-first-column";
+      //                                                 isfirstFree = false;
+      //                                            }
+                                                  if (!isFree) {
+                                                      new_cell.addEventListener("change", (event) => {
+                                                        event.preventDefault();
+                                                        event.stopPropagation();
+                                                        this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value)
+                                                      }
+                                                      );
+                                                  }
+                                                  else {
+                                                      let ischeck = false;
+                                                      if (propdata.datatype == "checkbox") {
+                                                          ischeck = true;
+                                                      }
+                                                      new_cell.addEventListener("change", (event) => {
+                                                        event.preventDefault();
+                                                        event.stopPropagation();
+                                                        this.saveNewFreeItem(ciObject.id, tableKey, propKey, event.target.value, ischeck, event.target.checked);})
+                                                  }
+                                                  cellvalue.setAttribute('data-property-key',propdata.attKey);
+                                                  cellvalue.setAttribute('data-property-type',propdata.datatype);
+                                                  cellvalue.setAttribute("data-property-value", cellvalue.value);
+                                                  cellvalue.setAttribute('data-is-citem',true);
+                                                  new_cell.appendChild(cellvalue);
+                                                }
                                             }
-
-                                            else if (propdata.datatype === "simplenumeric") {
-                                                cellvalue = document.createElement("INPUT");
-                                                cellvalue.setAttribute("type", "text");
-                                                cellvalue.className = "table-input centertext";
-                                                cellvalue.className += " " + propTable.system.inputgroup;
-
-
-                                                if (propdata.inputsize == "M") {
-                                                    cellvalue.className += " input-med";
-                                                }
-
-                                                else if (propdata.inputsize == "T") {
-                                                    cellvalue.className += " table-tiny";
-                                                }
-
-                                                else {
-                                                    cellvalue.className += " table-small";
-                                                }
-                                            }
-
-                                            if (!propdata.editable && !game.user.isGM)
-                                                cellvalue.setAttribute("readonly", true);
-
-                                            if (propdata.datatype != "checkbox") {
-                                                if (ciObject.attributes[propKey].value == "" || constantauto) {
-                                                    ciObject.attributes[propKey].value = constantvalue;
-                                                }
-                                                cellvalue.value = ciObject.attributes[propKey].value;
-                                                // Set attribute value to the actual value for css selector functionality
-                                                cellvalue.setAttribute("value", cellvalue.value);
-                                                if (propdata.auto != "") {
-
-                                                    cellvalue.setAttribute("readonly", true);
-                                                }
-                                            }
-                                            else {
-                                                let setvalue = false;
-                                                //console.log(ciObject.attributes[propKey].value);
-                                                if (ciObject.attributes[propKey].value === true || ciObject.attributes[propKey].value === "true") {
-                                                    setvalue = true;
-                                                }
-                                                cellvalue.checked = setvalue;
-                                            }
-                                            cellvalue.className += " " + propdata.attKey;
-//                                            if (isfirstFree) {                                          
-//                                                 new_cell.className += " sb-table-row-first-column";
-//                                                 isfirstFree = false;
-//                                            }
-                                            if (!isFree) {
-                                                new_cell.addEventListener("change", (event) => 
-                                                  this.saveNewCIAtt(ciObject.id, groupprops[k].id, propdata.attKey, event.target.value)
-                                                );
-                                            }
-                                            else {
-                                                let ischeck = false;
-                                                if (propdata.datatype == "checkbox") {
-                                                    ischeck = true;
-                                                }
-                                                new_cell.addEventListener("change", (event) => this.saveNewFreeItem(ciObject.id, tableKey, propKey, event.target.value, ischeck, event.target.checked));
-                                            }
-                                            cellvalue.setAttribute('data-property-key',propdata.attKey);
-                                            cellvalue.setAttribute('data-property-type',propdata.datatype);
-                                            cellvalue.setAttribute("data-property-value", cellvalue.value);
-                                            cellvalue.setAttribute('data-is-citem',true);
-                                            new_cell.appendChild(cellvalue);
                                         }
+                                        new_row.appendChild(new_cell);
                                     }
-                                    new_row.appendChild(new_cell);
                                 }
                             }
                         }
@@ -4544,7 +4626,7 @@ ${dialogPanel.system.title}
                     table.appendChild(new_row);
                 }
 
-                if (propTable.system.hastotals && table != null) {
+                if (propTable.system.hastotals && table != null && propTable.system.tableoptions.showGroupProperties) {
                     let new_row = document.createElement("TR");
                     new_row.className = "totals-row";
 
@@ -4608,9 +4690,12 @@ ${dialogPanel.system.title}
                                 totalin = true;
                             }
                         }
-
-                        for (let k = 0; k < groupprops.length; k++) {
-
+                        if(propTable.system.tableoptions.showGroupProperties){
+                          for (let k = 0; k < groupprops.length; k++) {
+                            if (hideProperties.includes(groupprops[k].ikey)){
+                              // skip this one
+                              continue;
+                            }
                             let propRef = groupprops[k].id;
                             //let propObj = game.items.get(groupprops[k].id);
                             let propObj = await auxMeth.getTElement(groupprops[k].id, "property", groupprops[k].ikey);
@@ -4666,7 +4751,7 @@ ${dialogPanel.system.title}
                                 }
                             }
 
-
+                          }
                         }
 
                         //For transfer cell
@@ -4714,6 +4799,65 @@ ${dialogPanel.system.title}
         //console.log("refreshcItem finished");
     }
     
+    async createRadioInputsForcItem(citem,property,value,maxValue,onIcon,offIcon,readOnly,freeId=null,tableKey='',isFreeTable=false){
+      let radioInput=document.createElement("DIV");
+      radioInput.setAttribute('class',`radio-input-citem ${property.system.attKey} ${property.system.inputgroup}`);
+      radioInput.setAttribute('data-property-key',property.system.attKey);
+      radioInput.setAttribute('data-property-type','radio');
+      radioInput.setAttribute('attid',property.id);
+      if (!readOnly){
+        let anchor=document.createElement('A');
+        anchor.setAttribute('clickvalue','0');
+        anchor.setAttribute('class','radio-element');
+        anchor.setAttribute('data-property-key',property.system.attKey);
+        anchor.setAttribute('data-radio-element-value','0');
+        let radio=document.createElement('I');
+        radio.setAttribute('class','far ' + property.system.radioResetIcon);
+        anchor.addEventListener("click", (event) =>{
+          event.preventDefault();
+          event.stopPropagation();
+          if(isFreeTable){
+            this.saveNewFreeItem(freeId, tableKey, property.system.attKey, '0', false, null)
+          } else{
+            this.saveNewCIAtt(citem.id, property.id, property.system.attKey, '0')
+          }
+        });
+        
+        anchor.appendChild(radio);
+        radioInput.appendChild(anchor);
+      }
+      
+      for (let i = 1; i <= maxValue; i++) {
+        let radio=document.createElement('I');
+        if(value>=i){
+          radio.setAttribute('class','fas ' + onIcon);
+        } else{
+          radio.setAttribute('class','far ' + offIcon);
+        }
+        
+        if(!readOnly){
+          let anchor=document.createElement('A');
+          anchor.setAttribute('clickvalue','i');
+          anchor.setAttribute('class','radio-element');
+          anchor.setAttribute('data-property-key',property.system.attKey);
+          anchor.setAttribute('data-radio-element-value',i);
+          anchor.appendChild(radio);
+          anchor.addEventListener("click", (event) =>{ 
+            event.preventDefault();
+            event.stopPropagation();
+            if(isFreeTable){
+              this.saveNewFreeItem(freeId, tableKey, property.system.attKey, i, false, null)
+            } else{
+              this.saveNewCIAtt(citem.id, property.id, property.system.attKey, i)
+            }
+          });
+          radioInput.appendChild(anchor);
+        } else {
+          radioInput.appendChild(radio);
+        }                
+      }      
+      return radioInput;
+    }
     
     async dragcItem(ev, iD, number, originiD, tokenID = null) {
         ev.stopPropagation();
@@ -5013,7 +5157,7 @@ ${dialogPanel.system.title}
         }
 
         if (!this.actor.isToken) {
-            this.actor.update({ "system.citems": cItemsID });
+            await this.actor.update({ "system.citems": cItemsID });
         }
         else {            
             // v10 has longer ids, 
@@ -5212,7 +5356,37 @@ ${dialogPanel.system.title}
                         //let propTemplate = game.items.get(groupProps[i].id);
                         let propTemplate = await auxMeth.getTElement(groupProps[i].id, "property", groupProps[i].ikey);
                         newItem.attributes[propTemplate.system.attKey] = {};
-                        newItem.attributes[propTemplate.system.attKey].value = propTemplate.system.defvalue;
+                        let defaultValue='';
+                        defaultValue = propTemplate.system.defvalue;
+                        
+                        if (propTemplate.system.datatype === "simplenumeric") {
+                          defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, false);
+                          defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, false); 
+                        } 
+                        else if (propTemplate.system.datatype === "list") {
+                          if(propTemplate.system.defvalue!=''){
+                            defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, true);
+                            defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, true); 
+                          } else{
+                            // use the first entry of the list as value
+                            defaultValue = await auxMeth.getListPropertyFirstOption(propTemplate,this.actor.attributes, null);
+                          }
+                        }
+                        else {
+                          defaultValue = await auxMeth.autoParser(defaultValue, this.actor.attributes, null, true);
+                          defaultValue = await game.system.api._extractAPIFunctions(defaultValue,this.actor.attributes, null, true); 
+                        }
+                        
+                        
+                        if (defaultValue == null) {
+                          defaultValue = "";
+                        }
+                        if (defaultValue == "") {
+                          if (propTemplate.system.datatype === "simplenumeric" || propTemplate.system.datatype === "radio") {                                        
+                            defaultValue = '0';
+                          }                                    
+                        }
+                        newItem.attributes[propTemplate.system.attKey].value = defaultValue;
                     }
                 }
             }
@@ -5481,7 +5655,14 @@ ${dialogPanel.system.title}
 
                     radioNode.innerHTML = '';
                     //console.log(value);
+                    let centeringTable=document.createElement('TABLE');
+                    centeringTable.setAttribute('class','sb-centering-table')
+                    let centeringRow=document.createElement('TR');
+                    centeringRow.setAttribute('class','sb-centering-table')
+                    let centeringCell=document.createElement('TD');
+                    centeringCell.setAttribute('class','sb-centering-table')
                     if (maxRadios > 0) {
+                        
                         for (let j = 0; j <= parseInt(maxRadios); j++) {
                             let radiocontainer = document.createElement('a');
                             let clickValue = j;
@@ -5489,6 +5670,8 @@ ${dialogPanel.system.title}
                             radiocontainer.className = "radio-element";
                             radiocontainer.setAttribute('data-property-key',property.system.attKey);
                             radiocontainer.setAttribute('data-radio-element-value',clickValue);
+                            
+                             
                             //radiocontainer.style = "font-size:14px;";
                             //if (radiotype == "S")
                             //radiocontainer.style = "font-size:16px;";
@@ -5497,7 +5680,8 @@ ${dialogPanel.system.title}
                             let radiobutton = document.createElement('i');
 
                             if (j == 0) {
-                                radiobutton.className = "far fa-times-circle";
+                                radiobutton.className = "far " + property.system.radioResetIcon;
+                                radiobutton.setAttribute( "title", "Reset" );
                                 // if this is an auto calculated radio, or (non-editable and not gm) hide the reset icon
                                 if(!property.system.auto=='' || (!property.system.editable && !game.user.isGM) ){
                                   radiocontainer.style.display = "none";; 
@@ -5505,9 +5689,11 @@ ${dialogPanel.system.title}
                             }
 
                             else if (value >= clickValue) {
+                              radiobutton.setAttribute( "title", property.system.tooltip );
                                 radiobutton.className = "fas " + radiotype;                                
                             }
                             else {
+                              radiobutton.setAttribute( "title", property.system.tooltip );
                                 radiobutton.className = "far " + radiotype;
                             }
                             
@@ -5519,11 +5705,16 @@ ${dialogPanel.system.title}
                               // add class to indicated non-clickable
                               radiocontainer.className +=" sb-radio-element-non-clickable";
                             }
-                            await radioNode.appendChild(radiocontainer);
-
+                            //await radioNode.appendChild(radiocontainer);
+                            await centeringCell.appendChild(radiocontainer);
                         }
 
+                    } else{
+                      centeringCell.innerText='No MAX defined';
                     }
+                    await centeringRow.appendChild(centeringCell);
+                    await centeringTable.appendChild(centeringRow);
+                    await radioNode.appendChild(centeringTable);
                 }
 
             }
@@ -5576,12 +5767,11 @@ ${dialogPanel.system.title}
         let radiotype = property.system.radiotype;
         let attKey = property.system.attKey;
         const attributes = this.actor.system.attributes;
-        //attributes[attKey].value =  clickValue;
+        
         await this.actor.update({ [`system.attributes.${attKey}.value`]: clickValue });
-        //await this.actor.actorUpdater();
-        //await this.actor.update({"data.attributes":attributes}, {diff: false});
+        
         if (clickValue > 0) {
-            target.className = "fas " + radiotype;
+           target.className = "fas " + radiotype;
         } 
           
 

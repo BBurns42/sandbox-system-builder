@@ -7,6 +7,9 @@ import  { getSandboxItemIconFile } from "./sb-itemsheet-helpers.js";
 import  { SandboxJSONImportForm } from "./sb-json-import-form.js";
 import { GameFolderPicker } from "./game-folder-picker-form.js";
 import { lookupV,lookupX,lookupColumnCount,lookupRowCount,lookupList } from "./sb-lookup-table.js";
+
+
+
 // Usage: 
 //    let api=game.system.api;
 //    api.BuildActorTemplates();   
@@ -55,6 +58,7 @@ export class SandboxAPI {
         updateItemsPackImg,
         updateItemsImg,
         updateItemsAllImg,
+        replaceAllMissingImages,
         GameFolderPicker,
         importJSON,
         _deleteAll,
@@ -67,11 +71,14 @@ export class SandboxAPI {
         _extractAPIFunctions,
         _ActorProperty_RemoveProperty,
         mathParser,
-        sum,floor,ceil
+        sum,floor,ceil        
       };           
     
   }
 }
+
+
+
 function _APIFunctionRequiredArguments(functionName){
   let returnValue=0;
   switch (functionName){
@@ -431,6 +438,16 @@ function  getSandboxItemDefaultIconFile(itemtype,datatype,rollable){
   return getSandboxItemIconFile(itemtype,datatype,rollable);
 }
 
+async function replaceAllMissingImages(){
+  // check for gm
+  if (!game.user.isGM){
+    // notify
+    await sb_custom_dialog_prompt(game.i18n.localize("SANDBOX.GMAuthorityRequiredTitle"),game.i18n.localize("SANDBOX.GMAuthorityRequiredBody"),game.i18n.localize("Ok"),'Information');
+    // exit 
+    return false;  
+  }
+  
+}
 
 async function replaceAllMissingItemImages(itemtype){
   // check for gm
@@ -1745,7 +1762,7 @@ async function fontAwesomeIconPicker(selectedclass='',defaultclass='', addToTitl
   
   
     function iconPickerLoadStandardIcons(){
-      const standardicons=['fa-book','fa-vial','fa-star','fa-dice-d20','fa-dice-d12','fa-dice-d10','fa-dice-d8','fa-dice-d6','fa-dice-d4','fa-circle','fa-square','fa-file-alt'];
+      const standardicons=['fa-book','fa-vial','fa-star','fa-dice-d20','fa-dice-d12','fa-dice-d10','fa-dice-d8','fa-dice-d6','fa-dice-d4','fa-circle','fa-square','fa-file-alt','fa-times-circle'];
       let iconshtml='';
       for (let i = 0; i < standardicons.length; i++) {
           iconshtml+= '<div class="sb-icon-picker-displayframe" title="' + standardicons[i] +'" dataitem="' + standardicons[i] +'"  onclick="iconPickerSelectIcon();"><i dataitem="' + standardicons[i] +'" class="sb-icon-picker-displayicon fas ' + standardicons[i] +'"  ></i></div>';

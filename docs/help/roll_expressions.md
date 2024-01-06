@@ -211,7 +211,7 @@ This will enable the Reveal/Hide icon on the chat message
 
 ![](./resources/roll_chat_msg_secrets.png)
 
-You may use HTML tags inside the && expression too. Use of CSS classes is easiest, but you can also use style tags with some extra effort. You can use things like `<br> or <hr>` to better organize (or even more complicated DIV flexbox or grid things) but you should
+You may use HTML tags inside the && expression too. Use of CSS classes is easiest, but you can also use style tags with some extra effort. You can use things like `<br> or <hr>` to better organize (or even more complicated DIV flexbox or grid things).
 
 Example:
 
@@ -225,38 +225,43 @@ Example:
 &&0;0:<span class="roll-result">This text is big and bold</span>&&
 ```
 
-You might sometimes find that some CSS in a && does not work, like using a CSS-function like rgba(), the parsing have some problems with that. If you have any problem, use HTML codes.
+Using CSS attributes in a && needs an extra step due to the parser have problems with `(),;:`. To overcome this, use HTML codes for those characters.
 
-| Character | HTML Code |
-| --------- | --------- |
-| ,         | `&#44`    |
-| :         | `&#58`    |
-| ;         | `&#59`    |
-| (         | `&#40`    |
-| )         | `&#41`    |
+| Character |                   | HTML Code |
+| --------- | ----------------- | --------- |
+| ,         | comma             | `&#44`    |
+| :         | colon             | `&#58`    |
+| ;         | semi colon        | `&#59`    |
+| (         | left parenthesis  | `&#40`    |
+| )         | right parenthesis | `&#41`    |
 
-```plaintext
-0 &&0;0:<hr><i>This, (text) is: italic; <span style="font-size: 16px; color:rgba&#40;174,0,78,0.8&#41;;">@{TXT_OVERLOADING}</span> and has
-a horizontal-rule</i>&&
+##### Examples with HTML codes
+
+```
+0 &&0;0:<span style="font-size&#58 16px&#59 color&#58 red&#59">This text is big and red</span>&&
 ```
 
-You can now also add `\~noresult\~` to the end of an expression to hide the result! PLEASE KEEP IN MIND. THE "ROLL" STILL NEEDS A VALUE TO SUBMIT TO CHAT! even if it ends up being hidden.
-
 ```plaintext
-0
-&&0;0:The result of '0' has been hidden! and only text appears!&& ~noresult~
+0 &&0;0:<hr><i>This&#44 (text) is&#58 italic&#59 <span style="font-size&#58 16px&#59 color &#58 rgba&#40 174 &#44 0 &#44 78 &#44 0.8 &#41&#59">@{NUM_STANDARD_ROLL}</span> and has  a horizontal-rule</i>&&  
 ```
 
 Also, another option is to use Registration Helpers
 
-Example
-
 ```plaintext
-$<30;style="color:darkred;">
-$<31;style="color:darkgreen;">
-$<32;style="color:grey;">
+$<30;style="color&#58darkred&#59">
+$<31;style="color&#58darkgreen&#59">
+$<32;style="color&#58grey&#59">
 0
 &&0;0:<hr><span $30>This text is Dark Red</span>&&
+```
+
+##### Hiding the rolled result
+
+You can now also add `~noresult~` to the end of an expression to hide the result! PLEASE KEEP IN MIND. THE "ROLL" STILL NEEDS A VALUE TO SUBMIT TO CHAT! even if it ends up being hidden.
+
+```plaintext
+0
+&&0;0:The result of '0' has been hidden! and only text appears!&& ~noresult~
 ```
 
 ## Roll IDs

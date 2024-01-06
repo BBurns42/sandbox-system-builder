@@ -34,6 +34,7 @@
   --sb-font-size-headers:14px; /* 14px */
   --sb-font-size-tabs:14px;    /* 14px */
   --sb-font-size-tableheaders:14px; /* 14px */
+  --sb-font-size-input-radios:var(--sb-font-size-inputs);
 
   /* Colors used */
   --sb-color-inputs:#191813;
@@ -118,6 +119,7 @@ Fonts faces
   color:var(--sb-color-tooltip);
   font-family: var(--sb-font-family-tooltip);
   font-size: var(--sb-font-size-tooltip);
+  text-align: left;
 }
 
 .sandbox.sheet .window-content {
@@ -469,6 +471,17 @@ Fonts faces
 .sandbox.sheet.item .label-medlarge {
     max-width: 100px;
     min-width: 100px;
+}
+
+.sandbox.sheet .label-medlargeplus {
+    margin: 0;
+    padding: 5px 5px;
+    width: 170px;
+    font-size:var(--sb-font-size-labels);
+}
+.sandbox.sheet.item .label-medlargeplus {
+    max-width: 120px;
+    min-width: 120px;
 }
 
 
@@ -873,6 +886,9 @@ Fonts faces
     font-family: var(--sb-font-family-general);
     font-size: var(--sb-font-size-primary);
     padding: 10px 0px;
+}
+.sandbox.sheet.item .flexblock {    
+    padding: 2px 0px;
 }
 
 .sandbox.sheet .flexblock-simple {
@@ -2021,9 +2037,24 @@ Fonts faces
 }
 
 .sandbox.sheet .radio-input{
-    padding:5px 2px;
-    vertical-align:middle;
+  padding:0px 2px 0px 2px;  
+  font-size: var(--sb-font-size-input-radios);
+    
+}
 
+
+
+.sandbox.sheet .radio-input-citem{
+  padding:0px 2px 0px 2px;  
+  font-size: var(--sb-font-size-input-radios);
+  
+  
+    
+}
+
+.sandbox.sheet a.radio-element {    
+  vertical-align:middle; 
+  font-size: var(--sb-font-size-input-radios);
 }
 
 .sandbox.sheet .sb-radio-element-non-clickable{
@@ -3276,6 +3307,10 @@ input.sb-table-filter-editor-key
   background-color:var(--sb-background-color-inputs);
   color: var(--sb-color-inputs);
 }
+select.sb-table-filter-editor-value{
+    width: calc(100% - 2px);
+    min-width: 20px;
+}
 
 .sb-table-filter-editor-table-tbody-td-manipulator{
   white-space:nowrap;
@@ -3467,4 +3502,14 @@ table.sb-table-invisible > tbody > tr > td:nth-child(2){
 }
 table.sb-table-invisible > tbody > tr > td:nth-child(3){
   width:40%;
+}
+
+.sandbox.sheet .sb-centering-table{
+  vertical-align:middle;
+  background: rgba(0,0,0,0)!important;
+  border-style:none!important;
+  border: 0px;
+    padding:0; 
+    margin:0;
+    border-collapse: collapse;
 }

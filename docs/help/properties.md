@@ -46,6 +46,8 @@ Enable Rolls for this property.  For more information, see [Rollable Properties]
 
 This is the initial value that the property will have in the actor. A empty field for numerical properties means 0.
 
+This field accepts [Expressions](sandbox_expressions.md)
+
 ### Editable
 
 Makes a property read only for players

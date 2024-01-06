@@ -346,7 +346,8 @@ The roll functions are the following:
 
 ![Referring cItem attribute](docs/images/tuto39.jpg)
 
-- `%[expression,0:min return,value1:return_for_value1,valueN:return_for_valueN]`: You know that in many ttrpgs you have a value and a modifier related to it. And most of the times the calculation of the modifier is not a simple arithmetic calculation, is more of a table search. For example, you could have a system that requires you to roll 1d20 for a number of traits, and from 1 to 10 the trait modifier would be +0, 11 to 12 would be +1, 13 to 16 would be +2, and 17+ would be +3. So I created this expression to deal with that, simply by using `%[1d20,0:0,11:1,13:2,17:3]`. Easy, and very useful.
+- `%[expression,0:min return,value1:return_for_value1,valueN:return_for_valueN]`: You know that in many ttrpgs you have a value and a modifier related to it. And most of the times the calculation of the modifier is not a simple arithmetic calculation, is more of a table search. For example, you could have a system that requires you to roll 1d20 for a number of traits, and from 1 to 10 the trait modifier would be +0, 11 to 12 would be +1, 13 to 16 would be +2, and 17+ would be +3. So I created this expression to deal with that, simply by using 
+  `%[1d20,0:0,11:1,13:2,17:3]`. Easy, and very useful.
 
 ![Referring cItem attribute](docs/images/tuto40.jpg)
 

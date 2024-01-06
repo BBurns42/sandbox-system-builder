@@ -1,4 +1,17 @@
 # Sandbox Change Log
+## Version 0.14.3(2024-01-06)
+- Feature: Using RADIO properties in cItem/tables(standard/free)
+- Added selectable reset icon for RADIO properties
+- Added option 'Show Properties?' for tables. Default is true, if false, the citem group properties will not be shown in the table. Uses/Activate/Number can still be seen if enabled
+- Added option 'Property Hide List' for tables. Accepts a comma separated string with group property keys to not show in the table
+- CSS Info: If you have used CSS to style radio elements, changes have been made to the document structure that might require som adjustments to your CSS
+- FIX: When adding a group to a cItem, LIST properties where not initialized correctly
+- FIX: For free tables, correct default values when adding new row
+- FIX: Formatting of tooltips
+- FIX: Added support for LIST properties with Auto/Lookup Options to Table Filter Editor
+- FIX: For tables, unable to set text/list property to empty if underlying property had default value or citem had non-empty value
+- REGRESSION: Handling of ;:, in && now back to needing HTML codes(see documentation)
+
 ## Version 0.14.2.1(2023-12-30)
 - Added flag for cItems 'Remove after last use'
 - Added panel width 1/5
