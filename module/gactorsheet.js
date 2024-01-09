@@ -985,11 +985,11 @@ ${dialogPanel.system.title}
                     finalContent += `
 <select  class="rdialogInput select-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" attKey ="${panelProperty.system.attKey}"  data-type="String">
 `;
-                    let options = panelProperty.system.listoptions.split(",");
+                    //let options = panelProperty.system.listoptions.split(",");
+                    let options = await auxMeth.getListPropertyOptions(panelProperty,this.actor.system.attributes, null);
+                    options = options.split("|");
                     for (let j = 0; j < options.length; j++) {
-                        finalContent += `
-<option  value="${options[j]}">${options[j]}</option>
-`;
+                        finalContent += `<option  value="${options[j]}">${options[j]}</option>`;
                     }
                     finalContent += `
 </select>
@@ -4433,6 +4433,11 @@ ${dialogPanel.system.title}
                                                       if (constantauto) {  
                                                           ciObject.attributes[propKey].value = constantvalue;
                                                       }
+                                                      if (ciObject.attributes[propKey].value == ""){
+                                                        if(propdata.datatype === "radio" ||  propdata.datatype === "simplenumeric"){
+                                                          ciObject.attributes[propKey].value=0;
+                                                        }
+                                                      }
                                                       cellvalue.value = ciObject.attributes[propKey].value;
                                                       // Set attribute value to the actual value for css selector functionality
                                                       cellvalue.setAttribute("value", cellvalue.value);
@@ -4570,28 +4575,20 @@ ${dialogPanel.system.title}
 
                 }
 
-                if (groupcitems.length == 0 || (tableHasValidFilter!=null && filter_passed_count==0 )) {
+                if (table != null && (groupcitems.length == 0 || (tableHasValidFilter!=null && filter_passed_count==0 ))) {
                     //Empty row;
-
                     let new_row = document.createElement("TR");
                     new_row.className = "empty-row";
                     new_row.className += " " + inputgroup;
-
-                    let headercells = document.getElementsByTagName("table");
-
-                    for (let x = 0; x < headercells.length; x++) {
-                        if (headercells[x].classList.contains(propTable.system.attKey)) {
-                            let columns = headercells[x].getElementsByTagName("th");
-                            for (let w = 0; w < columns.length; w++) {
-                                let empty_cell = document.createElement("TD");
-                                new_row.appendChild(empty_cell);
-                            }
-                        }
-
-                    }
-                    if (table != null)
-                        table.appendChild(new_row);
-
+                    // get header row
+                    let headerRow = document.querySelector(`[tableKey='${propTable.system.attKey}']`);
+                    let empty_cell = document.createElement("TD");
+                    empty_cell.className = "empty-cell";
+                    empty_cell.className += " " + inputgroup;
+                    empty_cell.setAttribute('colspan',headerRow.childElementCount-1);
+                    new_row.appendChild(empty_cell);                                        
+                    
+                    table.appendChild(new_row);                    
                 }
 
                 if (isFree && table != undefined) {
@@ -5156,15 +5153,13 @@ ${dialogPanel.system.title}
                 }
         }
 
+
+        
         if (!this.actor.isToken) {
             await this.actor.update({ "system.citems": cItemsID });
         }
-        else {            
-            // v10 has longer ids, 
-            // gActorSheet-Scene-ry4G1mjyCSGzxpHC-Token-8jswJPrzu0DQtoDv
-            let tokenId = this.id.split("-")[4];
-            let mytoken = canvas.tokens.get(tokenId);
-            await mytoken.document.update({ "actorData.system.citems": cItemsID });
+        else {                        
+            await this.actor.token.actor.update({ "system.citems": cItemsID });
         }
 
 

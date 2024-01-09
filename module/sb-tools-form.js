@@ -3,7 +3,7 @@ const _formid = "Sandbox-Tools";
 import { SystemSettingsForm } from "./system-settings-form.js";
 //import { DropDownMenu } from "./dropdownmenu.js";
 import { auxMeth } from "./auxmeth.js";
-
+import {SandboxSearchForm} from "./sb-search-form.js";
 
 
 export class SandboxToolsForm extends FormApplication {
@@ -38,7 +38,7 @@ export class SandboxToolsForm extends FormApplication {
     html.find('#sb-tools-btn-show-json-import').click(this._onDisplay_Sandbox_JSON_Import.bind(this));   
     html.find('#sb-tools-btn-show-build-actor-templates').click(this._onDisplay_Sandbox_BuildTemplates.bind(this)); 
     html.find('#sb-tools-btn-show-delete-all').click(this._onDisplay_Sandbox_DeleteAll.bind(this));
-
+    html.find('#sb-tools-btn-show-search').click(this._onDisplay_Sandbox_Search.bind(this));
                      
   }
 
@@ -71,6 +71,14 @@ export class SandboxToolsForm extends FormApplication {
           display: true,
           indevelopment: false
         },
+        SEARCH: {
+          id: 'sb-tools-btn-show-search',
+          name: 'Sandbox Search',
+          hint: 'Run Search tool',
+          icon: 'fas fa-magnifying-glass',
+          display: true,
+          indevelopment: false
+        },
         DELETE_ALL: {
           id: 'sb-tools-btn-show-delete-all',
           name: 'Delete All',
@@ -86,6 +94,12 @@ export class SandboxToolsForm extends FormApplication {
   }
 
 
+  _onDisplay_Sandbox_Search(event) {
+    event.preventDefault();
+    let f = new SandboxSearchForm();
+    f.render(true,{focus:true});
+  }
+  
   _onDisplay_Sandbox_Settings(event) {
     event.preventDefault();
     let f = new SystemSettingsForm();

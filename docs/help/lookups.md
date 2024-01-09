@@ -201,7 +201,5 @@ Returns string separated by strseparator
 // Note, comments are not supported in the Expression Editor
 
 lookupList(LOOKUP_AGE;Age Group) // returns "Infant|Child|Adolecent|Adult|Middle age|Senior|Old"
-
 ```
 
-### 

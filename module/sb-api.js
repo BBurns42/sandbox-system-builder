@@ -1812,7 +1812,7 @@ async function fontAwesomeIconPicker(selectedclass='',defaultclass='', addToTitl
       <legend class="sb-icon-picker-title">Icon library</legend>
       <div>
         <span class="sb-icon-picker-span-no-break" >
-          <label class="sb-icon-picker-label-no-break" for="sb-icon-picker-filter">Search filter</label><input type="text" id="sb-icon-picker-filter"/>
+          <label class="sb-icon-picker-label-no-break" for="sb-icon-picker-filter">Search filter</label><input type="text" id="sb-icon-picker-filter" onkeyup="iconPickerFilter()"/>
           <button class="sb-icon-picker-button-filter" type="button" onclick="iconPickerFilter()" title="Search"><i  class="fa-solid fa-magnifying-glass"></i></button> 
           <button class="sb-icon-picker-button-filter" type="button" onclick="iconPickerFilterClear()" title="Clear filter"><i  class="fa-solid fa-times-circle"></i></button> 
         </span>
@@ -1916,7 +1916,8 @@ async function fontAwesomeIconPicker(selectedclass='',defaultclass='', addToTitl
             width: "632",
             height: "750",
             resizable: false,
-            id:"sb-icon-picker-dialog"            
+            id:"sb-icon-picker-dialog",
+            closeOnSubmit:false
     });
   });
   let answer = await dialog;

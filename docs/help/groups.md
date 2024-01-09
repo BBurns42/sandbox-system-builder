@@ -4,6 +4,8 @@
 
 A Group is a set of properties that can be assigned to a cItem.
 
+In order to display a cItem in a table, the cItem must have at least one Group
+
 ### Details
 
 ![](./resources/group_basic.png)
