@@ -14,6 +14,7 @@ import { INVALID_KEY_CHARACTERS } from "./sb-key-validate.js";
 import { SandboxKeyValidate } from "./sb-key-validate.js";
 import { SystemSettingsForm } from "./system-settings-form.js";
 import { sb_custom_dialog_confirm } from "./sb-custom-dialogs.js";
+import { SandboxSearchForm } from "./sb-search-form.js";
 
 export function activateHelpers(html,item){
   try{
@@ -84,7 +85,9 @@ export function activateHelpers(html,item){
         if(item.type=="property"){
           menuItems = sb_item_sheet_dropdown_add_copy_property_as_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);
         }
-        menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);  
+        menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);
+        menuItems = sb_item_sheet_dropdown_add_search(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item);
+        
         new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-key-${item.id}`, menuItems);
       }
     }
@@ -320,6 +323,32 @@ function sb_item_sheet_dropdown_add_validate(html,menu,oAttribute,item){
         condition:true,
         callback: () => {
           sb_item_sheet_validate_input(html, oAttribute,item.type, item.id);
+        }
+      }    
+    ];
+    // add default menu items to  with supplied menu
+    returnMenu= menu.concat(menuItems);
+    return returnMenu;
+}
+
+function sb_item_sheet_dropdown_add_search(html,menu,oAttribute,item){
+  let returnMenu;
+  let menuItems=[
+      {
+        name: "Search",
+        icon: "<i class='fas fa-magnifying-glass fa-fw'></i>",  
+        tooltip:"Search for references to this key ",
+        condition:true,
+        callback: () => {
+          //sb_item_sheet_validate_input(html, oAttribute,item.type, item.id);
+          let elementInput=sb_item_sheet_get_input(html,'key',item.type);
+          if (elementInput!=null && elementInput.length>0){   
+            let sKey=elementInput[0].value; 
+            //sb_item_sheet_validate_key(validatingitemtype,itemName,itemid,typeClass,sKey,enforcedvalidation);
+            let f = new SandboxSearchForm({search_for:sKey});
+            f.render(true,{focus:true});  
+          }
+          
         }
       }    
     ];

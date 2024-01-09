@@ -1447,7 +1447,7 @@ export class gActor extends Actor {
     }
 
     async checkPropAuto(actorData, repeat = false) {
-        console.log("checking auto properties");
+        //console.log("checking auto properties");
         //        await this.update({"flags.ischeckingauto":true});
         //        this.data.flags.ischeckingauto = true;
         //        this.data.flags.hasupdated = false;

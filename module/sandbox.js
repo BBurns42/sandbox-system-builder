@@ -41,9 +41,10 @@ import  {
           adaptItemSheetGeoMetrics
         }  from "./sb-sheet-functions.js";
 import { SOCKETCONSTANTS } from "./sb-socket-constants.js";
-import  { socketHandler } from "./sb-socket-functions.js";
-import  { versionManagement } from "./sb-version-management.js";
-import  { getSandboxItemIconFile } from "./sb-itemsheet-helpers.js";
+import { socketHandler } from "./sb-socket-functions.js";
+import { versionManagement } from "./sb-version-management.js";
+import { getSandboxItemIconFile } from "./sb-itemsheet-helpers.js";
+import { SandboxSearchForm } from "./sb-search-form.js";
 
 
 
@@ -853,6 +854,16 @@ function createExportButtons(sidebar, jq) {
         condition:true,
         callback: html => {
           SBBugReport();
+        }
+      },  
+      {
+        name: "Search",
+        tooltip:"Search Sandbox Items",
+        icon: "<i class='fas fa-magnifying-glass fa-fw'></i>",
+        condition:true,
+        callback: html => {
+          let f = new SandboxSearchForm();
+          f.render(true,{focus:true});
         }
       }      
     ];     

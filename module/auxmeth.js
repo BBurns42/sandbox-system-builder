@@ -1087,7 +1087,7 @@ export class auxMeth {
             diff = 0;
         returnValue = returnValue.replace(/\#{diff}/g, diff);
       }
-      if(actor=!null){        
+      if(actor!=null){        
         returnValue = returnValue.replace(/\@{name}/g, actor.name);
       }
       if(actorcitem!=null){
@@ -2386,7 +2386,7 @@ if(!useMathParser){
         
         return toreturn;
     }
-  static async getListPropertyFirstOption(property,actorattributes, citemattributes){
+  static async getListPropertyFirstOption(property,actorattributes=null, citemattributes=null){
     let result='';
     let list=await auxMeth.getListPropertyOptions(property,actorattributes, citemattributes);
     if(list.length>0){      
@@ -2431,6 +2431,9 @@ if(!useMathParser){
         }
       }                  
     }
+    // get rid of duplicates by using Set
+    addList = Array.from(new Set(addList.split('|'))).join('|');
+    
     return addList;
   }  
     

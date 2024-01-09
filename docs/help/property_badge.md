@@ -4,11 +4,11 @@ Badge is a special variant of a number property, it stores only whole numbers(in
 
 ![](./resources/property_badge_basic.png)
 
-#### Max Value
+### Max Value
 
 The maximum value that the property can have. This field accepts [Expressions](sandbox_expressions.md)
 
-#### Auto
+### Auto
 
 A valid Common Expression, see [Expressions](sandbox_expressions.md)
 

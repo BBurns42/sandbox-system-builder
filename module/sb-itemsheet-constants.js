@@ -19,7 +19,7 @@
       SIMPLETEXT     : 890,
       SIMPLENUMERIC  : 920,
       CHECKBOX       : 925,
-      RADIO          : 890,
+      RADIO          : 800,
       TEXTAREA       : 815,
       LIST           : 895,
       LABEL          : 725,
