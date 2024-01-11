@@ -28,7 +28,11 @@
 
 10. [Lookups](lookups.md)
 
-11. [Roll Expressions](roll_expressions.md)
+11. Expressions
+
+    1. [Common Expressions](sandbox_expressions.md)
+
+    2. [Roll Expressions](roll_expressions.md)
 
 12. [CSS and Styling](css_and_styling.md)
 

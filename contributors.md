@@ -9,4 +9,4 @@
 
 ## Special thanks for all the people who had helped this project so far:
 
-- Alondaar - unwavering support and useful contributions to the code base
+- Alondaar - unwavering support and useful contributions to the code base, support him here [Ko-fi](https://ko-fi.com/alondaar)

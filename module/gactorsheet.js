@@ -644,120 +644,39 @@ export class gActorSheet extends ActorSheet {
         }));
     }
 
-    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData) {
-
-        //let dialogPanel = await game.items.get(dialogID);
+    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData) {        
         let dialogPanel = await auxMeth.getTElement(dialogID, "panel", dialogName);
-
         if (dialogPanel == null || dialogPanel == undefined) {
             console.warn("Sandbox | generateRollDialog | " + dialogName + " not found by ID");
             ui.notifications.warn("Please re-add dialog panel to roll " + rollname);
         }
-
         let finalContent = "";
-
         if (dialogPanel.type == "multipanel") {
-
-            let multiClass;
-
-            let multiClassName = 'col-1-2';
-
-            if (dialogPanel.system.width === "1") {
-                multiClassName = 'multi-col-1-1';
-            }
-
-            else if (dialogPanel.system.width === "1/3") {
-                multiClassName = 'multi-col-1-3';
-
-            }
-
-            else if (dialogPanel.system.width === "2/3") {
-                multiClassName = 'multi-col-2-3';
-
-
-            }
-
-            else if (dialogPanel.system.width === "3/4") {
-                multiClassName = 'multi-col-3-4';
-
-            }
-
-            else if (dialogPanel.system.width === "5/6") {
-                multiClassName = 'multi-col-5-6';
-
-            }
-
-            else if (dialogPanel.system.width === "1/2") {
-                multiClassName = 'multi-col-1-2';
-
-            }
-
-            else if (dialogPanel.system.width === "1/4") {
-                multiClassName = 'multi-col-1-4';
-
-            }
-            else if (dialogPanel.system.width === "1/5") {
-                multiClassName = 'multi-col-1-5';
-
-            }
-
-            else if (dialogPanel.system.width === "1/6") {
-                multiClassName = 'multi-col-1-6';
-            }
-
-            else if (dialogPanel.system.width === "1/8") {
-                multiClassName = 'multi-col-1-8';
-
-            }
-            else if (dialogPanel.system.width === "3/10") {
-                multiClassName = 'multi-col-3-10';
-
-            }
-            else if (dialogPanel.system.width === "1/16") {
-                multiClassName = 'multi-col-1-16';
-
-            }
-            else if (dialogPanel.system.width === "5/8") {
-                multiClassName = 'multi-col-5-8';
-
-            }
-            else if (dialogPanel.system.width === "3/8") {
-                multiClassName = 'multi-col-3-8';
-
-            }
-
-            else {
-                multiClassName = 'multi-col-1-1';
-
-            }
-
-            let multiWrapper = `
-<div class="${multiClassName} multiwrapper">
-`;
-            let wrapperEnd = `
-</div>`;
-
+            let multiClass; // ???
+            let multiClassName ='multi-' +  this._getPanelWidthClass(dialogPanel.system.width);            
+            let multiWrapper = `<div class="${multiClassName} multiwrapper">`;
+            let wrapperEnd = `</div>`;
             finalContent += multiWrapper;
-
-
             for (let i = 0; i < dialogPanel.system.panels.length; i++) {
                 let myp = dialogPanel.system.panels[i];
                 //let getPanel = game.items.get(myp.id);
                 let getPanel = await auxMeth.getTElement(myp.id, "panel", myp.ikey);
-
                 finalContent += await this.generateDialogPanelHTML(getPanel);
             }
-
             finalContent += wrapperEnd;
-
         }
-
         else {
             finalContent = await this.generateDialogPanelHTML(dialogPanel);
         }
-
+        
+        rollname = await auxMeth.basicParser(rollname,this.actor);
+        //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
+        rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
+        rollname = await game.system.api._extractAPIFunctions(rollname,actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
+        let dialogTitle=rollname;  // used to be dialogPanel.system.title
+        
         let d = new Dialog({
-            title: dialogPanel.system.title,
+            title: dialogTitle,
             content: finalContent,
             buttons: {
                 one: {
@@ -766,18 +685,15 @@ export class gActorSheet extends ActorSheet {
                     callback: async (html) => {
                         let dialogvalues = html[0].getElementsByClassName("rdialogInput");
                         let dialogProps = {};
-
                         for (let k = 0; k < dialogvalues.length; k++) {
                             let myKey = dialogvalues[k].getAttribute("attKey");
                             setProperty(dialogProps, myKey, {});
                             if (dialogvalues[k].type == "checkbox") {
-
                                 dialogProps[myKey].value = dialogvalues[k].checked;
                             }
                             else {
                                 dialogProps[myKey].value = dialogvalues[k].value;
                             }
-
                         }
                         //console.log(dialogProps);
                         this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, dialogProps, useData);
@@ -794,6 +710,10 @@ export class gActorSheet extends ActorSheet {
             actorattributes: actorattributes,
             citemattributes: citemattributes,
             number: number,
+            uses:ciuses,
+            maxuses:cimaxuses,
+            isactive:isactive,
+            targets:targets,
             close: () => console.log("cItem selection dialog was shown to player.")
         }, { width: null });
         d.render(true);
@@ -802,168 +722,30 @@ export class gActorSheet extends ActorSheet {
     }
 
     async generateDialogPanelHTML(dialogPanel) {
-        let divclassName = 'col-1-2';
-
-        if (dialogPanel.system.width === "1") {
-            divclassName = 'col-1-1';
-        }
-
-        else if (dialogPanel.system.width === "1/3") {
-            divclassName = 'col-1-3';
-
-        }
-
-        else if (dialogPanel.system.width === "2/3") {
-            divclassName = 'col-2-3';
-
-
-        }
-
-        else if (dialogPanel.system.width === "3/4") {
-            divclassName = 'col-3-4';
-
-        }
-
-        else if (dialogPanel.system.width === "5/6") {
-            divclassName = 'col-5-6';
-
-        }
-
-        else if (dialogPanel.system.width === "1/2") {
-            divclassName = 'col-1-2';
-
-        }
-
-        else if (dialogPanel.system.width === "1/4") {
-            divclassName = 'col-1-4';
-
-        }
-        else if (dialogPanel.system.width === "1/5") {
-            divclassName = 'col-1-5';
-
-        }
-
-        else if (dialogPanel.system.width === "1/6") {
-            divclassName = 'col-1-6';
-        }
-
-        else if (dialogPanel.system.width === "1/8") {
-            divclassName = 'col-1-8';
-
-        }
-        else if (dialogPanel.system.width === "3/10") {
-            divclassName = 'col-3-10';
-
-        }
-        else if (dialogPanel.system.width === "1/16") {
-            divclassName = 'col-1-16';
-
-        }
-        else if (dialogPanel.system.width === "5/8") {
-            divclassName = 'col-5-8';
-
-        }
-        else if (dialogPanel.system.width === "3/8") {
-            divclassName = 'col-3-8';
-
-        }
-
-        else {
-            divclassName = 'col-1-1';
-
-        }
-        let alignment = "";
-        if (dialogPanel.system.contentalign == "center") {
-            alignment = "centercontent";
-        }
-
-        else if (dialogPanel.system.contentalign == "right") {
-            alignment = "righcontent";
-        }
-
-        let textalignment = "";
-        if (dialogPanel.system.alignment == "center") {
-            textalignment = "centertext";
-        }
-
-        else if (dialogPanel.system.alignment == "right") {
-            textalignment = "rightext";
-        }
-
-        else {
-            textalignment = "lefttext";
-        }
-
-        let finalContent = `
-<div class="${divclassName} ${dialogPanel.system.panelKey}">
-`;
-        let endDiv = `
-</div>
-
-`;
+        
+        let divclassName=this._getPanelWidthClass(dialogPanel.system.width);
+        let alignment = this._getContentAlignmentClass(dialogPanel.system.contentalign);        
+        let textalignment = this._getTextAlignmentClass(dialogPanel.system.alignment);        
+        let finalContent = `<div class="${divclassName} ${dialogPanel.system.panelKey}">`;
+        let endDiv = `</div>`;
 
         if (dialogPanel.system.title != "") {
-            finalContent += `
-            <div class="panelheader ${dialogPanel.system.headergroup}">
-${dialogPanel.system.title}
-            </div>
-            `;
+            finalContent += `<div class="panelheader ${dialogPanel.system.headergroup}">${dialogPanel.system.title}</div>`;
         }
 
         let maxcolumns = dialogPanel.system.columns;
         let currentCol = 0;
         for (let i = 0; i < parseInt(dialogPanel.system.properties.length); i++) {
             let panelPropertyRef = dialogPanel.system.properties[i];
-            //let panelProperty = game.items.get(panelPropertyRef.id);
+            
             let panelProperty = await auxMeth.getTElement(panelPropertyRef.id, "property", panelPropertyRef.ikey);
 
             if (currentCol == 0) {
                 //Create first Row
-                finalContent += `
-<div class="new-row  ${alignment}">
-`;
-            }
-            let labelwidth = "";
-            let inputwidth = "";
-
-            if (panelProperty.system.labelsize == "F") {
-                labelwidth = " label-free";
-            }
-
-            else if (panelProperty.system.labelsize == "S") {
-                labelwidth = " label-small";
-            }
-
-            else if (panelProperty.system.labelsize == "T") {
-                labelwidth = " label-tiny";
-            }
-
-            else if (panelProperty.system.labelsize == "M") {
-                labelwidth = " label-med";
-            }
-
-            else if (panelProperty.system.labelsize == "L") {
-                labelwidth = " label-medlarge";
-            }
-
-            if (panelProperty.system.inputsize == "F") {
-                inputwidth = "input-free";
-            }
-
-            else if (panelProperty.system.inputsize == "S") {
-                inputwidth = "input-small";
-            }
-
-            else if (panelProperty.system.inputsize == "M") {
-                inputwidth = "input-med";
-            }
-
-            else if (panelProperty.system.inputsize == "L") {
-                inputwidth = "input-large";
-            }
-            else if (panelProperty.system.inputsize == "T") {
-                inputwidth = "input-tiny";
-            }
+                finalContent += `<div class="new-row  ${alignment}">`;
+            }            
+            let labelwidth=this._getLabelWidthClass(panelProperty.system.labelsize);            
+            let inputwidth=this._getInputWidthClass(panelProperty.system.inputsize);
 
             let defvalue = "";
             if (panelProperty.system.defvalue != "")
@@ -971,29 +753,19 @@ ${dialogPanel.system.title}
 
             if (panelProperty.system.datatype != "button" && panelProperty.system.datatype != "table" && panelProperty.system.datatype != "textarea" && panelProperty.system.datatype != "badge" && !panelProperty.system.ishidden) {
                 if (panelProperty.system.haslabel) {
-                    finalContent += `
-<label class="${labelwidth} ${textalignment} ${panelProperty.system.fontgroup} " title="${panelProperty.system.tooltip}">${panelProperty.system.tag}</label>
-`;
+                    finalContent += `<label class="${labelwidth} ${textalignment} ${panelProperty.system.fontgroup} " title="${panelProperty.system.tooltip}">${panelProperty.system.tag}</label>`;
                 }
                 if (panelProperty.system.datatype == "checkbox") {
-
-                    finalContent += `
-<input class="rdialogInput checkbox check-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" checkGroup ="${panelProperty.system.checkgroup}" attKey ="${panelProperty.system.attKey}" type="checkbox">	
-`;
+                    finalContent += `<input class="rdialogInput checkbox check-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" checkGroup ="${panelProperty.system.checkgroup}" attKey ="${panelProperty.system.attKey}" type="checkbox">`;
                 }
                 else if (panelProperty.system.datatype == "list") {
-                    finalContent += `
-<select  class="rdialogInput select-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" attKey ="${panelProperty.system.attKey}"  data-type="String">
-`;
-                    //let options = panelProperty.system.listoptions.split(",");
+                    finalContent += `<select  class="rdialogInput select-${panelProperty.system.attKey} ${panelProperty.system.inputgroup} ${defvalue}" title="${panelProperty.system.tooltip}" attKey ="${panelProperty.system.attKey}"  data-type="String">`;                    
                     let options = await auxMeth.getListPropertyOptions(panelProperty,this.actor.system.attributes, null);
                     options = options.split("|");
                     for (let j = 0; j < options.length; j++) {
                         finalContent += `<option  value="${options[j]}">${options[j]}</option>`;
                     }
-                    finalContent += `
-</select>
-`;
+                    finalContent += `</select>`;
                 }
 
                 else if (panelProperty.system.datatype == "label") {
@@ -1002,14 +774,18 @@ ${dialogPanel.system.title}
                 else {
                     let isauto = "";
                     let arrows = "";
+                    let inputGM="";
                     if (panelProperty.system.auto != "")
-                        isauto = "isauto";
-                    if (panelProperty.system.arrows) {
+                        isauto = "isauto input-disabled";
+                    if (panelProperty.system.arrows && (panelProperty.system.editable || game.user.isGM)) {
                         arrows = "hasarrows";
                     }
-                    finalContent += `
-<input class="rdialogInput ${inputwidth} ${panelProperty.system.inputgroup} ${isauto} ${defvalue} ${arrows}" attKey ="${panelProperty.system.attKey}" type="text" value="${panelProperty.system.defvalue}">	
-`;
+                    if (!panelProperty.system.editable) {
+                        inputGM = "inputGM";
+                    }
+                   
+                    
+                    finalContent += `<input class="rdialogInput ${inputwidth} ${panelProperty.system.inputgroup} ${isauto} ${defvalue} ${arrows} ${inputGM}" attKey ="${panelProperty.system.attKey}" type="text" value="${panelProperty.system.defvalue}">`;
                 }
 
                 currentCol += 1;
@@ -1026,12 +802,110 @@ ${dialogPanel.system.title}
 
         return finalContent;
     }
+    
+    
+    _getPanelWidthClass(panelWidth='1'){
+      switch (panelWidth) {
+        case '1':                
+          return 'col-1-1';
+        case '1/3':
+          return 'col-1-3';
+        case '2/3':
+          return 'col-2-3';
+        case '3/4':
+          return 'col-3-4';
+        case '5/6':
+          return 'col-5-6';
+        case '1/2':
+          return 'col-1-2';
+        case '1/4':
+          return 'col-1-4';
+        case '1/5':
+          return 'col-1-5';
+        case '1/6':
+          return 'col-1-6';
+        case '1/8':
+          return 'col-1-8';
+        case '3/10':
+          return 'col-3-10';
+        case '1/16':
+          return 'col-1-16';
+        case '5/8':
+          return 'col-5-8';
+        case '3/8':
+          return 'col-3-8';
+        default:
+          return 'col-1-1';
+          break;
+      }    
+    }
+    
+    _getTextAlignmentClass(textAlignment){
+      switch (textAlignment) {
+        case 'center':
+          return " centertext";
+        case 'right':
+          return " rightext";
+        case 'left':
+          return " lefttext";
+        default:
+          return " centertext";
+          break;
+      }
+    }
+    
+    _getContentAlignmentClass(contentAlignment){
+      switch (contentAlignment) {
+        case 'center':
+          return " centercontent";
+        case 'right':
+          return " rightcontent";
+        case 'left':
+          return " leftcontent";
+        default:
+          return " centercontent";
+          break;
+      }      
+    }
+    
+    _getInputWidthClass(inputSize='F'){
+      switch (inputSize) {
+        case 'F':
+          return " input-free";
+        case 'S':
+          return " input-small";
+        case 'M':
+          return " input-med";
+        case 'L':
+          return " input-large";
+        case 'T':
+          return " input-tiny";
+        default:
+          return " input-free";
+      }                
+    }
+    
+    _getLabelWidthClass(labelSize='F'){
+      switch (labelSize) {
+      case 'F':
+        return " label-free";        
+      case 'S':
+        return " label-small";
+      case 'T':
+        return " label-tiny";
+      case 'M':
+        return " label-med";
+      case 'L':
+        return " label-medlarge";
+      default:
+        return " label-free";
+        break;
+      }      
+    }
 
     async _onRollCheck(attrID, attKey, citemID, citemKey = null, ciRoll = false, isFree = false, tableKey = null, useData = null) {
         //console.log("rolling att " + attrID + " item " + citemID);
-
         let actorattributes = this.actor.system.attributes;
-
         let citemattributes;
         let rollexp;
         let rollname;
@@ -1052,31 +926,22 @@ ${dialogPanel.system.title}
 
         if (citemID != null) {
             if (!isFree) {
-
                 //citem = await game.items.get(citemID);
                 citem = await await auxMeth.getcItem(citemID, citemKey);
                 findcitem = this.actor.system.citems.find(y => y.id == citemID);
                 if (findcitem != null) {
                     citemattributes = findcitem.attributes;
-
                 }
-
                 if (citem != null)
                     rollcitemID = citemID;
-
             }
-
             else {
-
                 if (tableKey != null) {
                     let tableItems = actorattributes[tableKey].tableitems;
                     let myFreeItem = tableItems.find(y => y.id == citemID);
                     citemattributes = myFreeItem.attributes;
                 }
-
             }
-
-
             //console.log(citem);
         }
 
@@ -1106,7 +971,6 @@ ${dialogPanel.system.title}
             ciuses = findcitem.uses;
             cimaxuses=findcitem.maxuses;
         }
-
 
         if (hasDialog) {
             this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData);

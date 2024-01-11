@@ -48,8 +48,10 @@ Returns the maximum roll result of a simple dice roll XdY. So `maxdie(2d6;false)
 ##### Syntax
 
 ```
-@{character_attribute_name}
+@{character_property_key}
 ```
+
+Returns the value of a actor property
 
 So, imagine that the Key of the Level Property is "lvl". You can reference it on the roll with `@{lvl}`. So if you need to roll 1d6 + level to the chat you just use: `1d6+@{lvl}`
 
@@ -58,14 +60,24 @@ So, imagine that the Key of the Level Property is "lvl". You can reference it on
 ##### Syntax
 
 ```
-#{citem_name_attribute}
+#{citem_property_key}
 ```
+
+Returns the value of a cItem property in an actor
 
 If you are using a roll expression from a cItem you can reference one or more of its attributes with this. As an example, imagine a cItem has a "damage" property, and you want a roll expression to roll 1d6 + this attribute. So the roll expression would be `1d6+#{damage}`. Remember `@{}` is for Actor attributes, `#{}` is for cItem attributes.
 
 ![](./resources/citem_sword_example.png)
 
+### d{}
 
+##### Syntax
+
+```
+#{dialog_property_key}
+```
+
+Returns the value of a dialog property, see 
 
 ### %[]
 
