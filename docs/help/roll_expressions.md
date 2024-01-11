@@ -85,7 +85,7 @@ These properties are already defined and can be used in a roll expression
 - `#{target|target_attribute_key}`: Returns the value of an attribute of the target actor on the map. Useful for calculating AC and such. Example: 
 
   ```
-  1d20 + @{weapon_skill} &&total;0:FAILURE;#{target|ac}:YOU HIT!&&
+  1d20 + @{weapon_skill} &&total;0:FAILURE,#{target|ac}:YOU HIT!&&
   ```
 
 ### cItem Reserved keys
@@ -180,7 +180,7 @@ To roll without any chat message use`0 table(roll_table) ~nochat~`
 #### Syntax
 
 ```
-&&value_to_compare;value_1:text_1,value_N,text_N&&
+&&value_to_compare;value_1:text_1,value_N:text_N&&
 ```
 
 Conditional text. So imagine you want to return a sentence to the chat, along with your roll. You want to return "SUCCESS" if the result of your roll is over 8, "FAILURE" if the result of the roll is under 7, and "PARTIAL SUCCESS" on every other result. This function allows you to return that sentence/word below the roll result. So you can do this with the following formula `&&total;0:FAILURE,7:PARTIAL SUCCESS,9:SUCCESS&&`. The first argument of the expression is the value you are analyzing, and if you write `total` it will take into account the total of the roll. You can include a property instead of that, or another roll expression with a numeric outcome.
@@ -292,10 +292,41 @@ All flags are used with surrounding tildes `~flag~`
 
 ## Some examples of rolls
 
-- Roll 1d6: `1d6`
-- Roll 1d6, if the result is lower than 4, return 0.Otherwise return 1: `%[1d6,0:0,5:1]`
-- Roll 2d6 exploding, one called Skill and the other Wild, and return the highest: `roll(Skill;1;6;true) roll(Wild;1;6;true) max(?[Skill],?[Wild])`
-- Roll 4d6 and count results higher than 4:   `roll(Test;4;6;false) countH(?[Test];4)`
-- Roll 3d10, add the results, and if any die is equal to 10 add +5:  `roll(Test;3;10;false)   sum(?[Test]) + (countE(?[Test];10) *5)`
-- Roll 2d6, if any die is higher than 3 display SUCCESS, if the first die rolls a 1 display CONSEQUENCE, if both roll a 1 display SNAKE EYES:  `roll(Test1;1;6;false) roll(Test2;1;6;false) max(?[Test1],?[Test2]) &&max(?[Test1],?[Test2]);0:FAIL;4:SUCCESS&& &&countE(?[Test1];1);0:-;1:CONSEQUENCE&& &&countE(?[Test1],?[Test2];1);0:-;2:SNAKE EYES&&`
+- Roll 1d6: 
+
+  ```
+  1d6
+  ```
+- Roll 1d6, if the result is lower than 4, return 0.Otherwise return 1: 
+
+  ```
+  %[1d6,0:0,5:1]
+  ```
+- Roll 2d6 exploding, one called Skill and the other Wild, and return the highest: 
+
+  ```
+  roll(Skill;1;6;true) roll(Wild;1;6;true) max(?[Skill],?[Wild])
+  ```
+- Roll 4d6 and count results higher than 4:   
+
+  ```
+  roll(Test;4;6;false) countH(?[Test];4)
+  ```
+- Roll 3d10, add the results, and if any die is equal to 10 add +5:  
+
+  ```
+  roll(Test;3;10;false) sum(?[Test]) + (countE(?[Test];10) *5)
+  ```
+- Roll 2d6, if any die is higher than 3 display SUCCESS, if the first die rolls a 1 display CONSEQUENCE, if both roll a 1 display SNAKE EYES:  
+
+  ```
+  roll(Test1;1;6;false) 
+  roll(Test2;1;6;false) 
+  max(?[Test1],?[Test2]) 
+  &&max(?[Test1],?[Test2]);0:FAIL,4:SUCCESS&& 
+  &&countE(?[Test1];1);0:-,1:CONSEQUENCE&& 
+  &&countE(?[Test1],?[Test2];1);0:-,2:SNAKE EYES&&
+  ```
+
+  
 
