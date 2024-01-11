@@ -3319,7 +3319,8 @@ export class gActor extends Actor {
         //Parse basics
         rollname = await auxMeth.basicParser(rollname,this);
         rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number);
-
+        rollname = await game.system.api._extractAPIFunctions(rollname,actorattributes, citemattributes, true, false, number);
+        
         rollexp = await auxMeth.basicParser(rollexp,this);
         
         if (citemattributes != null) {            
@@ -3381,7 +3382,8 @@ export class gActor extends Actor {
 
         //Preparsing TO CHECK IF VALID EXPRESSION!!!
         rollexp = await auxMeth.autoParser(rollexp, actorattributes, citemattributes, true, false, number);
-
+        rollexp = await game.system.api._extractAPIFunctions(rollexp,actorattributes, citemattributes, true, false, number);
+        
         // Early check for ~nochat~ so to prevent 3D Dice from rolling
         if (rollexp.includes("~nochat~"))
             nochat = true;

@@ -6,13 +6,13 @@ Sandbox lets you build any TTRPG system, including sheets and game data, without
 
 ## Contributors
 
-- Seregras - original developer and creator of Sandbox 
+| Name      | Role                                      | Like this system? Want to donate?                            |
+| --------- | ----------------------------------------- | ------------------------------------------------------------ |
+| Ramses800 | Current main developer                    | [Ko-fi](https://ko-fi.com/ramses800)                         |
+| Alondaar  | Support and development                   | [Ko-fi](https://ko-fi.com/alondaar)                          |
+| Seregras  | Original developer and creator of Sandbox | [PATREON](https://www.patreon.com/seregras?fan_landing=true) |
 
-- Ramses800 - current developer
-
-- Alondaar - support and development
-
-  More contributor information can be found in  [Contributors](contributors.md)
+More contributor information can be found in  [Contributors](contributors.md)
 
 ## Documentation, Tutorials & More help
 

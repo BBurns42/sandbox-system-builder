@@ -2610,8 +2610,12 @@ div.dmtk-tooltip.visible {
     justify-content: center;
 }
 
-.dialog .righcontent {
+.dialog .rightcontent {
     justify-content: right;
+}
+
+.dialog .leftcontent {
+    justify-content: left;
 }
 
 .dialog .arrcontainer {
@@ -3320,11 +3324,31 @@ select.sb-table-filter-editor-value{
   background-color: rgba(214, 150, 0, 0.8) !important;
 }
 
+.sb-lookup-table-editor-data-container{
+      overflow: hidden;
+    height: calc(100% - 155px);
+	min-height:100px;
+}
+
 .sb-lookup-table-editor-data-table tbody {
   display: block;
-  max-height: 600px;
-  overflow-y: scroll;
+    overflow-y: auto;
+    table-layout: fixed;
+    
+    height: 100%;
 }
+tfoot.sb-lookup-table-editor-data-tfoot{
+	border-top: 1px solid var(--color-border-dark);
+}
+
+
+  table.sb-lookup-table-editor-data-table{
+    
+   height: calc(100% - 80px);
+    min-height:100px;
+    border-bottom-style: none;
+    background: rgba(0,0,0,0);
+  }
 
 .sb-lookup-table-editor-data-table thead, 
 .sb-lookup-table-editor-data-table tfoot,
@@ -3369,7 +3393,7 @@ th.sb-lookup-table-editor-manipulator-cell{
 
 td.sb-lookup-table-editor-bottom-right-cell{
 	
-    width: 38px;
+    width: 80px;
 }
 
 td.sb-lookup-table-editor-footer-cell{

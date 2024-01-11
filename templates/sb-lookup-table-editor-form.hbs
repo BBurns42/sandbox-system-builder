@@ -1,4 +1,6 @@
+<style>
 
+</style>
 <form id="sb-lookup-table-editor-form-content-{{{itemid}}}" class="sb-lookup-table-editor-form-content">
   <h2 class="module-header" style="padding-top:5px;border-top: 1px solid #b5b3a4;">Lookup Table Editor<i id="sb-btn-show-settings" title="Show Sandbox Settings"  class="fas fa-cog"></i></h2>
   <table>
@@ -23,20 +25,21 @@
     </tr>
   </table>
   <!-- Main data container -->
-  <table id="sb-lookup-table-editor-data-table-{{{itemid}}}" class="sb-lookup-table-editor-data-table"  name="sb-lookup-table-editor-data-table">
-    <thead id="sb-lookup-table-editor-data-thead-{{{itemid}}}" class="sb-lookup-table-editor-data-thead">
-      <tr id="sb-lookup-table-editor-data-thead-row-{{{itemid}}}">
-        {{{columns}}}
-      </tr>
-    </thead>
-    <tbody id="sb-lookup-table-editor-data-tbody-{{{itemid}}}" class="sb-lookup-table-editor-data-tbody">
-      {{{rows}}}
-    </tbody>
-    <tfoot>
-      <tr id="sb-lookup-table-editor-footer-{{{itemid}}}" class="sb-lookup-table-editor-footer">{{{footer}}}</tr>
-    </tfoot>
-  </table>
-
+  <div class="sb-lookup-table-editor-data-container">
+    <table id="sb-lookup-table-editor-data-table-{{{itemid}}}" class="sb-lookup-table-editor-data-table"  name="sb-lookup-table-editor-data-table">
+      <thead id="sb-lookup-table-editor-data-thead-{{{itemid}}}" class="sb-lookup-table-editor-data-thead">
+        <tr id="sb-lookup-table-editor-data-thead-row-{{{itemid}}}">
+          {{{columns}}}
+        </tr>
+      </thead>
+      <tbody id="sb-lookup-table-editor-data-tbody-{{{itemid}}}" class="sb-lookup-table-editor-data-tbody">
+        {{{rows}}}
+      </tbody>
+      <tfoot class="sb-lookup-table-editor-data-tfoot">
+        <tr id="sb-lookup-table-editor-footer-{{{itemid}}}" class="sb-lookup-table-editor-footer">{{{footer}}}</tr>
+      </tfoot>
+    </table>
+  </div>
   <!-- Settings Footer -->
   <footer class="sheet-footer flexrow">
     <button type="button" name="sb-lookup-table-editor-update">

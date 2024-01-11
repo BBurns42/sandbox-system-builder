@@ -97,6 +97,7 @@
   table.sb-search-result-table>tbody>tr>td{
     vertical-align:top;
     word-wrap: break-word;
+    padding-top: 8px;
   }
 
 td.sb-search-column-itemtype,
@@ -127,12 +128,15 @@ td.sb-search-column-itemkey{
     width:200px;	
   }
 
-th.sb-search-column-itemname,
+
 td.sb-search-column-itemname{
-    	
+  padding-top:0.25em !important;    	
   }
 
-
+.sb-search-form-search-type-label{
+  margin-left: 3px;
+    margin-top: 4px;
+}
   
 </style>
 
@@ -152,7 +156,7 @@ td.sb-search-column-itemname{
       <legend class="sb-search-fieldset-legend">Search Type</legend>    
       
       <input type="radio" id="sb-search-form-search-type-key-references" name="sb-search-form-search-type" value="key_references" {{#ifCond search_type "key_references"}} checked {{/ifCond}}>
-      <label for="sb-search-form-search-type-key-references"> Key references</label>    
+      <label class="sb-search-form-search-type-label" for="sb-search-form-search-type-key-references"> Key references</label>    
       
     </fieldset>  
     <fieldset class="sb-search-fieldset">

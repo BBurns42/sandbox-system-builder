@@ -203,3 +203,14 @@ Returns string separated by strseparator
 lookupList(LOOKUP_AGE;Age Group) // returns "Infant|Child|Adolecent|Adult|Middle age|Senior|Old"
 ```
 
+## Example of lookup in roll
+
+![](./resources/lookup_example_dice_steps.png)
+
+Roll Formula in simplenumeric property Step
+
+`rollp(steproll;lookupX(@{NUM_STEP};LOOKUP_DICE_STEPS;Step;Dice)) ?[steproll.total]`
+
+Auto in simplenumeric property Dice
+
+`lookupX(@{NUM_STEP};LOOKUP_DICE_STEPS;Step;Dice)`

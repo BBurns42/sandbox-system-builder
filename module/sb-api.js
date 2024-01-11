@@ -8,6 +8,7 @@ import  { SandboxJSONImportForm } from "./sb-json-import-form.js";
 import { GameFolderPicker } from "./game-folder-picker-form.js";
 import { lookupV,lookupX,lookupColumnCount,lookupRowCount,lookupList } from "./sb-lookup-table.js";
 
+import { Parser } from "./parser.js";
 
 
 // Usage: 
@@ -71,12 +72,68 @@ export class SandboxAPI {
         _extractAPIFunctions,
         _ActorProperty_RemoveProperty,
         mathParser,
-        sum,floor,ceil        
+        sum,floor,ceil ,
+        _parserTest,_parserTestAll
       };           
     
   }
 }
 
+
+//
+function _parserTest(expression){
+  const parser = new Parser();
+  let result;
+  try{
+    console.log('_parserTest\n');
+    console.log(expression);
+    result = parser.parse(expression);
+    console.log(' = ' + result );
+    
+  } catch(err){
+    console.log(err.message);
+  }
+  return result;
+}
+function _parserTestAll(){
+  const mathTests = [
+  ['1', 1],
+  [' 2 ', 2],
+  ['1 + 2', 3],
+  [' 1 + 2 ', 3],
+  ['1 + 2 * 3', 7],
+  ['(1 + 2) * 3', 9],
+  ['5 - 2', 3],
+  ['5 - 2 - 1', 2],
+  ['12 / 2 / 3', 2],
+  ['2 ^ 3 + 1', 9],
+  ['-2 ^ 2', -4],
+  ['(-2) ^ 2', 4],
+  ['-2 ^ 2 + 1', -3],
+  ['cos(0) + 3 * -4 / -2 ^ 2', 4]
+]
+
+const parser = new Parser()
+let result
+
+for (const [expression, expected] of mathTests) {
+  try {
+    result = parser.parse(expression)
+    console.assert(result == expected)
+  } catch (err) {
+    //const lines = '-'.repeat(process.stdout.columns)
+    //console.log(lines)
+    console.log(`Expression failed: "${expression}"`)
+    console.log(`Expected result: ${expected}`)
+    console.log(`Actual result: ${result}`)
+    //console.log(lines)
+    throw err
+  }
+}
+
+console.log('All tests passed! 🎉')
+}
+// 
 
 
 function _APIFunctionRequiredArguments(functionName){

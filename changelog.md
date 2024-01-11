@@ -1,5 +1,11 @@
 # Sandbox Change Log
-## Version 0.14.3.1(2024-01-xx)
+## Version 0.14.4(2024-01-11)
+- Improvement: Load actor/citem properties to roll dialogs(see documentation)
+- FIX: ImportAll for compendiums fail
+- FIX: ImportAll for compendiums supports compendium folders
+- FIX: parsing for lookup function to use in rollp()
+
+## Version 0.14.3.1(2024-01-09)
 - Added tool 'Search' - search for key references in all relevant items(property/panel/multipanel/group/tabs/lookup) fields
 - FIX: @name} returned 'undefined'
 - FIX: For Dialogs,Support for LISTs with Options Auto/Lookup
