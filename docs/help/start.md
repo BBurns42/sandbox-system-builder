@@ -20,23 +20,28 @@
 
 6. [Panels](panels.md)
 
-7. [Properties](properties.md)
+7. [Multipanels](multipanels.md)
 
-8. [Groups](groups.md)
+8. [Properties](properties.md)
 
-9. [cItems](citems.md)
+   1. [Rollable Properties](properties_rollable.md)
 
-10. [Lookups](lookups.md)
+9. [Groups](groups.md)
 
-11. Expressions
+10. [cItems](citems.md)
+
+11. [Lookups](lookups.md)
+
+12. Expressions
 
     1. [Common Expressions](sandbox_expressions.md)
 
     2. [Roll Expressions](roll_expressions.md)
+       1. [Roll Dialogs](roll_dialogs.md)
 
-12. [CSS and Styling](css_and_styling.md)
+13. [CSS and Styling](css_and_styling.md)
 
-13. [How To's](how_tos.md)
+14. [How To's](how_tos.md)
 
     
 

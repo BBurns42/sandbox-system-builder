@@ -1,4 +1,15 @@
 # Sandbox Change Log
+## Version 0.14.4.1(2024-01-15)
+- FIX: Roll Dialogs parsing of Roll Name
+- FIX: Consumable cItems attribute Uses did not accept non-numbers
+- CHANGE: For cItems tab Info renamed to Description 
+- CHANGE: For cItems tab Attributes renamed to Properties
+- CHANGE: For cItems MOD tab Layout changes
+- FIX: For items, an update will not trigger resize of form
+- FIX: For item sheets, CSS tweak for scrollablility
+- FIX: Sometimes, when having more than one actor sheet open, LIST properties were saved incorrctly
+- FIX: Unable to delete citem from actor if citem is deleted from world database
+
 ## Version 0.14.4(2024-01-11)
 - Improvement: Load actor/citem properties to roll dialogs(see documentation)
 - FIX: ImportAll for compendiums fail

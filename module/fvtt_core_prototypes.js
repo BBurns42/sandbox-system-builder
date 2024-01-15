@@ -198,7 +198,11 @@ export function fvtt_core_prototypes(){
 
       // Produce an initiative roll for the Combatant
       const roll = await combatant.getInitiativeRoll(formula);
-      //console.log(roll);
+      
+      // use actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, null) 
+      // rollSheetDice returns rolldata.result, use this to set updates
+      
+      
       updates.push({_id: id, initiative: roll.total});
 
       // Construct chat message data
@@ -214,10 +218,13 @@ export function fvtt_core_prototypes(){
         flavor: game.i18n.format("COMBAT.RollsInitiative", {name: combatant.name}),
         flags: {"core.initiativeRoll": true}
       }, messageOptions);
+      
       const chatData = await roll.toMessage(messageData, {
         create: false,
         rollMode: combatant.hidden && (rollMode === "roll") ? "gmroll" : rollMode
       });
+      
+      
 
       // Play 1 sound for the whole rolled set
       if (i > 0)

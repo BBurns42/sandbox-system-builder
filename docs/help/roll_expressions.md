@@ -195,11 +195,24 @@ Example
 &&total;20:This text only appears when the total is equal-to-or-greater-than 20&&
 ```
 
+#### Always show conditional text
+
 To always show a conditional text, you can use 
 
 ```
 0 &&0;0:Show always this&&
 ```
+
+#### Hiding the rolled result
+
+You can also add `~noresult~` to the end of an expression to hide the result! PLEASE KEEP IN MIND. THE "ROLL" STILL NEEDS A VALUE TO SUBMIT TO CHAT! even if it ends up being hidden.
+
+```plaintext
+0
+&&0;0:The result of '0' has been hidden! and only text appears!&& ~noresult~
+```
+
+#### GM Secrets in conditional texts
 
 Also, if you want to hide parts of the conditional text for non-GMs, you can use the CSS-class `secret`
 
@@ -211,7 +224,19 @@ This will enable the Reveal/Hide icon on the chat message
 
 ![](./resources/roll_chat_msg_secrets.png)
 
-You may use HTML tags inside the && expression too. Use of CSS classes is easiest, but you can also use style tags with some extra effort. You can use things like `<br> or <hr>` to better organize (or even more complicated DIV flexbox or grid things).
+#### Setting entire all conditional text to secret
+
+All text in conditional(`&&...&&`) will be marked as `secret` if the roll flag `~secretconditional~` is used
+
+Example.
+
+```
+0 &&total;0:Everything are secret&& ~secretconditional~
+```
+
+#### Formatting conditional texts
+
+You may use HTML tags inside the && expression. Use of CSS classes is easiest, but you can also use style tags with some extra effort. You can use things like `<br> or <hr>` to better organize (or even more complicated DIV flexbox or grid things).
 
 Example:
 
@@ -253,15 +278,6 @@ $<31;style="color&#58darkgreen&#59">
 $<32;style="color&#58grey&#59">
 0
 &&0;0:<hr><span $30>This text is Dark Red</span>&&
-```
-
-##### Hiding the rolled result
-
-You can now also add `~noresult~` to the end of an expression to hide the result! PLEASE KEEP IN MIND. THE "ROLL" STILL NEEDS A VALUE TO SUBMIT TO CHAT! even if it ends up being hidden.
-
-```plaintext
-0
-&&0;0:The result of '0' has been hidden! and only text appears!&& ~noresult~
 ```
 
 ## Roll IDs
