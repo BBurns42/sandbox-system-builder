@@ -38,6 +38,24 @@ export function registerHandlebarsHelpers() {
       return v1;
     }
   });
+  
+  Handlebars.registerHelper('infoToolTip', function (v1) {    
+    return `&nbsp;<i class="fas fa-circle-info" title="${game.i18n.localize(v1)}"></i>`;
+  });
+  
+  
+  Handlebars.registerHelper('itemAttribute', function (v1) {
+    let result='';
+    if(v1){     
+      if(game.i18n.has(`${v1}.Caption`)){
+        result=game.i18n.localize(`${v1}.Caption`);
+      }
+      if(game.i18n.has(`${v1}.Tooltip`)){        
+        result +=`&nbsp;<i class="fas fa-circle-info" title="${game.i18n.localize(v1 +'.Tooltip')}"></i>`;
+      }
+    } 
+    return result;
+  });
 
   Handlebars.registerHelper('ifNotEmpty', function (v1, options) {
     if (v1 == null || v1 == '') {

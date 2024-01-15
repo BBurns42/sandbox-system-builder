@@ -190,16 +190,20 @@
     },
     LOOKUP:{
       KEY:                   {ATTRIBUTE:'key',               IDENTIFIER:'input[name="system.lookupKey"]',       CAPTION:'Lookup Key'        ,LINEBREAKER:''    ,DEFAULT:''},
-      LOOKUPTABLE:           {ATTRIBUTE:'lookuptable',       IDENTIFIER:'textarea[name="lookupTable"]',           CAPTION:'Lookup Table'      ,LINEBREAKER:'\n'    ,DEFAULT:''}
+      LOOKUPTABLE:           {ATTRIBUTE:'lookuptable',       IDENTIFIER:'textarea[name="lookupTable"]',         CAPTION:'Lookup Table'      ,LINEBREAKER:'\n'    ,DEFAULT:''}
       
     },
     
     CITEM:{
       ROLLEXP:               {ATTRIBUTE:'rollexp',           IDENTIFIER:'input[name="system.roll"]',           CAPTION:'Roll Formula'       ,LINEBREAKER:'  '  ,DEFAULT:''}, 
       ROLLNAME:              {ATTRIBUTE:'rollname',          IDENTIFIER:'input[name="system.rollname"]',       CAPTION:'Roll Name'          ,LINEBREAKER:'  '  ,DEFAULT:''}, 
+      MAXUSES:               {ATTRIBUTE:'maxuses',           IDENTIFIER:'input[name="system.maxuses"]',        CAPTION:'Max Uses'           ,LINEBREAKER:'  '  ,DEFAULT:''},
       ROLLID:                {ATTRIBUTE:'rollid',            IDENTIFIER:'input[name="system.rollid"]',         CAPTION:'Roll ID'            ,LINEBREAKER:''    ,DEFAULT:''},
       ICON:                  {ATTRIBUTE:'icon',              IDENTIFIER:'input[name="system.icon"]',           CAPTION:'Icon'               ,LINEBREAKER:' '    ,DEFAULT:''},
-      ICONPATH:              {ATTRIBUTE:'tokeniconpath',     IDENTIFIER:'input[name="system.tokeniconpath"]',  CAPTION:'Icon Path'          ,LINEBREAKER:''    ,DEFAULT:''} 
+      ICONPATH:              {ATTRIBUTE:'tokeniconpath',     IDENTIFIER:'input[name="system.tokeniconpath"]',  CAPTION:'Icon Path'          ,LINEBREAKER:''    ,DEFAULT:''},
+      CONDAT:                {ATTRIBUTE:'condat',            IDENTIFIER:'input[name="{index}.condat"]',        CAPTION:'IF Condition Expression'           ,LINEBREAKER:'  '  ,DEFAULT:''},
+      CONDVALUE:             {ATTRIBUTE:'condvalue',         IDENTIFIER:'input[name="{index}.condvalue"]',     CAPTION:'Value'              ,LINEBREAKER:'  '  ,DEFAULT:''},
+      VALUE:                 {ATTRIBUTE:'value',             IDENTIFIER:'input[name="{index}.value"]',         CAPTION:'Value'              ,LINEBREAKER:'  '  ,DEFAULT:''}
     }
   };
  //'#citem-consume-icon-preview'

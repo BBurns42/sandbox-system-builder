@@ -195,7 +195,36 @@ export function activateHelpers(html,item){
       }
     }
     
-    
+    if(item.type=="cItem" ){
+      // maxuses
+      input = sb_item_sheet_get_input(html, 'maxuses', item.type);
+      if (input != null && input.length > 0) {  
+        let menuItems=[];
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].MAXUSES,item); 
+        menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].MAXUSES);  
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-maxuses-${item.id}`, menuItems);
+      }
+      // mods condat
+      for (let index = 0; index < item.system.mods.length; index++) {
+        input = sb_item_sheet_get_input(html, 'condat', item.type,index);
+        if (input != null && input.length > 0) {  
+          let menuItems=[];
+          menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CONDAT,item,index); 
+          menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CONDAT,index);  
+          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-condat-${item.id}`, menuItems);
+        }
+      }
+      // mods value
+      for (let index = 0; index < item.system.mods.length; index++) {
+        input = sb_item_sheet_get_input(html, 'value', item.type,index);
+        if (input != null && input.length > 0) {  
+          let menuItems=[];
+          menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VALUE,item,index); 
+          menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VALUE,index);  
+          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-value-${item.id}`, menuItems);
+        }
+      }
+    }
     
     if(item.type=="property"){
       // automax
@@ -402,7 +431,7 @@ function sb_item_sheet_dropdown_add_autogenerate_property_icon(html,menu,oAttrib
     return returnMenu;
 }
 
-function sb_item_sheet_dropdown_add_editor(html,menu,oAttribute,item){
+function sb_item_sheet_dropdown_add_editor(html,menu,oAttribute,item,index=null){
   let returnMenu;
   let menuItems=[
       {
@@ -411,7 +440,7 @@ function sb_item_sheet_dropdown_add_editor(html,menu,oAttribute,item){
         tooltip:"Open Expression editor",
         condition:true,
         callback: () => {
-          sb_item_sheet_edit_input(html,oAttribute,item.type,item.id,item.system.datatype,false);
+          sb_item_sheet_edit_input(html,oAttribute,item.type,item.id,item.system.datatype,false,index);
         }
       }    
     ];
@@ -563,7 +592,7 @@ function sb_item_sheet_dropdown_add_casing_menuitems(html,menu,oAttribute){
     return returnMenu;
 }
 
-function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
+function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute,index=null){
   let returnMenu;
   let defaultMenuItems=[
       {
@@ -572,7 +601,7 @@ function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
         tooltip:"Cut to Clipboard",
         condition:true,
         callback: () => {
-          sb_item_sheet_cut_input(html,oAttribute);
+          sb_item_sheet_cut_input(html,oAttribute,'','',index);
         }
       },
       {
@@ -581,7 +610,7 @@ function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
         tooltip:"Copy to Clipboard",
         condition:true,
         callback: () => {
-          sb_item_sheet_copy_input(html,oAttribute);
+          sb_item_sheet_copy_input(html,oAttribute,'','',index);
         }
       },
       {
@@ -590,7 +619,7 @@ function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
         tooltip:"Paste from Clipboard",
         condition:true,
         callback: () => {
-          sb_item_sheet_paste_input(html,oAttribute);
+          sb_item_sheet_paste_input(html,oAttribute,index);
         }
       },
       {
@@ -599,7 +628,7 @@ function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
         tooltip:"Clear input",
         condition:true,
         callback: () => {
-         sb_item_sheet_clear_input(html,oAttribute.IDENTIFIER)
+         sb_item_sheet_clear_input(html,oAttribute.IDENTIFIER,true,index);
         }
       } 
     ];
@@ -608,23 +637,29 @@ function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute){
     return returnMenu;
 }
 
-function sb_item_sheet_get_input(html,sAttribute,sTypeClass){ 
+function sb_item_sheet_get_input(html,sAttribute,sTypeClass,index=null){ 
     let objInput=null; 
     let sIdentifier= ITEMATTRIBUTE[sTypeClass.toUpperCase()][sAttribute.toUpperCase()].IDENTIFIER;
+    if(index!=null){
+      sIdentifier=sIdentifier.replaceAll('{index}',index);
+    }
     objInput = html.find(`${sIdentifier}`);
     return objInput;
   }
   
-function sb_item_sheet_cut_input(html,oAttribute,sPrefix='',sSuffix=''){ 
+async function sb_item_sheet_cut_input(html,oAttribute,sPrefix='',sSuffix='',index=null){ 
   let elementInput= null;
   let sIdentifier=oAttribute.IDENTIFIER;
+  if(index!=null){
+      sIdentifier=sIdentifier.replaceAll('{index}',index);
+    }
   let sValue='';
   elementInput= html.find(`${sIdentifier}`);
   if (elementInput!=null && elementInput.length>0){
     sValue=elementInput[0].value;
     if (sValue.length>0){     
       let sEnclosed=sPrefix + sValue + sSuffix;
-      navigator.clipboard.writeText(sEnclosed);
+      await navigator.clipboard.writeText(sEnclosed);
       // and empty it
       elementInput[0].value= '';
       // trigger onchange event
@@ -638,9 +673,12 @@ function sb_item_sheet_cut_input(html,oAttribute,sPrefix='',sSuffix=''){
   }                                                            
 }
 
-function sb_item_sheet_copy_input(html,oAttribute,sPrefix='',sSuffix=''){ 
+function sb_item_sheet_copy_input(html,oAttribute,sPrefix='',sSuffix='',index=null){ 
   let elementInput= null;
   let sIdentifier=oAttribute.IDENTIFIER;
+  if(index!=null){
+      sIdentifier=sIdentifier.replaceAll('{index}',index);
+    }
   let sValue='';
   elementInput= html.find(`${sIdentifier}`);
   if (elementInput!=null && elementInput.length>0){
@@ -668,12 +706,15 @@ function sb_item_sheet_copy_input_as_dialog_property(html,oAttribute){
   sb_item_sheet_copy_input(html,oAttribute,'d{','}');                                                           
 }
 
-function sb_item_sheet_paste_input(html,oAttribute){
+function sb_item_sheet_paste_input(html,oAttribute,index=null){
 navigator.clipboard.readText()
   .then(text => {
     // `text` contains the text read from the clipboard          
     let elementInput= null;                    
     let sIdentifier=oAttribute.IDENTIFIER;
+    if(index!=null){
+      sIdentifier=sIdentifier.replaceAll('{index}',index);
+    }
     elementInput= html.find(`${sIdentifier}`);
     if (elementInput!=null && elementInput.length>0){
       elementInput[0].value= text;
@@ -688,8 +729,11 @@ navigator.clipboard.readText()
   });            
 }
   
-function sb_item_sheet_clear_input(html,sIdentifier,triggeronchange=true){  
+function sb_item_sheet_clear_input(html,sIdentifier,triggeronchange=true,index=null){  
   let elementInput= null;
+  if(index!=null){
+      sIdentifier=sIdentifier.replaceAll('{index}',index);
+    }
   elementInput= html.find(`${sIdentifier}`);
   if (elementInput!=null && elementInput.length>0){
     switch (sIdentifier){
@@ -709,11 +753,13 @@ function sb_item_sheet_clear_input(html,sIdentifier,triggeronchange=true){
   }
 }
   
-async function sb_item_sheet_edit_input(html,oAttribute,typeClass,itemid,propertydatatype='',OPTION_USE_TABLE_FILTERS=false){
-  let sExpression=sb_item_sheet_get_input(html,oAttribute.ATTRIBUTE,typeClass)[0].value;
+async function sb_item_sheet_edit_input(html,oAttribute,typeClass,itemid,propertydatatype='',OPTION_USE_TABLE_FILTERS=false,index=null){
+  let sExpression=sb_item_sheet_get_input(html,oAttribute.ATTRIBUTE,typeClass,index)[0].value;
   let itemName=sb_item_sheet_get_input(html,'name','ITEM')[0].value;
   let itemtargetelement=ITEMATTRIBUTE[typeClass.toUpperCase()][oAttribute.ATTRIBUTE.toUpperCase()].IDENTIFIER; 
-
+  if(index!=null){
+      itemtargetelement=itemtargetelement.replaceAll('{index}',index);
+    }
   let options = {
       expression: sExpression,
       itemid: itemid,

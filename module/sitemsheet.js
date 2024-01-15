@@ -1274,6 +1274,24 @@ export class sItemSheet extends ItemSheet {
 
     }
 
+
+async upDateTabBodiesHeight(){
+      let basehtml = this.element;
+      if(!basehtml.hasOwnProperty('length')) 
+         return 
+      //let bground = basehtml.find(".window-content");
+      let sheader = await basehtml.find(".sheet-header");
+      let wheader = await basehtml.find(".window-header");
+      let stabs = await basehtml.find(".atabs");
+      let tabhandler = await basehtml.find(".tab");
+      for (let j = 0; j < tabhandler.length; j++) {
+          let mytab = tabhandler[j];
+
+          let totalheight = parseInt(basehtml[0].style.height) - parseInt(wheader[0].clientHeight) - parseInt(sheader[0].clientHeight) - parseInt(stabs[0].clientHeight) - 15;
+          mytab.style.height = totalheight + "px";
+      } 
+      this.sheetHasBeenResized=true; 
+    }
     async scrollBarTest(basehtml) {
         const wcontent = await this._element[0].getElementsByClassName("window-content");
         let newheight = parseInt(wcontent[0].offsetHeight) - 152;

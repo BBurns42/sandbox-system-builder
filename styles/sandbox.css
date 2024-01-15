@@ -69,18 +69,24 @@
   --sb-icon-picker-frame-size:27px;
 
   /* shadows */
-  --sb-text-shadow-primary:0 0 8px var(--color-shadow-primary);
-  --sb-filter-drop-shadow-primary: drop-shadow(0 0 4px var(--color-shadow-primary));
-  --sb-box-shadow-inputs:0 0 5px var(--color-shadow-primary);
+  --sb-color-shadow-primary:var(--color-shadow-primary);
+  --sb-text-shadow-primary:0 0 8px var(--sb-color-shadow-primary);
+  --sb-filter-drop-shadow-primary: drop-shadow(0 0 4px var(--sb-color-shadow-primary));
+  --sb-box-shadow-inputs:0 0 5px var(--sb-color-shadow-primary);
   /* other */
   --sb-checkbox-size:20px;
 
   /* sb tooltip */
   --sb-background-color-tooltip:var(--sb-color-inputs);
   --sb-color-tooltip:var(--sb-background-color-inputs);
-  --sb-font-size-tooltip:--sb-font-size-primary;
+  --sb-font-size-tooltip:var(--sb-font-size-labels);
   --sb-font-family-tooltip:var(--sb-font-family-primary);
 
+}
+
+input::placeholder {
+  color: lightgray!important;
+  opacity: 1; /* Firefox */
 }
 /*
 Fonts faces
@@ -127,6 +133,10 @@ Fonts faces
     overflow-y: hidden;
     font-family: var(--sb-font-family-primary);
     color:var(--sb-color-labels);
+}
+
+.sandbox.sheet .window-content form{
+  height:100%;	
 }
 
 /* Sheet Header */
@@ -1451,6 +1461,8 @@ Fonts faces
 .sandbox.sheet th{
     height: 26px;
     padding: 2px 1px;
+    font-family: var(--sb-font-family-tableheaders);
+    font-size: var(--sb-font-size-tableheaders);
 }
 
 .sandbox.sheet th:first-child{
@@ -3536,4 +3548,14 @@ table.sb-table-invisible > tbody > tr > td:nth-child(3){
     padding:0; 
     margin:0;
     border-collapse: collapse;
+}
+
+.sandbox.sheet.item label.sb-citem-form-middle-label{
+  min-width:141px;
+  max-width:146px;
+}
+
+.sandbox.sheet.item label.sb-citem-form-right-label{
+  min-width:100px;
+  max-width:100px;
 }

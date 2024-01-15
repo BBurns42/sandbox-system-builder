@@ -789,25 +789,27 @@ export class gActor extends Actor {
             for (let j = 0; j < listmods.length; j++) {
                 let modID = listmods[j];
                 let myAtt = modID.attribute;
-                let myAttValue = modID.value;
-                let myAttListEdit = modID.listmod;
-                let splitter = myAttValue.split(",");
+                if(myAtt.length>0){
+                  let myAttValue = modID?.value ?? '';
+                  let myAttListEdit = modID.listmod;
+                  let splitter = myAttValue.split(",");
+                  if(splitter.length>0){
+                    for (let k = 0; k < splitter.length; k++) {
+                        let myOpt = splitter[k];
 
-                for (let k = 0; k < splitter.length; k++) {
-                    let myOpt = splitter[k];
+                        if (myAttListEdit == "INCLUDE") {
+                            let optIndex = attributes[myAtt].listedit.add.indexOf(myOpt);
+                            attributes[myAtt].listedit.add.splice(optIndex, 1);
+                        }
 
-                    if (myAttListEdit == "INCLUDE") {
-                        let optIndex = attributes[myAtt].listedit.add.indexOf(myOpt);
-                        attributes[myAtt].listedit.add.splice(optIndex, 1);
+                        if (myAttListEdit == "REMOVE") {
+                            let optIndex = attributes[myAtt].listedit.remove.indexOf(myOpt);
+                            attributes[myAtt].listedit.remove.splice(optIndex, 1);
+                        }
+
                     }
-
-                    if (myAttListEdit == "REMOVE") {
-                        let optIndex = attributes[myAtt].listedit.remove.indexOf(myOpt);
-                        attributes[myAtt].listedit.remove.splice(optIndex, 1);
-                    }
-
+                  }
                 }
-
             }
 
             let itemsadded = citems.filter(y => y.addedBy == itemID);
@@ -2197,9 +2199,15 @@ export class gActor extends Actor {
             if (!jumpmod) {
 
                 const myAtt = attributes[attKey];
+                let seedprop;
                 //let seedprop = game.items.get(myAtt.id);
-                let seedprop = await auxMeth.getTElement(myAtt.id, "property", attKey);
-
+                try{
+                  if(myAtt!=null)
+                  seedprop = await auxMeth.getTElement(myAtt.id, "property", attKey);                
+                } catch(err){
+                  console.warn('checkpropAuto |',err.message);
+                }
+              
                 if (seedprop != null)
                     if (seedprop.system.datatype == "list") {
                         if (attributes[attKey].listedit == null)
@@ -4247,10 +4255,9 @@ export class gActor extends Actor {
             else if (rtypevalue == CONST.DICE_ROLL_MODES.SELF) {
                 // whisper to self  
                 messageData.whisper = ChatMessage.getWhisperRecipients(game.user.name);
-
             }
 
-            //console.log(blindmode);
+            
 
             let newmessage = await ChatMessage.create(messageData);
             rollData.msgid = newmessage.id;
