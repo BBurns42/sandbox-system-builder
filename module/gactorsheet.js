@@ -646,7 +646,7 @@ export class gActorSheet extends ActorSheet {
         }));
     }
 
-    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData) {        
+    async generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData, tablekey = null) {        
         let dialogPanel = await auxMeth.getTElement(dialogID, "panel", dialogName);
         if (dialogPanel == null || dialogPanel == undefined) {
             console.warn("Sandbox | generateRollDialog | " + dialogName + " not found by ID");
@@ -701,7 +701,7 @@ export class gActorSheet extends ActorSheet {
                             }
                         }
                         //console.log(dialogProps);
-                        this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, dialogProps, useData);
+                        this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, dialogProps, useData, tablekey);
                     }
                 },
                 two: {
@@ -934,6 +934,8 @@ export class gActorSheet extends ActorSheet {
         let cimaxuses=1;
         let rollcitemID;
 
+        let rolltablekey = null;
+
         if (citemID != null) {
             if (!isFree) {
                 //citem = await game.items.get(citemID);
@@ -950,6 +952,8 @@ export class gActorSheet extends ActorSheet {
                     let tableItems = actorattributes[tableKey].tableitems;
                     let myFreeItem = tableItems.find(y => y.id == citemID);
                     citemattributes = myFreeItem.attributes;
+                    rollcitemID = citemID;
+                    rolltablekey = tableKey;
                 }
             }
             //console.log(citem);
@@ -983,10 +987,10 @@ export class gActorSheet extends ActorSheet {
         }
 
         if (hasDialog) {
-            this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData);
+            this.generateRollDialog(dialogID, dialogName, rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, useData, rolltablekey);
         }
         else {
-            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, null, useData);
+            this.rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, rollcitemID, targets, null, useData, rolltablekey);
         }
 
 
@@ -994,7 +998,7 @@ export class gActorSheet extends ActorSheet {
 
     }
 
-    async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses=1, rollcitemID, targets, dialogProps = null, useData = null) {
+    async rollExpression(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses=1, rollcitemID, targets, dialogProps = null, useData = null, tablekey = null) {
         let tokenid;
         let finalroll;
         rollexp = await auxMeth.parseDialogProps(rollexp, dialogProps);
@@ -1007,7 +1011,7 @@ export class gActorSheet extends ActorSheet {
                 tokenid = canvas.tokens.placeables.find(y => y.id == targets[i]);
                 //TEST SERE FOR BETTER ROLL RESULTS
                 
-                let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, tokenid, rollcitemID);
+                let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, tokenid, rollcitemID, null, tablekey);
                 finalroll = finalrollprev.result;
             }
         }
@@ -1017,7 +1021,7 @@ export class gActorSheet extends ActorSheet {
                 tokenid = this.token.id;
             //TEST SERE FOR BETTER ROLL RESULTS
             
-            let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, null, rollcitemID, tokenid);
+            let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, null, rollcitemID, tokenid, tablekey);
             finalroll = finalrollprev.result;
         }
 
