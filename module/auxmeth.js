@@ -979,7 +979,7 @@ export class auxMeth {
 
         return expr;
     }
-    static async basicParser(expr,actor=null,actorcitem=null){
+    static async basicParser(expr,actor=null,actorcitem=null,target=null){
       let returnValue=expr;
       // parses basic things
       if(expr.length==0) return returnValue;
@@ -1003,6 +1003,30 @@ export class auxMeth {
           returnValue = await returnValue.replace(/\#{targetname}/g, firstTarget.document.name);
         } else{
           returnValue = await returnValue.replace(/\#{targetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+        }
+      }
+      // Parse current target name
+      // Only replaces the tag if target is set
+      // 'FIRST' does the same as "#{targetname}"
+      // 'NONE' replaces the tag with nothing
+      // A target object replaces with the target's name
+      if(returnValue.includes("#{currenttargetname}") && target != null){
+        switch (target) {
+            case 'FIRST':
+                let firstTarget=game.user.targets.first();
+                if(firstTarget!=null){
+                    returnValue = await returnValue.replace(/\#{currenttargetname}/g, firstTarget.document.name);
+                } else {
+                    returnValue = await returnValue.replace(/\#{currenttargetname}/g, game.i18n.localize("SANDBOX.RollExpressionNoTargetsSelected"));
+                }
+                break;
+            case 'NONE':
+                returnValue = await returnValue.replace(/\#{currenttargetname}/g, "");
+                break;
+            default:
+                if (target.name != null) {
+                    returnValue = await returnValue.replace(/\#{currenttargetname}/g, target.name);
+                }
         }
       }
       // parse target(s) name
