@@ -226,6 +226,8 @@ Hooks.once("init", async function () {
 
     let oAPI = new SandboxAPI();
     oAPI.initialize();
+    // set browser tab title
+    document.title=`${game.world.title} • Foundry VTT ${game.version} • ${game.system.title} ${game.system.version}` ;
     
 });
 
@@ -870,7 +872,7 @@ Hooks.on("updateItem", async (item, updateData, options, userId) => {
 
 Hooks.on("createToken", async (token, options, userId) => {
 
-    if (game.settings.get("sandbox", "tokenOptions")) {
+    if (game.settings.get("sandbox", "tokenOptions") && game.user.isGM) {
         let tokenData = token;
         let sameTokens = canvas.tokens.placeables.filter((tok) => tok.document.actorId === tokenData.actorId);
 
@@ -886,6 +888,28 @@ Hooks.on("createToken", async (token, options, userId) => {
 
             token.update({ name: newname });
             token.actor.update({name:newname});
+            // update the first one
+            if(tokennumber==2){
+              // check if the first token has the original name
+              
+              if(sameTokens[0].name==token.name){
+                const firstTokenName=token.name + " 1"; 
+                sameTokens[0].document.update({ name: firstTokenName });
+                sameTokens[0].document.actor.update({name:firstTokenName});
+                // check if this token is in combat
+                if(sameTokens[0].document.inCombat){
+                  // search all combabtans for this token, it might be several 
+                  const combatTracker = game.combats.apps[0];
+                  for(const combatant of combatTracker.viewed.combatants){
+                    if(combatant.tokenId==sameTokens[0].document.id){
+                      // update combatant
+                      combatant.update({name: firstTokenName});
+                    }
+                  }
+                  
+                }
+              }
+            }
         }
 
 
@@ -954,16 +978,23 @@ Hooks.on("rendersItemSheet", async (app, html, data) => {
     if (app.object.type == "property") {
         app.listMacros(html);
     }
-    adaptItemSheetGeoMetrics(app,html);
-    await app.scrollBarTest(html);
-    app._setScrollStates();
+    // if not already loaded
+    if(app._priorState<=0){
+      adaptItemSheetGeoMetrics(app,html);
+    }
+//    await app.scrollBarTest(html);
+//    app._setScrollStates();
+//    
+//    
+//    
+//    html.find('.window-resizable-handle').mouseup(ev => {
+//        ev.preventDefault();
+//        app.scrollBarTest(html);
+//    });
+    
+
     
     
-    
-    html.find('.window-resizable-handle').mouseup(ev => {
-        ev.preventDefault();
-        app.scrollBarTest(html);
-    });
     titleToTooltip(app,html)
 });
 
@@ -1131,7 +1162,7 @@ Hooks.on("rendergActorSheet", async (app, html, data) => {
         app.resizeObserver.observe(sheetbody[0]);                
       }
     }
-    titleToTooltip(app,html)
+    titleToTooltip(app,html);
 });
 
 Hooks.on("closegActorSheet", async (app, html) => {
@@ -1150,10 +1181,10 @@ Hooks.on("closegActorSheet", async (app, html) => {
 });
 
 Hooks.on("renderChatMessage", async (app, html, data) => {
-    //    console.log(app);
-    //    console.log(data);
-    //    console.log(html);
-    let speakerimg="icons/svg/mystery-man.svg"
+//        console.log(app);
+//        console.log(data);
+//        console.log(html);
+    let speakerimg="icons/svg/mystery-man.svg";
     let speakeractor=null;;
     if(typeof data.message.speaker.actor==='string' ){        
       speakeractor=game.actors.get(data.message.speaker.actor);
@@ -1202,12 +1233,17 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             let content = html.find('.dice-roll');
             content.replaceWith(newhtml);
             _html = await html[0].outerHTML;
+//          // check if the last message, then             
+//            if (game.user.isGM) {
+//              await auxMeth.rollToMenu(newhtml);
+//            }
         });
         // scroll to the bottom
         const chatlog=document.querySelector("#chat-log");
         if(chatlog!=null){
           chatlog.scrollTop = chatlog.scrollHeight;
         }
+        
     }
     //console.log(html);
     if (!_html.includes("roll-template")) {
@@ -1416,317 +1452,290 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
 
         });
     }
-   titleToTooltip(app,html)
+   titleToTooltip(app,html);
 });
 
+
+
+
 Hooks.on("renderDialog", async (app, html, data) => {
-    const htmlDom = html[0];
+  const htmlDom = html[0];
+  if (app.data.citemdialog) {
+    const OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID);
+    const OPTION_USE_CITEM_INFO_FORM_FOR_GMS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_GMS.ID);
+    let showCitemInfoOnly = false;
+    if (game.user.isGM) {
+      if (OPTION_USE_CITEM_INFO_FORM_FOR_GMS) {
+        showCitemInfoOnly = true;
+      }
+    } else {
+      if (OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS) {
+        showCitemInfoOnly = true;
+      }
+    }
+    let checkbtns = htmlDom.getElementsByClassName("dialog-check");
+    let dialogDiv = htmlDom.getElementsByClassName("item-dialog");
+    let button = htmlDom.getElementsByClassName("dialog-button")[0];
+    let links = htmlDom.getElementsByClassName("linkable");
 
-    if (app.data.citemdialog) {
-        const OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID);
-        const OPTION_USE_CITEM_INFO_FORM_FOR_GMS = sb_item_sheet_get_game_setting("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_GMS.ID);
-        let showCitemInfoOnly=false;
-        if (game.user.isGM){
-          if (OPTION_USE_CITEM_INFO_FORM_FOR_GMS){
-            showCitemInfoOnly=true;
-          }
+    let actorId = dialogDiv[0].getAttribute("actorId");
+    let selectnum = dialogDiv[0].getAttribute("selectnum");
+    const actor = game.actors.get(actorId);
+    setProperty(actor.flags, "selection", []);
+    button.disabled = true;
+
+    for (let i = 0; i < checkbtns.length; i++) {
+      let check = checkbtns[i];
+      check.addEventListener("change", (event) => {
+        let itemId = event.target.getAttribute("itemId");
+        if (event.target.checked) {
+          actor.flags.selection.push(itemId);
         } else {
-          if(OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS){
-            showCitemInfoOnly=true;
+          actor.flags.selection.splice(actor.flags.selection.indexOf(itemId), 1);
+        }
+        let selected = actor.flags.selection.length;
+        if (selected != selectnum) {
+          button.disabled = true;
+        } else {
+          button.disabled = false;
+        }
+      });
+    }
+    for (let j = 0; j < links.length; j++) {
+      links[j].addEventListener("click", async (event) => {
+        let itemId = event.target.getAttribute("itemId");
+        let ciKey = event.target.getAttribute("ciKey");
+        let citem = await auxMeth.getcItem(itemId, ciKey);
+        if (!showCitemInfoOnly) {
+          citem.sheet.render(true);
+        } else {
+          auxMeth.showCIitemInfo(citem);
+        }
+      });
+    }
+
+  }
+
+  if (app.data.citemText) {
+    htmlDom.addEventListener("keydown", function (event) {
+      event.stopPropagation();
+    }, true);
+
+    let t_area = htmlDom.getElementsByClassName("texteditor-large");
+    //console.log(t_area);
+    t_area[0].disabled = true;
+    t_area[0].addEventListener("change", (event) => {
+      app.data.dialogValue = event.target.value;
+
+    });
+
+    let lock_content = htmlDom.getElementsByClassName("lockcontent");
+    let lock_button = htmlDom.getElementsByClassName("lock");
+    let lock_open = htmlDom.getElementsByClassName("lockopen");
+
+    let button = htmlDom.getElementsByClassName("dialog-button")[0];
+    button.disabled = true;
+
+    lock_open[0].style.display = "none";
+    lock_button[0].addEventListener("click", function (event) {
+      event.stopPropagation();
+      //console.log("locking");
+      lock_open[0].style.display = "block";
+      lock_button[0].style.display = "none";
+      t_area[0].disabled = false;
+      button.disabled = true;
+    }, true);
+
+    lock_open[0].addEventListener("click", function (event) {
+      event.stopPropagation();
+      //console.log("unlocking");
+      lock_button[0].style.display = "block";
+      lock_open[0].style.display = "none";
+      button.disabled = false;
+      t_area[0].disabled = true;
+    }, true);
+  }
+
+  if (app.data.exportDialog) {
+    let checkbtns = htmlDom.getElementsByClassName("checkbox");
+    for (let i = 0; i < checkbtns.length; i++) {
+      let check = checkbtns[i];
+      check.addEventListener("change", (event) => {
+        let checkgroup = event.target.getAttribute("folderid");
+        var newevent = new Event('change');
+        if (checkgroup != null) {
+          for (let j = 0; j < checkbtns.length; j++) {
+            let othercheck = checkbtns[j];
+            if (othercheck.getAttribute("parentid") == checkgroup && othercheck != check) {
+              if (event.target.checked) {
+                if (!othercheck.checked) {
+                  othercheck.checked = true;
+                  othercheck.dispatchEvent(newevent);
+                }
+              } else {
+                if (othercheck.checked) {
+                  othercheck.checked = false;
+                  othercheck.dispatchEvent(newevent);
+                }
+              }
+            }
           }
         }
-        let checkbtns = htmlDom.getElementsByClassName("dialog-check");
-        let dialogDiv = htmlDom.getElementsByClassName("item-dialog");
-        let button = htmlDom.getElementsByClassName("dialog-button")[0];
-        let links = htmlDom.getElementsByClassName("linkable");
+      });
+    }
+  }
 
-        let actorId = dialogDiv[0].getAttribute("actorId");
-        let selectnum = dialogDiv[0].getAttribute("selectnum");
-        const actor = game.actors.get(actorId);
-        setProperty(actor.flags, "selection", []);
-        button.disabled = true;
-
-        for (let i = 0; i < checkbtns.length; i++) {
-            let check = checkbtns[i];
-            check.addEventListener("change", (event) => {
-                let itemId = event.target.getAttribute("itemId");
-                if (event.target.checked) {
-                    actor.flags.selection.push(itemId);
-                }
-                else {
-                    actor.flags.selection.splice(actor.flags.selection.indexOf(itemId), 1);
-                }
-                let selected = actor.flags.selection.length;
-                if (selected != selectnum) {
-                    button.disabled = true;
-                }
-                else {
-                    button.disabled = false;
-                }
-            });
+  if (app.data.rollDialog) {
+    let checkbtns = htmlDom.getElementsByClassName("checkbox");
+    for (let i = 0; i < checkbtns.length; i++) {
+      let check = checkbtns[i];
+      check.addEventListener("change", (event) => {
+        let checkgroup = event.target.getAttribute("checkGroup");
+        if (event.target.checked && checkgroup != "") {
+          for (let j = 0; j < checkbtns.length; j++) {
+            let othercheck = checkbtns[j];
+            if (othercheck.getAttribute("checkGroup") == checkgroup && othercheck != check)
+              othercheck.checked = false;
+          }
         }
-        for (let j = 0; j < links.length; j++) {
-            links[j].addEventListener("click", async (event) => {
-                let itemId = event.target.getAttribute("itemId");
-                let ciKey = event.target.getAttribute("ciKey");
-                let citem = await auxMeth.getcItem(itemId, ciKey);
-                if(!showCitemInfoOnly){
-                  citem.sheet.render(true);
-                } else {
-                  auxMeth.showCIitemInfo(citem);
-                }
-            });
-        }
-
+      });
     }
 
-    if (app.data.citemText) {
+    let allfields = htmlDom.getElementsByClassName("rdialogInput");
+    let dialogProps = {};
 
-        htmlDom.addEventListener("keydown", function (event) {
-            event.stopPropagation();
-        }, true);
-
-        let t_area = htmlDom.getElementsByClassName("texteditor-large");
-        //console.log(t_area);
-        t_area[0].disabled = true;
-        t_area[0].addEventListener("change", (event) => {
-            app.data.dialogValue = event.target.value;
-
-        });
-
-        let lock_content = htmlDom.getElementsByClassName("lockcontent");
-        let lock_button = htmlDom.getElementsByClassName("lock");
-        let lock_open = htmlDom.getElementsByClassName("lockopen");
-
-        let button = htmlDom.getElementsByClassName("dialog-button")[0];
-        button.disabled = true;
-
-        lock_open[0].style.display = "none";
-        lock_button[0].addEventListener("click", function (event) {
-            event.stopPropagation();
-            //console.log("locking");
-            lock_open[0].style.display = "block";
-            lock_button[0].style.display = "none";
-            t_area[0].disabled = false;
-            button.disabled = true;
-        }, true);
-
-        lock_open[0].addEventListener("click", function (event) {
-            event.stopPropagation();
-            //console.log("unlocking");
-            lock_button[0].style.display = "block";
-            lock_open[0].style.display = "none";
-            button.disabled = false;
-            t_area[0].disabled = true;
-        }, true);
-    }
-
-    if (app.data.exportDialog) {
-        let checkbtns = htmlDom.getElementsByClassName("checkbox");
-        for (let i = 0; i < checkbtns.length; i++) {
-            let check = checkbtns[i];
-            check.addEventListener("change", (event) => {
-
-                let checkgroup = event.target.getAttribute("folderid");
-                var newevent = new Event('change');
-
-                if (checkgroup != null) {
-                    for (let j = 0; j < checkbtns.length; j++) {
-                        let othercheck = checkbtns[j];
-                        if (othercheck.getAttribute("parentid") == checkgroup && othercheck != check) {
-                            if (event.target.checked) {
-                                if (!othercheck.checked) {
-                                    othercheck.checked = true;
-                                    othercheck.dispatchEvent(newevent);
-                                }
-
-                            }
-                            else {
-                                if (othercheck.checked) {
-                                    othercheck.checked = false;
-                                    othercheck.dispatchEvent(newevent);
-                                }
-                            }
-
-
-
-                        }
-
-                    }
-                }
-
-            });
-        }
-    }
-
-    if (app.data.rollDialog) {
-
-        let checkbtns = htmlDom.getElementsByClassName("checkbox");
-
-        for (let i = 0; i < checkbtns.length; i++) {
-            let check = checkbtns[i];
-            check.addEventListener("change", (event) => {
-
-                let checkgroup = event.target.getAttribute("checkGroup");
-
-                if (event.target.checked && checkgroup != "") {
-                    for (let j = 0; j < checkbtns.length; j++) {
-                        let othercheck = checkbtns[j];
-                        if (othercheck.getAttribute("checkGroup") == checkgroup && othercheck != check)
-                            othercheck.checked = false;
-                    }
-                }
-
-            });
-        }
-
-        let allfields = htmlDom.getElementsByClassName("rdialogInput");
-        let dialogProps = {};
-
-        for (let k = 0; k < allfields.length; k++) {
-            let myKey = allfields[k].getAttribute("attKey");
-            setProperty(dialogProps, myKey, {});
+    for (let k = 0; k < allfields.length; k++) {
+      let myKey = allfields[k].getAttribute("attKey");
+      setProperty(dialogProps, myKey, {});
 //            if (allfields[k].type == "checkbox") {
 //
 //                dialogProps[myKey].value = allfields[k].checked;
 //            }
 //            else {
-                dialogProps[myKey].value = allfields[k].value;
+      dialogProps[myKey].value = allfields[k].value;
+      if (allfields[k].classList.contains("hasarrows")) {
+        let sInputArrows = document.createElement("SPAN");
+        let arrContainer = document.createElement("A");
+        arrContainer.className = "arrcontainer";
+        arrContainer.style.display = "inline-block";
+        arrContainer.setAttribute("attKey", allfields[k].getAttribute("attKey"));
+        let arrUp = document.createElement("I");
+        arrUp.className = "arrup";
+        let arrDown = document.createElement("I");
+        arrDown.className = "arrdown";
 
-                if (allfields[k].classList.contains("hasarrows")) {
+        arrContainer.appendChild(arrUp);
+        arrContainer.appendChild(arrDown);
+        sInputArrows.appendChild(arrContainer);
+        allfields[k].parentElement.insertBefore(sInputArrows, allfields[k].nextSibling);
 
-                    let sInputArrows = document.createElement("SPAN");
-                    let arrContainer = document.createElement("A");
-                    arrContainer.className = "arrcontainer";
-                    arrContainer.style.display = "inline-block";
-                    arrContainer.setAttribute("attKey", allfields[k].getAttribute("attKey"));
-                    let arrUp = document.createElement("I");
-                    arrUp.className = "arrup";
-                    let arrDown = document.createElement("I");
-                    arrDown.className = "arrdown";
+        arrUp.addEventListener("click", async (event) => {
+          event.preventDefault();
+          let attKey = event.target.parentElement.getAttribute("attkey");
+          let currentValue = event.target.parentElement.parentElement.previousElementSibling.value;
+          dialogProps[attKey].value = parseInt(currentValue) + 1;
+          allfields[k].value = dialogProps[attKey].value;
+          var newevent = new Event('change');
+          allfields[k].dispatchEvent(newevent);
+        });
 
-                    arrContainer.appendChild(arrUp);
-                    arrContainer.appendChild(arrDown);
-                    sInputArrows.appendChild(arrContainer);
-                    allfields[k].parentElement.insertBefore(sInputArrows, allfields[k].nextSibling);
+        arrDown.addEventListener("click", async (event) => {
+          event.preventDefault();
+          let attKey = event.target.parentElement.getAttribute("attkey");
+          let currentValue = event.target.parentElement.parentElement.previousElementSibling.value;
+          dialogProps[attKey].value = parseInt(currentValue) - 1;
+          allfields[k].value = dialogProps[attKey].value;
+          var newevent = new Event('change');
+          allfields[k].dispatchEvent(newevent);
+        });
+      }
 
-                    arrUp.addEventListener("click", async (event) => {
-                        event.preventDefault();
-
-                        let attKey = event.target.parentElement.getAttribute("attkey");
-
-                        let currentValue = event.target.parentElement.parentElement.previousElementSibling.value;
-
-                        dialogProps[attKey].value = parseInt(currentValue) + 1;
-
-                        allfields[k].value = dialogProps[attKey].value;
-
-                        var newevent = new Event('change');
-                        allfields[k].dispatchEvent(newevent);
-                    });
-
-                    arrDown.addEventListener("click", async (event) => {
-                        event.preventDefault();
-
-                        let attKey = event.target.parentElement.getAttribute("attkey");
-
-                        let currentValue = event.target.parentElement.parentElement.previousElementSibling.value;
-
-                        dialogProps[attKey].value = parseInt(currentValue) - 1;
-
-                        allfields[k].value = dialogProps[attKey].value;
-                        var newevent = new Event('change');
-                        allfields[k].dispatchEvent(newevent);
-                    });
-                }
-
-                if (allfields[k].classList.contains("defvalue") || allfields[k].classList.contains("isauto") ) {
-                    let deffield = allfields[k];
-                    let propDef = game.items.find(y => y.system.attKey == myKey);
-                    let defexpr;
-                    if(allfields[k].classList.contains("isauto")){
-                      defexpr = propDef.system.auto;
-                    } else {
-                      defexpr = propDef.system.defvalue;
-                    }
-                    if (!propDef.system.editable && !game.user.isGM){
-                      deffield.disabled = true;
-                    }
-                    
-                    let finalvalue = defexpr;
-
-                    if (isNaN(defexpr)) {
-                        defexpr = await auxMeth.parseDialogProps(defexpr, dialogProps);
-                        //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
-                        finalvalue = await auxMeth.autoParser(defexpr, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number,app.data.uses,app.data.maxuses);
-                        finalvalue = await game.system.api._extractAPIFunctions(finalvalue,app.data.actorattributes, app.data.citemattributes, false, null, app.data.number,app.data.uses,app.data.maxuses);
-                    }
-
-                    if (propDef.system.datatype == "checkbox") {
-                        let checkfinal = false;
-                        if (finalvalue === "true"){
-                            checkfinal = true;
-                          } else {
-                            checkfinal = false;
-                          }
-
-                        deffield.checked = checkfinal;
-                    }
-                    else {
-                        deffield.value = finalvalue;
-                    }
-
-                }
-            //}
-
+      if (allfields[k].classList.contains("defvalue") || allfields[k].classList.contains("isauto")) {
+        let deffield = allfields[k];
+        let propDef = game.items.find(y => y.system.attKey == myKey);
+        let defexpr;
+        if (allfields[k].classList.contains("isauto")) {
+          defexpr = propDef.system.auto;
+        } else {
+          defexpr = propDef.system.defvalue;
+        }
+        if (!propDef.system.editable && !game.user.isGM) {
+          deffield.disabled = true;
         }
 
-        let autofields = htmlDom.getElementsByClassName("isauto");
+        let finalvalue = defexpr;
 
-        for (let n = 0; n < autofields.length; n++) {
-            let autofield = autofields[n];
-            autofield.disabled = true;
+        if (isNaN(defexpr)) {
+          defexpr = await auxMeth.parseDialogProps(defexpr, dialogProps);
+          //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
+          finalvalue = await auxMeth.autoParser(defexpr, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
+          finalvalue = await game.system.api._extractAPIFunctions(finalvalue, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
         }
 
-        for (let j = 0; j < allfields.length; j++) {
-            let thisinput = allfields[j];
-            //if (!thisinput.classList.contains("isauto")) {
-            thisinput.addEventListener("change", async (event) => {
-                for (let k = 0; k < autofields.length; k++) {
-                    let changedvalue = event.target.value;
-                    let changekey = event.target.getAttribute("attKey");
+        if (propDef.system.datatype == "checkbox") {
+          let checkfinal = false;
+          if (finalvalue === "true") {
+            checkfinal = true;
+          } else {
+            checkfinal = false;
+          }
 
-                    let changeProp = game.items.find(y => y.system.attKey == changekey);
-                    if (changeProp == null)
-                        return;
-
-                    if (changeProp.system.datatype == "checkbox")
-                        changedvalue = event.target.checked;
-
-                    dialogProps[changekey].value = changedvalue;
-
-                    let autofield = autofields[k];
-                    let propKey = autofield.getAttribute("attKey");
-                    let propObj = await game.items.find(y => y.system.attKey == propKey);
-
-                    let autoexpr = propObj.system.auto;
-                    autoexpr = await auxMeth.parseDialogProps(autoexpr, dialogProps);
-                    //console.log(autoexpr);
-                    let finalvalue = await auxMeth.autoParser(autoexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number,app.data.uses,app.data.maxuses);
-                    finalvalue = await game.system.api._extractAPIFunctions(finalvalue,app.data.actorattributes, app.data.citemattributes, false, null, app.data.number,app.data.uses,app.data.maxuses);
-                    //console.log(finalvalue);
-                    autofield.value = finalvalue;
-                }
-
-
-
-            });
-            //}
-
+          deffield.checked = checkfinal;
+        } else {
+          deffield.value = finalvalue;
         }
+
+      }
+      //}
+
     }
 
-    titleToTooltip(app,html);
+    let autofields = htmlDom.getElementsByClassName("isauto");
+
+    for (let n = 0; n < autofields.length; n++) {
+      let autofield = autofields[n];
+      autofield.disabled = true;
+    }
+
+    for (let j = 0; j < allfields.length; j++) {
+      let thisinput = allfields[j];
+      //if (!thisinput.classList.contains("isauto")) {
+      thisinput.addEventListener("change", async (event) => {
+        for (let k = 0; k < autofields.length; k++) {
+          let changedvalue = event.target.value;
+          let changekey = event.target.getAttribute("attKey");
+          let changeProp = game.items.find(y => y.system.attKey == changekey);
+          if (changeProp == null)
+            return;
+          if (changeProp.system.datatype == "checkbox")
+            changedvalue = event.target.checked;
+          dialogProps[changekey].value = changedvalue;
+          let autofield = autofields[k];
+          let propKey = autofield.getAttribute("attKey");
+          let propObj = await game.items.find(y => y.system.attKey == propKey);
+          let autoexpr = propObj.system.auto;
+          autoexpr = await auxMeth.parseDialogProps(autoexpr, dialogProps);          
+          let finalvalue = await auxMeth.autoParser(autoexpr, app.data.attributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
+          finalvalue = await game.system.api._extractAPIFunctions(finalvalue, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
+          //console.log(finalvalue);
+          autofield.value = finalvalue;
+          dialogProps[propKey].value = finalvalue;
+        }
+        // get new roll name for dialogTitle
+        let dialogTitle=app.data.rollname;
+        dialogTitle = await auxMeth.parseDialogProps(dialogTitle, dialogProps);  
+        dialogTitle = await auxMeth.basicParser(dialogTitle,app.data.actor);
+        dialogTitle = await auxMeth.autoParser(dialogTitle, app.data.actor.system.attributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
+        dialogTitle = await game.system.api._extractAPIFunctions(dialogTitle, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
+        console.log(dialogTitle);
+        // update title
+        let titleElement = htmlDom.getElementsByClassName("window-title");
+        titleElement[0].innerText=dialogTitle;
+      });
+    }
+  }
+
+  titleToTooltip(app, html);
 
 });
 

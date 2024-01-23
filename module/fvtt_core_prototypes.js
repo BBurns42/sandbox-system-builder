@@ -189,6 +189,13 @@ export function fvtt_core_prototypes(){
     // Iterate over Combatants, performing an initiative roll for each
     const updates = [];
     const messages = [];
+    
+    let initiativeFormulaFromSettings = await game.settings.get("sandbox", "initKey");
+    let initiativeFormula = "1d20";
+    if (initiativeFormulaFromSettings != "") {
+      initiativeFormula = "@{" + initiativeFormulaFromSettings + "}";
+    }
+    
     for (let [i, id] of ids.entries()) {
 
       // Get Combatant data (non-strictly)
@@ -197,33 +204,44 @@ export function fvtt_core_prototypes(){
         return results;
 
       // Produce an initiative roll for the Combatant
-      const roll = await combatant.getInitiativeRoll(formula);
-      //console.log(roll);
-      updates.push({_id: id, initiative: roll.total});
+      //const roll = await combatant.getInitiativeRoll(formula);
+      
+      // use actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, null) 
+      // rollSheetDice returns rolldata.result, use this to set updates
+      const rollname = game.i18n.format("COMBAT.RollsInitiative", {name: combatant.name});
+      const rollid='INITIATIVE_ROLL';
+      const roll=await combatant.actor.rollSheetDice(initiativeFormula, rollname, rollid, combatant.actor.system.attributes, null); 
+      updates.push({_id: id, initiative: roll.result});    
+//      updates.push({_id: id, initiative: roll.total});
 
-      // Construct chat message data
-
-      let messageData = foundry.utils.mergeObject({
-        speaker: {
-          scene: this.scene.id,
-          actor: combatant.actor?.id,
-          token: combatant.token?.id,
-          alias: combatant.name
-        },
-
-        flavor: game.i18n.format("COMBAT.RollsInitiative", {name: combatant.name}),
-        flags: {"core.initiativeRoll": true}
-      }, messageOptions);
-      const chatData = await roll.toMessage(messageData, {
-        create: false,
-        rollMode: combatant.hidden && (rollMode === "roll") ? "gmroll" : rollMode
-      });
-
-      // Play 1 sound for the whole rolled set
-      if (i > 0)
-        chatData.sound = null;
-      messages.push(chatData);
+//      // Construct chat message data
+//
+//      let messageData = foundry.utils.mergeObject({
+//        speaker: {
+//          scene: this.scene.id,
+//          actor: combatant.actor?.id,
+//          token: combatant.token?.id,
+//          alias: combatant.name
+//        },
+//
+//        flavor: game.i18n.format("COMBAT.RollsInitiative", {name: combatant.name}),
+//        flags: {"core.initiativeRoll": true}
+//      }, messageOptions);
+//      
+//      const chatData = await roll.toMessage(messageData, {
+//        create: false,
+//        rollMode: combatant.hidden && (rollMode === "roll") ? "gmroll" : rollMode
+//      });
+//      
+//      
+//
+//      // Play 1 sound for the whole rolled set
+//      if (i > 0)
+//        chatData.sound = null;
+//      messages.push(chatData);
     }
+    //console.log(updates)
+    
     if (!updates.length)
       return this;
 
@@ -236,7 +254,7 @@ export function fvtt_core_prototypes(){
     }
 
     // Create multiple chat messages
-    await ChatMessage.implementation.create(messages);
+    //await ChatMessage.implementation.create(messages);
     return this;
 
   };
@@ -253,7 +271,7 @@ export function fvtt_core_prototypes(){
     let initF = await game.settings.get("sandbox", "initKey");
     let formula = "1d20";
     if (initF != "") {
-      formula = "@{" + initF + "}"
+      formula = "@{" + initF + "}";
     }
 
     formula = await auxMeth.autoParser(formula, this.actor.system.attributes, null, true, false);

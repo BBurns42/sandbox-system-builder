@@ -32,6 +32,15 @@ The roll dialog is built on a Panel or a Multipanel with Panels inside.
 
 To create a panel for dialog, this is done as any normal panel with properties etc. except it is not added to the actor template.
 
+#### Supported properties datatypes for dialogs
+
+- Simpletext
+- Simplenumeric
+- Checkbox
+- List
+
+#### Loading actor/citem data into dialog
+
 To load any values from an actor, use the property´s **Default Value** field(which accepts an [Expression](sandbox_expressions.md) that can reference an actor property `@{..}`or a cItem property `#{..}` or any valid expression).
 
 ##### Example

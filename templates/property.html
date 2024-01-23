@@ -14,8 +14,8 @@
   {{!-- Sheet Tab Navigation --}}
   <div class="atabs">
     <nav class="sheet-tabs tabs" data-group="primary">
-      <a class="item item-tab-button" data-tab="description">Description</a>
-      <a class="item item-tab-button" data-tab="details">Details</a>
+      <a class="item item-tab-button" data-tab="description">{{localize 'SANDBOX.ItemSheet.Labels.Tab.Description'}}</a>
+      <a class="item item-tab-button" data-tab="details">{{localize 'SANDBOX.ItemSheet.Labels.Tab.Details'}}</a>
     </nav>
   </div>
 
@@ -43,7 +43,8 @@
       </div>
     {{/if}}{{!--</if>--}} 
     {{!-- Details Tab --}}
-    <div class="tab biography scrollable active" data-group="primary" data-tab="details">
+    <div class="tab details  active" data-group="primary" data-tab="details">
+      <div class="sb-item-details">
       <div class="flexblock">
         <div class="col-1-2">
           <div class="new-row">
@@ -754,7 +755,7 @@
       </div>
       {{/ifCond}}
 
-
+      </div>
     </div>
   </section>
 </form>

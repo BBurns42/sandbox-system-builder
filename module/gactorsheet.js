@@ -543,7 +543,9 @@ export class gActorSheet extends ActorSheet {
                 li.slideUp(200, () => this.render(false));
               }
             } else {
-              ui.notifications.warn('Sandbox | Unable to find item ' + itemid +  ']');            
+              ui.notifications.warn('Sandbox | Unable to find item ' + itemid +  '] in world database, removing it from actor');   
+              this.deleteCItem(itemid);
+              li.slideUp(200, () => this.render(false));
             }
         });
 
@@ -651,6 +653,7 @@ export class gActorSheet extends ActorSheet {
             ui.notifications.warn("Please re-add dialog panel to roll " + rollname);
         }
         let finalContent = "";
+        let dialogProps={};
         if (dialogPanel.type == "multipanel") {
             let multiClass; // ???
             let multiClassName ='multi-' +  this._getPanelWidthClass(dialogPanel.system.width);            
@@ -661,19 +664,21 @@ export class gActorSheet extends ActorSheet {
                 let myp = dialogPanel.system.panels[i];
                 //let getPanel = game.items.get(myp.id);
                 let getPanel = await auxMeth.getTElement(myp.id, "panel", myp.ikey);
-                finalContent += await this.generateDialogPanelHTML(getPanel);
+                finalContent += await this.generateDialogPanelHTML(getPanel,dialogProps);
             }
             finalContent += wrapperEnd;
         }
         else {
-            finalContent = await this.generateDialogPanelHTML(dialogPanel);
+            finalContent = await this.generateDialogPanelHTML(dialogPanel,dialogProps);
         }
         
-        rollname = await auxMeth.basicParser(rollname,this.actor);
-        //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
-        rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
-        rollname = await game.system.api._extractAPIFunctions(rollname,actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
         let dialogTitle=rollname;  // used to be dialogPanel.system.title
+        dialogTitle = await auxMeth.parseDialogProps(dialogTitle, dialogProps);                
+        dialogTitle = await auxMeth.basicParser(dialogTitle,this.actor);
+        //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
+        dialogTitle = await auxMeth.autoParser(dialogTitle, actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
+        dialogTitle = await game.system.api._extractAPIFunctions(dialogTitle,actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
+        
         
         let d = new Dialog({
             title: dialogTitle,
@@ -707,6 +712,8 @@ export class gActorSheet extends ActorSheet {
             },
             default: "one",
             rollDialog: true,
+            rollname:rollname,
+            actor:this.actor,
             actorattributes: actorattributes,
             citemattributes: citemattributes,
             number: number,
@@ -715,13 +722,13 @@ export class gActorSheet extends ActorSheet {
             isactive:isactive,
             targets:targets,
             close: () => console.log("cItem selection dialog was shown to player.")
-        }, { width: null });
+        }, { width: null,classes: ["dialog",dialogName] });
         d.render(true);
 
 
     }
 
-    async generateDialogPanelHTML(dialogPanel) {
+    async generateDialogPanelHTML(dialogPanel,dialogProps) {
         
         let divclassName=this._getPanelWidthClass(dialogPanel.system.width);
         let alignment = this._getContentAlignmentClass(dialogPanel.system.contentalign);        
@@ -795,7 +802,10 @@ export class gActorSheet extends ActorSheet {
                 finalContent += endDiv;
                 currentCol = 0;
             }
-
+            // add to props
+            setProperty(dialogProps, panelPropertyRef.ikey, {});                         
+            dialogProps[panelPropertyRef.ikey].value = panelProperty.system.defvalue;
+            
         }
 
         finalContent += endDiv;
@@ -3940,13 +3950,15 @@ export class gActorSheet extends ActorSheet {
                                                     }
                                                     let cvalueToString = constantvalue.toString();
                                                     let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
-                                                    let checknonumsum = cvalueToString.match(nonumsum);
+                                                    //let checknonumsum = cvalueToString.match(nonumsum);
+                                                    let checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean" ;
+                                                    let t=typeof cvalueToString;
                                                     let justexpr = true;
                                                     if (propdata.datatype == "simplenumeric")
                                                         justexpr = false;
                                                     //
                                                     if (checknonumsum) {                                                    
-                                                        constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
+                                                        constantvalue = await cvalueToString.replace(/\@{name}/g, this.actor.name);
                                                         constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
                                                         constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
                                                         constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
@@ -3961,10 +3973,11 @@ export class gActorSheet extends ActorSheet {
                                                     if(propdata.datatype === "radio"){
                                                       maxValue = propdata.automax;
                                                       cvalueToString = maxValue.toString();
-                                                      checknonumsum = cvalueToString.match(nonumsum);
+                                                      //checknonumsum = cvalueToString.match(nonumsum);
+                                                      checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean";
                                                       if (checknonumsum) { 
 
-                                                        maxValue = await maxValue.replace(/\#{active}/g, ciObject.isactive);
+                                                        maxValue = await cvalueToString.replace(/\#{active}/g, ciObject.isactive);
                                                         maxValue = await maxValue.replace(/\#{uses}/g, ciObject.uses);
                                                         maxValue = await maxValue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
                                                         maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
@@ -3978,19 +3991,35 @@ export class gActorSheet extends ActorSheet {
                                                   // for free tables
                                                   if(propdata.datatype === "radio"){
                                                     maxValue = propdata.automax;
-                                                    maxValue = await maxValue.replace(/\#{active}/g, 0);
-                                                    maxValue = await maxValue.replace(/\#{uses}/g, 1);
-                                                    maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
-                                                    maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
-                                                    maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
-                                                    maxValue = await game.system.api.mathParser(maxValue);
+                                                    cvalueToString = maxValue.toString();                                                      
+                                                    checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean";
+                                                    if (checknonumsum) {                                                     
+                                                      maxValue = await cvalueToString.replace(/\#{active}/g, 0);
+                                                      maxValue = await maxValue.replace(/\#{uses}/g, 1);
+                                                      maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
+                                                      maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
+                                                      maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
+                                                      maxValue = await game.system.api.mathParser(maxValue);
+                                                    }
                                                   }
                                                   constantvalue = propdata.defvalue;
                                                 }
                                                 if (constantvalue == "") {
-                                                  if (propdata.datatype === "simplenumeric" || propdata.datatype === "radio") {                                        
-                                                    constantvalue = '0';
-                                                  }                                    
+                                                  switch (propdata.datatype) {
+                                                    case "radio":
+                                                    case "badge":
+                                                    case "simplenumeric":
+                                                      constantvalue = '0';
+                                                      break;
+                                                    case "checkbox":
+                                                      constantvalue = false;
+                                                      break;
+                                                    default:
+
+                                                      break;
+                                                  }
+                        
+                                                                                     
                                                 }
                                             //AUTO FOR CITEMS CHANGED!!!
                                             // if (propdata.auto != "")
@@ -5924,9 +5953,9 @@ export class gActorSheet extends ActorSheet {
         for (const actorProperty in expandedData.system.attributes) {          
           let property=game.items.find(y=>y.type=="property" && y.system.attKey==actorProperty && y.system.datatype=='list');
           if (property!=null){ 
-            //console.log(property);
+            //console.log(this);
             // get this form doc
-            let listElement=document.querySelector(`[data-property-type="list"][data-property-key="${actorProperty}"]`);
+            let listElement=this.form.querySelector(`[data-property-type="list"][data-property-key="${actorProperty}"]`);
             if(listElement!=null){
               let isCitem=listElement.getAttribute("data-is-citem");
               // check the actual value

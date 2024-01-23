@@ -2523,7 +2523,9 @@ if(!useMathParser){
 
                 let amessage = game.messages.contents[i];
                 if (!found) {
-                    if (amessage.content.includes("roll-template") && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
+                    // [3].value.flags.core.initiativeRoll
+                    //let isInitiativeRoll=amessage?.flags?.core?.initiativeRoll ?? false;
+                    if (amessage.content.includes("roll-template")  && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
                         found = true;
                         lastmessage = amessage;
                         break;
@@ -2551,7 +2553,8 @@ if(!useMathParser){
                 trashcan[0].style.display = "none";
 
         let rollextra = tester.querySelector(".roll-extra");
-        rollextra.style.display = "none";
+        if(rollextra)
+          rollextra.style.display = "none";
 
 
         let rollMenu = document.createElement("DIV");

@@ -1,4 +1,22 @@
 # Sandbox Change Log
+## Version 0.14.4.2(2024-01-22)
+- FIX: LastRoll for initiative roll from Combat Tracker incorrect
+- FIX: Tab headers for properties and cItems did not work for Foundry 10
+- FIX: If setting 'Token Options' is enabled, players gets an error when a token is created
+- FIX: Using a constant number value(1,2,3 etc) or strings as arguments for lookup functions value in cItems tables dont parse
+- Added attribute 'data-result' to roll-result, makes it possible to use a CSS attribute selector based on the value of a roll, example `.roll-result[data-result="12"]{color:pink;}` 
+
+## Version 0.14.4.1(2024-01-15)
+- FIX: Roll Dialogs parsing of Roll Name
+- FIX: Consumable cItems attribute Uses did not accept non-numbers
+- CHANGE: For cItems tab Info renamed to Description 
+- CHANGE: For cItems tab Attributes renamed to Properties
+- CHANGE: For cItems MOD tab Layout changes
+- FIX: For items, an update will trigger resize of form
+- FIX: For item sheets, CSS tweak for scrollablility
+- FIX: Sometimes, when having more than one actor sheet open, LIST properties were saved incorrctly
+- FIX: Unable to delete citem from actor if citem is deleted from world database
+
 ## Version 0.14.4(2024-01-11)
 - Improvement: Load actor/citem properties to roll dialogs(see documentation)
 - FIX: ImportAll for compendiums fail

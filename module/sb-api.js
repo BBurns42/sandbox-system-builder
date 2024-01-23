@@ -72,8 +72,8 @@ export class SandboxAPI {
         _extractAPIFunctions,
         _ActorProperty_RemoveProperty,
         mathParser,
-        sum,floor,ceil ,
-        _parserTest,_parserTestAll
+        sum,floor,ceil 
+       
       };           
     
   }

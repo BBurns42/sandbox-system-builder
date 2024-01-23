@@ -5,6 +5,72 @@
   "FILES.TitleTextextended": "File Browser",
   "FILES.TitleJson": "Select JSON file",
   "FILES.TitleCsv": "Select CSV file",
+  "SANDBOX.ItemSheet.Labels.Tab.Description":"Description",
+  "SANDBOX.ItemSheet.Labels.Tab.Properties":"Properties",
+  "SANDBOX.ItemSheet.Labels.Tab.Groups":"Groups",
+  "SANDBOX.ItemSheet.Labels.Tab.Mods":"Mods",
+  "SANDBOX.ItemSheet.Labels.Tab.Details":"Details",
+  "SANDBOX.ItemSheet.Labels.Tab.Panels":"Panels",
+  
+  "SANDBOX.cItem.ItemAttribute.UseType.Caption":"Use Type",
+  "SANDBOX.cItem.ItemAttribute.UseType.Passive.Caption":"Passive",
+  "SANDBOX.cItem.ItemAttribute.UseType.Activation.Caption":"Activation",
+  "SANDBOX.cItem.ItemAttribute.UseType.Consumable.Caption":"Consumable",
+  "SANDBOX.cItem.ItemAttribute.Icon.Caption":"Activation Icon",
+  
+  "SANDBOX.cItem.ItemAttribute.SelfDestruct.Caption":"Self-destruct",
+  "SANDBOX.cItem.ItemAttribute.SelfDestruct.Tooltip":"If checked, all MODS that are not from the SET type will be permanently executed and the cItem will self destroy",
+  
+  "SANDBOX.cItem.ItemAttribute.Permanent.Caption":"Permanent",
+  "SANDBOX.cItem.ItemAttribute.Permanent.Tooltip":"If checked, the MOD effects will stay even if the cItem or MODs have been deleted/deactivated",
+  
+  "SANDBOX.cItem.ItemAttribute.MaxUses.Caption":"Max Uses",
+  "SANDBOX.cItem.ItemAttribute.MaxUses.Tooltip":"Can be an Expression.<br>Set to 0 for unlimited uses.",
+  
+  "SANDBOX.cItem.ItemAttribute.Rechargable.Caption":"Rechargable",
+  "SANDBOX.cItem.ItemAttribute.RemoveAfterLastUse.Caption":"Remove after last use",
+  
+  "SANDBOX.cItem.ItemAttribute.IsTokenIcon.Caption":"Has Icon",
+  "SANDBOX.cItem.ItemAttribute.TokenVisible.Caption":"Always on",
+  "SANDBOX.cItem.ItemAttribute.IconPath.Caption":"Icon Path",
+  
+  "SANDBOX.cItem.ItemAttribute.RollName.Caption":"Roll Name",
+  "SANDBOX.cItem.ItemAttribute.RollName.Tooltip":"Can be an Expression.",
+  
+  "SANDBOX.cItem.ItemAttribute.RollId.Caption":"Roll ID",
+  "SANDBOX.cItem.ItemAttribute.HasDialog.Caption":"Has Dialog",
+  "SANDBOX.cItem.ItemAttribute.DialogName.Caption":"Dialog Panel (Drag Here)",
+  
+  "SANDBOX.cItem.ItemAttribute.RollFormula.Caption":"Roll Formula",
+  "SANDBOX.cItem.ItemAttribute.RollFormula.Tooltip":"Must be a valid Roll Expression.",
+  
+  "SANDBOX.cItem.ItemAttribute.Mod.NewMod.Caption":"NEW MOD",
+  "SANDBOX.cItem.ItemAttribute.Mod.NewMod.Tooltip":"Add new modifier",
+  "SANDBOX.cItem.ItemAttribute.Mod.DeleteMod.Tooltip":"Delete modifier",
+  "SANDBOX.cItem.ItemAttribute.Mod.ModHeader.Caption":"MOD",
+  
+  "SANDBOX.cItem.ItemAttribute.Mod.Name.Caption":"Name",
+  "SANDBOX.cItem.ItemAttribute.Mod.Once.Caption":"Once",
+  "SANDBOX.cItem.ItemAttribute.Mod.Type.Caption":"Type",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondAt.Caption":"IF Condition Expression",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondAt.Tooltip":"A property key(without @{..} or #{..}).<br>Can be a Expression(including property key with @{..} or #{..})",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondOp.Caption":"Operator",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondOp.None.Caption":"NONE",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondValue.Caption":"Value",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondValue.Tooltip":"Only static string/number/true/false, no Expression",
+  "SANDBOX.cItem.ItemAttribute.Mod.CondValue.Caption":"Value",
+  "SANDBOX.cItem.ItemAttribute.Mod.ListMod.Caption":"Mode",
+  "SANDBOX.cItem.ItemAttribute.Mod.ListMod.Include.Caption":"Include",
+  "SANDBOX.cItem.ItemAttribute.Mod.ListMod.Remove.Caption":"Remove",
+  "SANDBOX.cItem.ItemAttribute.Mod.Attribute.Caption":"Property Key",
+  "SANDBOX.cItem.ItemAttribute.Mod.Attribute.Tooltip":"A actor property key(without @{..})",
+  "SANDBOX.cItem.ItemAttribute.Mod.Value.Caption":"Value",
+  "SANDBOX.cItem.ItemAttribute.Mod.Value.Tooltip":"Can be an Expression unless Type is CREATE",
+  "SANDBOX.cItem.ItemAttribute.Mod.RollId.Caption":"Roll ID",
+  "SANDBOX.cItem.ItemAttribute.Mod.RollIdValue.Caption":"Value",
+  "SANDBOX.cItem.ItemAttribute.Mod.SelectNum.Caption":"Select",
+  "SANDBOX.cItem.ItemAttribute.Mod.SelectNum.Tooltip":"0 for all",
+  "SANDBOX.cItem.ItemAttribute.Mod.ItemDropArea.Caption":"ITEMS(Drop below)",
   
   "SANDBOX.RollExpressionNoTargetsSelected":"No target(s) selected",
   "SANDBOX.GMAuthorityRequiredTitle":"Insufficient permission",
@@ -15,6 +81,7 @@
   "SANDBOX.ItemTypeMultiPanel":"Multipanel",
   "SANDBOX.ItemTypeGroup":"Group",
   "SANDBOX.ItemTypeSheetTab":"Sheettab",
+  "SANDBOX.ItemTypeLookup":"Lookup",
   "SANDBOX.ItemTypecItem":"cItem",
   "SANDBOX.cItemModifikation":"Modification",
   "SANDBOX.TokenActorPropertiesInfo":"Token actors inherit all properties from its source actor, to remove a inherited property, it must be removed from the source actor. A token actor can have properties not found in its source actor and they can be removed.",
@@ -124,10 +191,9 @@
         "ACTOR_SHEET_OPTIONS": {
           "Name": "Actor Sheets Options",
           "Hint": "Options for displaying actor sheets"
-        }
-        
+        }                              
       },
-      "settings":{
+      "settings":{        
         "PREFIX_PROPERTY": {
           "Name": "Prefix for property key",
           "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is unchecked"
@@ -336,7 +402,7 @@
         },
         "tokenOptions": {
           "Name": "Token Options",
-          "Hint": "If checked, you can specify bar1 under token on the template Token tab"
+          "Hint": "If checked, you can specify bar1 under token on the template Token tab, also, when creating a non-linked token, it will get automatically a number added to its token name."
         },
         "customStyle": {
           "Name": "CSS Style file",
