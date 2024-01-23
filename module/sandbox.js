@@ -226,6 +226,8 @@ Hooks.once("init", async function () {
 
     let oAPI = new SandboxAPI();
     oAPI.initialize();
+    // set browser tab title
+    document.title=`${game.world.title} • Foundry VTT ${game.version} • ${game.system.title} ${game.system.version}` ;
     
 });
 
@@ -870,7 +872,7 @@ Hooks.on("updateItem", async (item, updateData, options, userId) => {
 
 Hooks.on("createToken", async (token, options, userId) => {
 
-    if (game.settings.get("sandbox", "tokenOptions")) {
+    if (game.settings.get("sandbox", "tokenOptions") && game.user.isGM) {
         let tokenData = token;
         let sameTokens = canvas.tokens.placeables.filter((tok) => tok.document.actorId === tokenData.actorId);
 
@@ -886,6 +888,28 @@ Hooks.on("createToken", async (token, options, userId) => {
 
             token.update({ name: newname });
             token.actor.update({name:newname});
+            // update the first one
+            if(tokennumber==2){
+              // check if the first token has the original name
+              
+              if(sameTokens[0].name==token.name){
+                const firstTokenName=token.name + " 1"; 
+                sameTokens[0].document.update({ name: firstTokenName });
+                sameTokens[0].document.actor.update({name:firstTokenName});
+                // check if this token is in combat
+                if(sameTokens[0].document.inCombat){
+                  // search all combabtans for this token, it might be several 
+                  const combatTracker = game.combats.apps[0];
+                  for(const combatant of combatTracker.viewed.combatants){
+                    if(combatant.tokenId==sameTokens[0].document.id){
+                      // update combatant
+                      combatant.update({name: firstTokenName});
+                    }
+                  }
+                  
+                }
+              }
+            }
         }
 
 
@@ -1157,10 +1181,10 @@ Hooks.on("closegActorSheet", async (app, html) => {
 });
 
 Hooks.on("renderChatMessage", async (app, html, data) => {
-    //    console.log(app);
-    //    console.log(data);
-    //    console.log(html);
-    let speakerimg="icons/svg/mystery-man.svg"
+//        console.log(app);
+//        console.log(data);
+//        console.log(html);
+    let speakerimg="icons/svg/mystery-man.svg";
     let speakeractor=null;;
     if(typeof data.message.speaker.actor==='string' ){        
       speakeractor=game.actors.get(data.message.speaker.actor);
@@ -1209,12 +1233,17 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
             let content = html.find('.dice-roll');
             content.replaceWith(newhtml);
             _html = await html[0].outerHTML;
+//          // check if the last message, then             
+//            if (game.user.isGM) {
+//              await auxMeth.rollToMenu(newhtml);
+//            }
         });
         // scroll to the bottom
         const chatlog=document.querySelector("#chat-log");
         if(chatlog!=null){
           chatlog.scrollTop = chatlog.scrollHeight;
         }
+        
     }
     //console.log(html);
     if (!_html.includes("roll-template")) {
@@ -1423,8 +1452,11 @@ Hooks.on("renderChatMessage", async (app, html, data) => {
 
         });
     }
-   titleToTooltip(app,html)
+   titleToTooltip(app,html);
 });
+
+
+
 
 Hooks.on("renderDialog", async (app, html, data) => {
   const htmlDom = html[0];

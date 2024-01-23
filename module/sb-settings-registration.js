@@ -24,6 +24,7 @@ export function sb_settings_menus() {
 }
 
 export function sb_settings_registration() {
+  // SHOW OPTIONS
      game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_SHOWADV.ID, {
         name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWADV.ID}.Name`,
         hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_SHOWADV.ID}.Hint`,
@@ -104,6 +105,7 @@ export function sb_settings_registration() {
         category:`sandbox.settings.categories.SHOW_OPTIONS`,
         requiresrender:true        
     });
+    // general options
     game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID, {
         name: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID}.Name`,
         hint: `sandbox.settings.settings.${SETTINGATTRIBUTE.OPTION_TOKENOPTIONS.ID}.Hint`,
@@ -181,7 +183,7 @@ export function sb_settings_registration() {
       hidden:true,
       disableresetdefault:true
     });
-    
+     
     
     // citem options
     game.settings.register("sandbox", SETTINGATTRIBUTE.OPTION_USE_CITEM_INFO_FORM_FOR_PLAYERS.ID, {

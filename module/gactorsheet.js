@@ -3951,13 +3951,15 @@ export class gActorSheet extends ActorSheet {
                                                     }
                                                     let cvalueToString = constantvalue.toString();
                                                     let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
-                                                    let checknonumsum = cvalueToString.match(nonumsum);
+                                                    //let checknonumsum = cvalueToString.match(nonumsum);
+                                                    let checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean" ;
+                                                    let t=typeof cvalueToString;
                                                     let justexpr = true;
                                                     if (propdata.datatype == "simplenumeric")
                                                         justexpr = false;
                                                     //
                                                     if (checknonumsum) {                                                    
-                                                        constantvalue = await constantvalue.replace(/\@{name}/g, this.actor.name);
+                                                        constantvalue = await cvalueToString.replace(/\@{name}/g, this.actor.name);
                                                         constantvalue = await constantvalue.replace(/\#{name}/g, ciObject.name);
                                                         constantvalue = await constantvalue.replace(/\#{active}/g, ciObject.isactive);
                                                         constantvalue = await constantvalue.replace(/\#{uses}/g, ciObject.uses);
@@ -3972,10 +3974,11 @@ export class gActorSheet extends ActorSheet {
                                                     if(propdata.datatype === "radio"){
                                                       maxValue = propdata.automax;
                                                       cvalueToString = maxValue.toString();
-                                                      checknonumsum = cvalueToString.match(nonumsum);
+                                                      //checknonumsum = cvalueToString.match(nonumsum);
+                                                      checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean";
                                                       if (checknonumsum) { 
 
-                                                        maxValue = await maxValue.replace(/\#{active}/g, ciObject.isactive);
+                                                        maxValue = await cvalueToString.replace(/\#{active}/g, ciObject.isactive);
                                                         maxValue = await maxValue.replace(/\#{uses}/g, ciObject.uses);
                                                         maxValue = await maxValue.replace(/\#{maxuses}/g, ciObject.maxuses);                                                                                                                                                            
                                                         maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, justexpr, false, ciObject.number, ciObject.uses,ciObject.maxuses);
@@ -3989,19 +3992,35 @@ export class gActorSheet extends ActorSheet {
                                                   // for free tables
                                                   if(propdata.datatype === "radio"){
                                                     maxValue = propdata.automax;
-                                                    maxValue = await maxValue.replace(/\#{active}/g, 0);
-                                                    maxValue = await maxValue.replace(/\#{uses}/g, 1);
-                                                    maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
-                                                    maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
-                                                    maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
-                                                    maxValue = await game.system.api.mathParser(maxValue);
+                                                    cvalueToString = maxValue.toString();                                                      
+                                                    checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean";
+                                                    if (checknonumsum) {                                                     
+                                                      maxValue = await cvalueToString.replace(/\#{active}/g, 0);
+                                                      maxValue = await maxValue.replace(/\#{uses}/g, 1);
+                                                      maxValue = await maxValue.replace(/\#{maxuses}/g, 1); 
+                                                      maxValue = await auxMeth.autoParser(maxValue, this.actor.system.attributes, ciObject.attributes, true);
+                                                      maxValue = await game.system.api._extractAPIFunctions(maxValue,this.actor.system.attributes, ciObject.attributes, true); 
+                                                      maxValue = await game.system.api.mathParser(maxValue);
+                                                    }
                                                   }
                                                   constantvalue = propdata.defvalue;
                                                 }
                                                 if (constantvalue == "") {
-                                                  if (propdata.datatype === "simplenumeric" || propdata.datatype === "radio") {                                        
-                                                    constantvalue = '0';
-                                                  }                                    
+                                                  switch (propdata.datatype) {
+                                                    case "radio":
+                                                    case "badge":
+                                                    case "simplenumeric":
+                                                      constantvalue = '0';
+                                                      break;
+                                                    case "checkbox":
+                                                      constantvalue = false;
+                                                      break;
+                                                    default:
+
+                                                      break;
+                                                  }
+                        
+                                                                                     
                                                 }
                                             //AUTO FOR CITEMS CHANGED!!!
                                             // if (propdata.auto != "")
