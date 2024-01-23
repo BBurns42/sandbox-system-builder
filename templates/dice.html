@@ -31,15 +31,15 @@
         </div>
         {{/if}}
 
-        <div class="roll-result">
+        <div class="roll-result" data-result="{{{result}}}">
             {{#if showresult}}
             {{#if iscrit}}
-            <div class="roll-iscrit">
+            <div class="roll-iscrit" data-result="{{{result}}}">
                 {{{result}}}
             </div>
             {{else}}
             {{#if isfumble}}
-            <div class="roll-isfumble">
+            <div class="roll-isfumble" data-result="{{{result}}}">
                 {{{result}}}
             </div>
             {{else}}
