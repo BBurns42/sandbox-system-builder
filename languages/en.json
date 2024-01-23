@@ -191,10 +191,9 @@
         "ACTOR_SHEET_OPTIONS": {
           "Name": "Actor Sheets Options",
           "Hint": "Options for displaying actor sheets"
-        }
-        
+        }                              
       },
-      "settings":{
+      "settings":{        
         "PREFIX_PROPERTY": {
           "Name": "Prefix for property key",
           "Hint": "Used for autogenerating property key when <b>Use property data type for prefix</b> is unchecked"
@@ -403,7 +402,7 @@
         },
         "tokenOptions": {
           "Name": "Token Options",
-          "Hint": "If checked, you can specify bar1 under token on the template Token tab"
+          "Hint": "If checked, you can specify bar1 under token on the template Token tab, also, when creating a non-linked token, it will get automatically a number added to its token name."
         },
         "customStyle": {
           "Name": "CSS Style file",

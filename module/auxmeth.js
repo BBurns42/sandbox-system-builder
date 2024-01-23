@@ -2524,8 +2524,8 @@ if(!useMathParser){
                 let amessage = game.messages.contents[i];
                 if (!found) {
                     // [3].value.flags.core.initiativeRoll
-                    let isInitiativeRoll=amessage?.flags?.core?.initiativeRoll ?? false;
-                    if (amessage.content.includes("roll-template") || isInitiativeRoll && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
+                    //let isInitiativeRoll=amessage?.flags?.core?.initiativeRoll ?? false;
+                    if (amessage.content.includes("roll-template")  && !amessage.content.includes("sb-do-not-show-in-lastroll")) {
                         found = true;
                         lastmessage = amessage;
                         break;
