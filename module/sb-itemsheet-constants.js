@@ -16,16 +16,16 @@
 
   export const ITEM_SHEET_PROPERTY_HEIGHT={
 
-      SIMPLETEXT     : 890,
-      SIMPLENUMERIC  : 920,
-      CHECKBOX       : 925,
-      RADIO          : 800,
-      TEXTAREA       : 815,
-      LIST           : 895,
-      LABEL          : 725,
-      BADGE          : 890,
-      TABLE          : 875,
-      BUTTON         : 670
+      SIMPLETEXT     : 680,
+      SIMPLENUMERIC  : 720,
+      CHECKBOX       : 790,
+      RADIO          : 750,
+      TEXTAREA       : 650,
+      LIST           : 850,
+      LABEL          : 560,
+      BADGE          : 680,
+      TABLE          : 805,
+      BUTTON         : 480
 
   }; 
   export const ITEM_SHEET_DEFAULT_WIDTH=600;

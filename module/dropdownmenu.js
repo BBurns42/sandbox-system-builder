@@ -1,4 +1,10 @@
 /**
+ * DropDownMenu
+ * Version 1.0
+ * 
+ */
+
+/**
  * @typedef {object} DropDownMenuEntry
  * @property {string} name               The drop down menu label. Can be localized.
  * @property {string} icon               A string containing an HTML icon element for the menu item
@@ -22,40 +28,43 @@
  * Make sure that DropDownMenu global event listener is active
  * Example at init
  * Hooks.once("init", async function () {
-    // DropDown menu listeners
-    DropDownMenu.eventListeners();
+ // DropDown menu listeners
+ DropDownMenu.eventListeners();
  * 
  * Example usage
-    let menuItems=[
-      {
-        name: "Edit",
-        icon: "<i class='fas fa-edit fa-fw'></i>",
-        condition:true,
-        callback: html => console.log(html)
-      },
-      {
-        name: "Copy",
-        icon: "<i class='fas fa-copy fa-fw'></i>",
-        condition:true,
-        callback: html => console.log(html)
-      },
-      {
-        name: "Delete",
-        icon: "<i class='fas fa-trash fa-fw' style='color: rgb(255, 65, 65);'></i>",
-        condition:true,
-        callback: html => console.log(html)
-      }
-    ];  
-    
-    // set option eventname to click to dropdown on left click
-    let dropdownOptions={
-      eventName:"click",
-      onOpen: null,
-      onClose:null       
-    };
-    new DropDownMenu(html, "#sb-btn-show-dropdown-menu", menuItems,dropdownOptions);
-    new DropDownMenu(html, "#sb-btn-show-sandbox-settings", menuItems,dropdownOptions);  
-*/
+ let menuItems=[
+ {
+ name: "Edit",
+ icon: "<i class='fas fa-edit fa-fw'></i>",
+ condition:true,
+ callback: html => console.log(html)
+ },
+ {
+ name: "Copy",
+ icon: "<i class='fas fa-copy fa-fw'></i>",
+ condition:true,
+ callback: html => console.log(html)
+ },
+ {
+ name: "Delete",
+ icon: "<i class='fas fa-trash fa-fw' style='color: rgb(255, 65, 65);'></i>",
+ condition:true,
+ callback: html => console.log(html)
+ }
+ ];  
+ 
+ // set option eventname to click to dropdown on left click
+ let dropdownOptions={
+ eventName:"click",
+ onOpen: null,
+ onClose:null,
+ customClass:"sb-context",
+ downVerticalAdjustment:0,
+ upVerticalAdjustment:0
+ };
+ new DropDownMenu(html, "#sb-btn-show-dropdown-menu", menuItems,dropdownOptions);
+ new DropDownMenu(html, "#sb-btn-show-sandbox-settings", menuItems,dropdownOptions);  
+ */
 
 
 
@@ -69,15 +78,20 @@ export class DropDownMenu {
    *                                                    menu
    * @param {DropDownMenuCallback} [options.onOpen]      A function to call when the drop down menu is opened.
    * @param {DropDownMenuCallback} [options.onClose]     A function to call when the drop down menu is closed.
+   * @param {string} [options.customClass='']  Optionally css class to add for all dropdown elements 
    */
-  constructor(element, selector, menuItems, {eventName="click", onOpen, onClose,customClass=''}={}) {
+  constructor(element, selector, menuItems, {eventName = "click", onOpen, onClose, customClass = '',
+    downVerticalAdjustment=0,upVerticalAdjustment=0,
+    expandLeft=false,
+    expandUp=false,
+    expandRight=false,
+    expandDown=false} = {}) {
 
     /**
      * The target HTMLElement being selected
      * @type {HTMLElement}
      */
     this.element = element;
-
     /**
      * The target CSS selector which activates the menu
      * @type {string}
@@ -107,20 +121,23 @@ export class DropDownMenu {
      * @type {Function}
      */
     this.onClose = onClose;
-    
-    this.customClass=customClass;
+
+    this.customClass = customClass;
+    this.downVerticalAdjustment=downVerticalAdjustment;
+    this.upVerticalAdjustment=upVerticalAdjustment;
 
     /**
      * Track which direction the menu is expanded in
      * @type {boolean}
      */
     this._expandUp = false;
-      
-    // overides for location, option to set this in constructor to be added later
-    this._fixedExpansionLeft=true;
-    this._fixedExpansionRight=false;
-    this._fixedExpansionDown=false;
-    this._fixedExpansionUp=false;
+    this._expandLeft = false;
+
+    // overides for location
+    this.expandLeft = expandLeft;
+    this.expandRight = expandRight;
+    this.expandDown = expandDown;
+    this.expandUp = expandUp;
 
     // Bind to the current element
     this.bind();
@@ -139,7 +156,7 @@ export class DropDownMenu {
    * @returns {*|jQuery.fn.init|jQuery|HTMLElement}
    */
   get menu() {
-    return $("#dropdown-menu");  
+    return $("#dropdown-menu");
   }
 
   /* -------------------------------------------- */
@@ -154,8 +171,8 @@ export class DropDownMenu {
    * @param {string} [options.hookName="EntryContext"]  The name of the hook to call.
    * @returns {DropDownMenu}
    */
-  static create(app, html, selector, menuItems, {hookName="EntryDropDown", ...options}={}) {
-    for ( const cls of app.constructor._getInheritanceChain() ) {
+  static create(app, html, selector, menuItems, {hookName = "EntryDropDown", ...options} = {}) {
+    for (const cls of app.constructor._getInheritanceChain()) {
       /**
        * A hook event that fires when the drop down menu for entries in an Application is constructed. Substitute the
        * Application name in the hook event to target a specific Application, for example
@@ -169,7 +186,8 @@ export class DropDownMenu {
       Hooks.call(`get${cls.name}${hookName}`, html, menuItems);
     }
 
-    if ( menuItems ) return new DropDownMenu(html, selector, menuItems, options);
+    if (menuItems)
+      return new DropDownMenu(html, selector, menuItems, options);
   }
 
   /* -------------------------------------------- */
@@ -178,17 +196,22 @@ export class DropDownMenu {
    * Attach a DropDownMenu instance to an HTML selector
    */
   bind() {
-    this.element.on(this.eventName, this.selector, event => {
+    const element = this.element instanceof HTMLElement ? this.element : this.element[0];
+    element.addEventListener(this.eventName, event => {
+      const matching = event.target.closest(this.selector);
+      if (!matching)
+        return;
       event.preventDefault();
-      this.#target = event.currentTarget;
+      this.#target = matching;
       const menu = this.menu;
 
-      // Remove existing drop down UI
+      // Remove existing dropdown UI
       const prior = document.querySelector(".dropdown");
       prior?.classList.remove("dropdown");
-      if ( this.#target.contains(menu[0]) ) return this.close();
+      if (this.#target.contains(menu[0]))
+        return this.close();
 
-      // Render a new drop down menu
+      // Render a new context menu
       event.stopPropagation();
       ui.dropdown = this;
       this.onOpen?.(this.#target);
@@ -204,15 +227,16 @@ export class DropDownMenu {
    * @param {boolean} [options.animate=true]  Animate the drop down menu closing.
    * @returns {Promise<void>}
    */
-  async close({animate=true}={}) {
-    if ( animate ) await this._animateClose(this.menu);
+  async close( {animate = true} = {}) {
+    if (animate)
+      await this._animateClose(this.menu);
     this._close();
   }
 
   /* -------------------------------------------- */
 
   _close() {
-    for ( const item of this.menuItems ) {
+    for (const item of this.menuItems) {
       delete item.element;
     }
     this.menu.remove();
@@ -243,8 +267,8 @@ export class DropDownMenu {
    * @param {jQuery} target     The target element to which the drop down menu is attached
    */
   render(target) {
-    const existing = $("#dropdown-menu"); 
-    let html = existing.length ? existing : $(`<nav id="dropdown-menu" class="${this.customClass}"></nav>`);
+    const existing = $("#dropdown-menu");
+    let html = existing.length ? existing : $(`<nav id="dropdown-menu" class="dropdown-menu ${this.customClass}"></nav>`);
     let ol = $(`<ol class="dropdown-items ${this.customClass}"></ol>`);
     html.html(ol);
 
@@ -253,18 +277,19 @@ export class DropDownMenu {
 
       // Determine menu item visibility (display unless false)
       let display = true;
-      if ( item.condition !== undefined ) {
-        display = ( item.condition instanceof Function ) ? item.condition(target) : item.condition;
+      if (item.condition !== undefined) {
+        display = (item.condition instanceof Function) ? item.condition(target) : item.condition;
       }
-      if ( !display ) continue;
+      if (!display)
+        continue;
 
       // Construct and add the menu item
       let name = game.i18n.localize(item.name);
-      
-      let tooltip="";
-      if (item.tooltip!=null){
-        tooltip=item.tooltip;
-      }      
+
+      let tooltip = "";
+      if (item.tooltip != null) {
+        tooltip = item.tooltip;
+      }
       let li = $(`<li class="dropdown-item ${this.customClass}" data-tooltip="${tooltip}">${item.icon}${name}</li>`);
       li.children("i").addClass("fa-fw");
       ol.append(li);
@@ -274,7 +299,9 @@ export class DropDownMenu {
     }
 
     // Bail out if there are no children
-    if ( ol.children().length === 0 ) return;
+    if (ol.children().length === 0)
+      return;
+
 
     // Append to target
     this._setPosition(html, target);
@@ -291,6 +318,8 @@ export class DropDownMenu {
 
   /* -------------------------------------------- */
 
+
+
   /**
    * Set the position of the drop down menu, taking into consideration whether the menu should expand upward or downward
    * or left/right adjustment
@@ -302,45 +331,67 @@ export class DropDownMenu {
     target.css("position", "relative");
     html.css("visibility", "hidden");
     target.append(html);
+
     const dropdownRect = html[0].getBoundingClientRect();
     const parentRect = target[0].getBoundingClientRect();
     const containerRect = container.getBoundingClientRect();
 
     // Determine whether to expand upwards
-    const dropdownTop = parentRect.top - dropdownRect.height;
-    const dropdownBottom = parentRect.bottom + dropdownRect.height;
-    const canOverflowUp = (dropdownTop > containerRect.top) || (getComputedStyle(container).overflowY === "visible");
-
-    // If it overflows the container bottom, but not the container top
-    const containerUp = ( dropdownBottom > containerRect.bottom ) && ( dropdownTop >= containerRect.top );
-    const windowUp = ( dropdownBottom > window.innerHeight ) && ( dropdownTop > 0 ) && canOverflowUp;
-    this._expandUp = containerUp || windowUp;
-
-    // -------------------------
-    // Part added with override      
-    // default is to the right   
-    if(this._fixedExpansionLeft){
-      // always adjust to left
-      let adjustleft=-(dropdownRect.width - parentRect.width );
-      html.css("left",adjustleft + "px");
-    } else if(this._fixedExpansionRight){
-        html.css("left","");
-    } else{
-      // adaptive positioninig, this need some love for edge cases 
-      if(dropdownRect.right>containerRect.right){
-        // Adjust to left
-        let adjustleft=-(dropdownRect.width - parentRect.width );
-        html.css("left",adjustleft + "px");
-      } else {
-        // reset left
-        html.css("left","");
-      }
+    let calculatedExpandUp=parentRect.top + dropdownRect.height + parentRect.height > window.innerHeight;
+    let expandUp=false;
+    if(this.expandDown){
+      expandUp=false;
+    } else if(this.expandUp){
+      expandUp=true;
+    } else {
+      expandUp=calculatedExpandUp;
     }
-    // Override end
-    // -------------------------
-    // 
-    // Display the menu
+    
+    if (expandUp) {
+      const bottom = window.innerHeight - parentRect.top - this.upVerticalAdjustment;
+      this._expandUp = true;
+      html.css("bottom", bottom + "px");
+      html.css("top", "unset");
+    } else {
+
+      const top = parentRect.top + parentRect.height - this.downVerticalAdjustment;
+      html.css("top", top + "px");
+      html.css("bottom", "unset");
+      this._expandUp = false;
+    }
+
     html.addClass(this._expandUp ? "expand-up" : "expand-down");
+    
+    // Determine whether to show to the right or left
+    let calculatedExpandLeft=parentRect.right + dropdownRect.width > window.innerWidth;
+    let calculatedExpandRight=parentRect.right - dropdownRect.width<0;
+    let expandLeft=calculatedExpandLeft;
+    if(this.expandRight){
+      expandLeft=false;
+    } else if(this.expandLeft){
+      expandLeft=true;
+    } 
+    // make sure it stays on screen even if the preferred is right
+    if (calculatedExpandLeft && this.expandRight){
+      expandLeft=true;
+    }
+    if (calculatedExpandRight && this.expandLeft){
+      expandLeft=false;
+    }
+    
+    
+    if (expandLeft) {
+      // shift it to the left      
+      const right = window.innerWidth - parentRect.right;
+      html.css("right", right + "px");
+      this._expandLeft=false;
+    } else {
+      html.css("right", "unset");
+      this._expandLeft=false;
+    }
+    html.addClass(this._expandLeft ? "expand-left" : "expand-right");
+    // Display the menu
+    
     html.css("visibility", "");
     target.addClass("dropdown");
   }
@@ -376,9 +427,10 @@ export class DropDownMenu {
    * Global listeners which apply once only to the document.
    */
   static eventListeners() {
-    
+
     document.addEventListener("click", ev => {
-      if ( ui.dropdown ) ui.dropdown.close();
+      if (ui.dropdown)
+        ui.dropdown.close();
     });
   }
 }
