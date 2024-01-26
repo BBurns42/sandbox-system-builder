@@ -1,4 +1,10 @@
 # Sandbox Change Log
+## Version 0.14.4.3(2024-01-xx)
+- Improved error messaging for invalid argument of lookup functions
+- Overhaul of Item Helpers dropdowns to align with Foundry visuals/behaviours
+- Added missing 'Copy as CSS' to Item Helpers for Font/Input/Header Groups for Panels/Multipanels/Properties
+- FIX: Previous update fix for Tab headers for properties did not work for Foundry 10 were not properly packaged into release
+
 ## Version 0.14.4.2(2024-01-22)
 - FIX: LastRoll for initiative roll from Combat Tracker incorrect
 - FIX: Tab headers for properties and cItems did not work for Foundry 10
