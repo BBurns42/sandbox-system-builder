@@ -2243,7 +2243,7 @@ span.dc-input-dropdown-value{
 
 
 .dcroll-bar{
-    z-index: 70;
+    z-index: var(--z-index-app);
     position: fixed;
     bottom: 7px;
     right: 310px;
