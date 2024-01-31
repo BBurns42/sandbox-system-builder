@@ -1,5 +1,9 @@
 # Sandbox Change Log
-## Version 0.14.4.3(2024-01-xx)
+## Version 0.14.4.4(2024-01-31)
+-FIX: Radios in Free tables fails
+- Minor layout work on item helpers dropdown
+
+## Version 0.14.4.3(2024-01-26)
 - Improved error messaging for invalid argument of lookup functions
 - Overhaul of Item Helpers dropdowns to align with Foundry visuals/behaviours
 - Added missing 'Copy as CSS' to Item Helpers for Font/Input/Header Groups for Panels/Multipanels/Properties
@@ -20,7 +24,7 @@
 - CHANGE: For cItems MOD tab Layout changes
 - FIX: For items, an update will trigger resize of form
 - FIX: For item sheets, CSS tweak for scrollablility
-- FIX: Sometimes, when having more than one actor sheet open, LIST properties were saved incorrctly
+- FIX: Sometimes, when having more than one actor sheet open, LIST properties were saved incorrectly
 - FIX: Unable to delete citem from actor if citem is deleted from world database
 
 ## Version 0.14.4(2024-01-11)

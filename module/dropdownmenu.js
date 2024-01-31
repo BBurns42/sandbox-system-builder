@@ -81,11 +81,11 @@ export class DropDownMenu {
    * @param {string} [options.customClass='']  Optionally css class to add for all dropdown elements 
    */
   constructor(element, selector, menuItems, {eventName = "click", onOpen, onClose, customClass = '',
-    downVerticalAdjustment=0,upVerticalAdjustment=0,
-    expandLeft=false,
-    expandUp=false,
-    expandRight=false,
-    expandDown=false} = {}) {
+          downVerticalAdjustment = 0, upVerticalAdjustment = 0,
+          expandLeft = false,
+          expandUp = false,
+          expandRight = false,
+          expandDown = false} = {}) {
 
     /**
      * The target HTMLElement being selected
@@ -123,8 +123,8 @@ export class DropDownMenu {
     this.onClose = onClose;
 
     this.customClass = customClass;
-    this.downVerticalAdjustment=downVerticalAdjustment;
-    this.upVerticalAdjustment=upVerticalAdjustment;
+    this.downVerticalAdjustment = downVerticalAdjustment;
+    this.upVerticalAdjustment = upVerticalAdjustment;
 
     /**
      * Track which direction the menu is expanded in
@@ -282,16 +282,20 @@ export class DropDownMenu {
       }
       if (!display)
         continue;
+      let li;
+      if (item.separator) {
+        li = $(`<li class="dropdown-item-separator"></li>`);
+      } else {
+        // Construct and add the menu item
+        let name = game.i18n.localize(item.name);
 
-      // Construct and add the menu item
-      let name = game.i18n.localize(item.name);
-
-      let tooltip = "";
-      if (item.tooltip != null) {
-        tooltip = item.tooltip;
+        let tooltip = "";
+        if (item.tooltip != null) {
+          tooltip = item.tooltip;
+        }
+        li = $(`<li class="dropdown-item ${this.customClass}" data-tooltip="${tooltip}">${item.icon}${name}</li>`);
+        li.children("i").addClass("fa-fw");
       }
-      let li = $(`<li class="dropdown-item ${this.customClass}" data-tooltip="${tooltip}">${item.icon}${name}</li>`);
-      li.children("i").addClass("fa-fw");
       ol.append(li);
 
       // Record a reference to the item
@@ -328,7 +332,7 @@ export class DropDownMenu {
   _setPosition(html, target) {
     const container = target[0].parentElement;
     // Append to target and get the dropdown bounds
-    target.css("position", "relative");
+    //target.css("position", "relative");
     html.css("visibility", "hidden");
     target.append(html);
 
@@ -337,16 +341,16 @@ export class DropDownMenu {
     const containerRect = container.getBoundingClientRect();
 
     // Determine whether to expand upwards
-    let calculatedExpandUp=parentRect.top + dropdownRect.height + parentRect.height > window.innerHeight;
-    let expandUp=false;
-    if(this.expandDown){
-      expandUp=false;
-    } else if(this.expandUp){
-      expandUp=true;
+    let calculatedExpandUp = parentRect.top + dropdownRect.height + parentRect.height > window.innerHeight;
+    let expandUp = false;
+    if (this.expandDown) {
+      expandUp = false;
+    } else if (this.expandUp) {
+      expandUp = true;
     } else {
-      expandUp=calculatedExpandUp;
+      expandUp = calculatedExpandUp;
     }
-    
+
     if (expandUp) {
       const bottom = window.innerHeight - parentRect.top - this.upVerticalAdjustment;
       this._expandUp = true;
@@ -361,37 +365,37 @@ export class DropDownMenu {
     }
 
     html.addClass(this._expandUp ? "expand-up" : "expand-down");
-    
+
     // Determine whether to show to the right or left
-    let calculatedExpandLeft=parentRect.right + dropdownRect.width > window.innerWidth;
-    let calculatedExpandRight=parentRect.right - dropdownRect.width<0;
-    let expandLeft=calculatedExpandLeft;
-    if(this.expandRight){
-      expandLeft=false;
-    } else if(this.expandLeft){
-      expandLeft=true;
-    } 
+    let calculatedExpandLeft = parentRect.right + dropdownRect.width > window.innerWidth;
+    let calculatedExpandRight = parentRect.right - dropdownRect.width < 0;
+    let expandLeft = calculatedExpandLeft;
+    if (this.expandRight) {
+      expandLeft = false;
+    } else if (this.expandLeft) {
+      expandLeft = true;
+    }
     // make sure it stays on screen even if the preferred is right
-    if (calculatedExpandLeft && this.expandRight){
-      expandLeft=true;
+    if (calculatedExpandLeft && this.expandRight) {
+      expandLeft = true;
     }
-    if (calculatedExpandRight && this.expandLeft){
-      expandLeft=false;
+    if (calculatedExpandRight && this.expandLeft) {
+      expandLeft = false;
     }
-    
-    
+
+
     if (expandLeft) {
       // shift it to the left      
       const right = window.innerWidth - parentRect.right;
       html.css("right", right + "px");
-      this._expandLeft=false;
+      this._expandLeft = false;
     } else {
       html.css("right", "unset");
-      this._expandLeft=false;
+      this._expandLeft = false;
     }
     html.addClass(this._expandLeft ? "expand-left" : "expand-right");
     // Display the menu
-    
+
     html.css("visibility", "");
     target.addClass("dropdown");
   }

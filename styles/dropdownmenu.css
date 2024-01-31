@@ -5,7 +5,7 @@
 /* Needed CSS for function, do not override these */
 #dropdown-menu {
   position: fixed;
-  z-index: calc(var(--z-index-app) + 1);
+  z-index: calc(var(--z-index-app) + 11);
 }
 
 /* CSS for visual, can be overriden */
@@ -17,7 +17,7 @@
   background:var(--color-text-dark-header);
   border: 1px solid var(--color-border-dark);
   border-radius: 5px;
-  color: var(--color-text-light-1);  
+  color: var(--color-text-light-1);
 }
 
 #dropdown-menu ol.dropdown-items {
@@ -35,16 +35,22 @@
   font-weight: normal;
   text-shadow: none;
   white-space: nowrap;
-  
+
   text-align: left;
 }
 #dropdown-menu li.dropdown-item:hover {
   cursor: pointer;
   color: var(--color-text-light-0);
   text-shadow: 0 0 4px var(--color-shadow-primary);
-  
+
 
 }
+
+#dropdown-menu li.dropdown-item-separator{
+  border-top: 1px solid var(--color-border-light-primary);
+  cursor: default;
+}
+
 #dropdown-menu li.dropdown-item > i {
   margin-right: 5px;
 }
