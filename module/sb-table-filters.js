@@ -58,7 +58,7 @@ export async function sb_table_filter_passed(filter, actorcitem, actorattributes
       condition_value = await auxMeth.autoParser(condition.value, actorattributes, actorcitem.attributes, true);
       switch(typeof condition_propertyvalue){
         case('boolean'):
-          if(condition_value.trim().toLowerCase()=='true'){
+          if(condition.value.trim().toLowerCase()=='true'){
             condition_value=true;
           } else {
             condition_value=false;
