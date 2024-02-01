@@ -312,23 +312,18 @@ Hooks.once('ready', async () => {
           sInput.value = Number(sInput.value) - change
           await game.settings.set("sandbox", "diff", Number(sInput.value));
         });
-        
-        
-        
+
         let spanDC = document.createElement("SPAN");
         spanDC.innerHTML='DC';
         spanDC.setAttribute( "class", "dc-header" );
-        ;
-        
-        
-        
-        
-        header.appendChild(decDC);
+
+        //header.appendChild(decDC);
         header.appendChild(spanDC);
-        header.appendChild(incDC);
+        //header.appendChild(incDC);
         
 
         let form = document.createElement("FORM");
+        form.className = "dcinput-form";
         let sInput = document.createElement("INPUT");
         sInput.className = "dcinput-box";
         sInput.setAttribute("type", "text");
@@ -336,59 +331,36 @@ Hooks.once('ready', async () => {
         sInput.setAttribute("value", "");
 
         let initvalue = 0;
-        //        if(!hasProperty(SBOX.diff,game.data.world.name)){
-        //            setProperty(SBOX.diff,game.data.world.name,0);
-        //        }
 
         sInput.value = game.settings.get("sandbox", "diff");
 
         sInput.addEventListener("keydown", async (event) => {
             event.preventDefault();
             event.stopPropagation();
-
             if (event.key == "Backspace" || event.key == "Delete") {
                 sInput.value = 0;
-            }
-
-            else if (event.key == "Enter") {
-                //SBOX.diff[game.data.world.name] = sInput.value;
+            }else if (event.key == "Enter") {                
                 await game.settings.set("sandbox", "diff", sInput.value);
-            }
-
-            else if (event.key == "-") {
-                //SBOX.diff[game.data.world.name] = sInput.value;
+            }else if (event.key == "-") {                
                 sInput.value = "-";
-            }
-
-            else {
+            }else {
                 if (!isNaN(event.key))
                     sInput.value += event.key;
             }
-
             if (!isNaN(sInput.value)) {
                 sInput.value = parseInt(sInput.value);
             }
-
-
         });
-
         sInput.addEventListener("focusout", async (event) => {
             event.preventDefault();
-            event.stopPropagation();
-
-            //SBOX.diff[game.data.world.name] = sInput.value;
+            event.stopPropagation();           
             await game.settings.set("sandbox", "diff", sInput.value);
-
         });
-
+        form.appendChild(decDC);
         form.appendChild(sInput);
-         
-        
-        
-        
-        
+        form.appendChild(incDC); 
+                                
         backgr.appendChild(header);
-
         backgr.appendChild(form);
 
         if (game.settings.get("sandbox", "showDC")) {
@@ -401,7 +373,7 @@ Hooks.once('ready', async () => {
             if(entry.length==2){
               let entryMenu=
                 {
-                name:entry[0],
+                name:'<span class="dc-input-dropdown-value">' + entry[1] + '</span>' + entry[0],
                 icon:'',
                 condition:true,
                 callback: async(event) => {
@@ -416,11 +388,25 @@ Hooks.once('ready', async () => {
           if(menuItems.length>0){
             let selectorDC = document.createElement("I");
             selectorDC.setAttribute( "id", "sb-dc-selector" )
-            selectorDC.setAttribute( "class", "sb-dc-btn fas fa-caret-down" );
+            //selectorDC.setAttribute( "class", "sb-dc-btn fas fa-caret-down" );
+            selectorDC.setAttribute( "class", "sb-dc-btn fas fa-square-caret-up" );
+            
             selectorDC.setAttribute( "data-tooltip", "System defined Difficulty Classes" );
             selectorDC.setAttribute( "data-tooltip-direction", "UP" );
             spanDC.appendChild(selectorDC);
-            new DropDownMenu($(".dcroll-bar"), `#sb-dc-selector`, menuItems,{customClass:'sb-context'});
+            let dropDownMenuOptions={
+              downVerticalAdjustment:0,
+              upVerticalAdjustment:0,
+              onOpen:function(){   
+                // move dc to front to get the dropdown atop of any windows
+                $(".dcroll-bar").css('z-index','9999');                
+              },
+              onClose:function(){   
+                // move dc back to normal position
+                $(".dcroll-bar").css('z-index','70');                
+              }
+            };
+            new DropDownMenu($(".dcroll-bar"), `#sb-dc-selector`, menuItems,dropDownMenuOptions);            
           }
         }
 

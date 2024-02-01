@@ -3939,7 +3939,9 @@ export class gActorSheet extends ActorSheet {
                                         else if (propdata.datatype != "table") {
                                             let constantvalue;
                                             let maxValue;
+                                            let cvalueToString;
                                             let constantauto = false;
+                                            let checknonumsum;
                                             if (propdata.datatype != "label")
                                                 if (!isFree) {
                                                     if (ciTemplate.system.attributes[propKey] == null) {
@@ -3952,10 +3954,10 @@ export class gActorSheet extends ActorSheet {
                                                         constantauto = true;
                                                         constantvalue = propdata.auto;
                                                     }
-                                                    let cvalueToString = constantvalue.toString();
+                                                    cvalueToString = constantvalue.toString();
                                                     let nonumsum = /[#@]{|\%\[|\if\[|\?\[/g;
                                                     //let checknonumsum = cvalueToString.match(nonumsum);
-                                                    let checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean" ;
+                                                    checknonumsum = !Number.isNumeric(cvalueToString) && typeof cvalueToString != "boolean" ;
                                                     let t=typeof cvalueToString;
                                                     let justexpr = true;
                                                     if (propdata.datatype == "simplenumeric")
