@@ -2205,13 +2205,17 @@ Fonts faces
     border: 2px solid black;
     border-radius: 4px;
     height:100px;
-    width:115px;
-    margin-top:-46px;
+    width:120px;
+    margin-top:-42px;
     margin-right:10px;
     user-select: all;
 
 }
-.sb-dc-btn{margin:3px;}
+.sb-dc-btn {
+    margin: 6px 3px 0 3px ;
+    font-size: 22px;	
+}
+
 .sb-dc-btn:hover{
   cursor: pointer;
   text-shadow: var(--sb-text-shadow-primary);
@@ -2221,13 +2225,14 @@ Fonts faces
 
 span.dc-header{border:0px;}
 
+span.dc-input-dropdown-value{
+  display: inline-block;
+    width: 30px;
+    text-align: center;
+}
+
 #dropdown-menu.sb-context {
-    width: max-content;
-    height: max-content;
-    min-width: 104px;
-    max-width: 360px;
-    position: absolute;
-    left: 24;
+    
     background: #23221d;
     border: 1px solid var(--color-border-dark);
     border-radius: 5px;
@@ -2238,7 +2243,7 @@ span.dc-header{border:0px;}
 
 
 .dcroll-bar{
-    z-index: 70;
+    z-index: var(--z-index-app);
     position: fixed;
     bottom: 7px;
     right: 310px;
@@ -2247,16 +2252,18 @@ span.dc-header{border:0px;}
     flex: 0 0 100px;
 }
 
-.dc-input input{
-    height:60px;
-    width:100%;
-    border:none;
-    color:black;
+.dc-input form{	
+	margin:10px 0px 3px 0px;
+}
+.dc-input input {
+    height: 40px;
+    width: 65px;
+    border: none;
+    color: black;
     font-family: var(--sb-font-family-chat-roll-result);
     font-size: 36px;
-    text-align:center;
+    text-align: center;
     pointer-events: auto;
-
 }
 
 .dc-header{

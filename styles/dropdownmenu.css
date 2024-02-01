@@ -1,25 +1,25 @@
 /* ----------------------------------------- */
 /*  Dropdown Menu
 /* ----------------------------------------- */
+
+/* Needed CSS for function, do not override these */
 #dropdown-menu {
-  width: 100%;
+  position: fixed;
+  z-index: calc(var(--z-index-app) + 11);
+}
+
+/* CSS for visual, can be overriden */
+#dropdown-menu {
+  width: max-content;
   height: max-content;
   min-width: 150px;
   max-width: 360px;
-  position: absolute;
-  left: 0;
-  background:var(--sb-background-color-inputs);
+  background:var(--color-text-dark-header);
   border: 1px solid var(--color-border-dark);
-  border-radius: 3px;
-  color: var(--sb-color-inputs);
-  z-index: calc(var(--z-index-app) + 1);
+  border-radius: 5px;
+  color: var(--color-text-light-1);
 }
-#dropdown-menu.expand-down {
-  top: calc(100% + -2px);
-}
-#dropdown-menu.expand-up {
-  bottom: calc(100% + -2px);
-}
+
 #dropdown-menu ol.dropdown-items {
   list-style: none;
   margin: 0;
@@ -29,20 +29,28 @@
 
 #dropdown-menu li.dropdown-item {
   padding: 0 5px;
-  line-height: 26px;
-  font-size: var(--sb-font-size-tooltip);
-  font-family: var(--sb-font-family-tooltip);
+  line-height: 32px;
+  font-size: var(--font-size-14);
+  font-family:  var(--font-primary);
   font-weight: normal;
-  cursor: pointer;
-  white-space: nowrap;
   text-shadow: none;
+  white-space: nowrap;
+
+  text-align: left;
 }
 #dropdown-menu li.dropdown-item:hover {
+  cursor: pointer;
   color: var(--color-text-light-0);
-  text-shadow: 0 0 4px var(--sb-color-shadow-primary);
-  background-color: var(--sb-color-shadow-primary);
-  
+  text-shadow: 0 0 4px var(--color-shadow-primary);
+
+
 }
+
+#dropdown-menu li.dropdown-item-separator{
+  border-top: 1px solid var(--color-border-light-primary);
+  cursor: default;
+}
+
 #dropdown-menu li.dropdown-item > i {
   margin-right: 5px;
 }

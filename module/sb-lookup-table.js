@@ -28,21 +28,11 @@ export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=fals
   if(!sb_lookupTable_passes_basic_check(lookupKey,lookup)){
     return returnvalue;
   }    
-  
-  if(!stringIsNumber(returnColumn)){
-    returnColumn = getColumnIndex(lookup,returnColumn);
-  }
-  
-  if(Number(returnColumn)<0){
-    ui.notifications.warn('Lookup for item ['+ lookup.name  +'] with key:['+ lookupKey +'] can not be made for return column '+ returnColumn);
+  // column checks
+  returnColumn=sb_lookupTable_passes_column_check(lookupKey,lookup,returnColumn,'return');
+  if(returnColumn==-1){
     return returnvalue;
-  }
-  
-  // checks neede for this function
-  if(returnColumn>=lookup.system.lookupTable.columns.length){
-    ui.notifications.warn('Lookup item ['+ lookup.name  +'] with key:['+ lookupKey +'] have less than '+ (returnColumn + 1) +' columns');
-    return returnvalue;
-  }
+  }    
   
   for (let row = 0; row < lookup.system.lookupTable.rows.length; row++) {      
     if(Number(lookupValue)>=Number(lookup.system.lookupTable.rows[row][0]) && Number(lookupValue)<=Number(lookup.system.lookupTable.rows[row][1])){
@@ -66,6 +56,7 @@ export async function lookupV(lookupValue,lookupKey,returnColumn,exactMatch=fals
   return returnvalue;
 }
 
+
 //lookupX(lookupValue;lookupKey;lookupColumn;returnColumn;defaultReturn='') // always exact match
 export async function lookupX(lookupValue,lookupKey,lookupColumn,returnColumn,defaultReturn=''){
   let returnvalue=defaultReturn;
@@ -74,34 +65,17 @@ export async function lookupX(lookupValue,lookupKey,lookupColumn,returnColumn,de
   if(!sb_lookupTable_passes_basic_check(lookupKey,lookup)){
     return returnvalue;
   }    
-  if(!stringIsNumber(returnColumn)){
-    returnColumn = getColumnIndex(lookup,returnColumn);
-  }
   
-  if(Number(returnColumn)<0){
-    ui.notifications.warn('Lookup for item ['+ lookup.name  +'] with key:['+ lookupKey +'] can not be made for return column '+ returnColumn);
+  // column checks
+  returnColumn=sb_lookupTable_passes_column_check(lookupKey,lookup,returnColumn,'return');
+  if(returnColumn==-1){
     return returnvalue;
-  }
+  } 
   
-  if(!stringIsNumber(lookupColumn)){
-    lookupColumn = getColumnIndex(lookup,lookupColumn);
-  }
-  
-  if(Number(lookupColumn)<0){
-    ui.notifications.warn('Lookup for item ['+ lookup.name  +'] with key:['+ lookupKey +'] can not be made for lookup column '+ returnColumn);
+  lookupColumn=sb_lookupTable_passes_column_check(lookupKey,lookup,lookupColumn,'lookup');
+  if(lookupColumn==-1){
     return returnvalue;
-  }
-  
-  // checks neede for this function
-  if(returnColumn>=lookup.system.lookupTable.columns.length){
-    ui.notifications.warn('Lookup item ['+ lookup.name  +'] with key:['+ lookupKey +'] have less than '+ (returnColumn + 1) +' columns');
-    return returnvalue;
-  }
-  
-  if(lookupColumn>=lookup.system.lookupTable.columns.length){
-    ui.notifications.warn('Lookup item ['+ lookup.name  +'] with key:['+ lookupKey +'] have less than '+ (lookupColumn + 1) +' columns');
-    return returnvalue;
-  }
+  }     
   
   for (let row = 0; row < lookup.system.lookupTable.rows.length; row++) {    
     if((lookupValue)==(lookup.system.lookupTable.rows[row][lookupColumn])){
@@ -119,20 +93,13 @@ export async function lookupList(lookupKey,returnColumn,strSeparator='|'){
   if(!sb_lookupTable_passes_basic_check(lookupKey,lookup)){
     return returnvalue;
   } 
-  if(!stringIsNumber(returnColumn)){
-    returnColumn = getColumnIndex(lookup,returnColumn);
-  }
   
-  if(Number(returnColumn)<0){
-    ui.notifications.warn('Lookup for item ['+ lookup.name  +'] with key:['+ lookupKey +'] can not be made for return column '+ returnColumn);
+  // column checks
+  returnColumn=sb_lookupTable_passes_column_check(lookupKey,lookup,returnColumn,'return');
+  if(returnColumn==-1){
     return returnvalue;
-  }
-  
-  // checks neede for this function
-  if(returnColumn>=lookup.system.lookupTable.columns.length){
-    ui.notifications.warn('Lookup item ['+ lookup.name  +'] with key:['+ lookupKey +'] have less than '+ (returnColumn + 1) +' columns');
-    return returnvalue;
-  }
+  } 
+    
   for (let row = 0; row < lookup.system.lookupTable.rows.length; row++) { 
     if(row==0){
       returnvalue=lookup.system.lookupTable.rows[row][returnColumn];
@@ -202,6 +169,26 @@ function sb_lookupTable_passes_basic_check(lookupKey,lookup,checkRows=true,check
     return false;
   }
   return true;
+}
+
+// returns -1 if failed, else the column index
+function sb_lookupTable_passes_column_check(lookupKey,lookup,columnToCheck,columnType='return'){  
+  let returnColumn=columnToCheck;  
+  if(!stringIsNumber(returnColumn)){    
+    returnColumn = getColumnIndex(lookup,returnColumn);
+    if(returnColumn==-1){
+      // not found
+      ui.notifications.warn('Lookup for item ['+ lookup.name  +'] with key:['+ lookupKey +'] can not find '+ columnType + ' column ['+ columnToCheck +']');
+      return -1;
+    }    
+  }
+  if(Number(returnColumn)<0 || Number(returnColumn)>=lookup.system.lookupTable.columns.length){
+    ui.notifications.warn(`Lookup for item ${lookup.name} with key:[${lookupKey}] can not be made for ${columnType} column [${returnColumn}]. Minimum ${columnType} column is [0], maximum ${columnType} column is [${lookup.system.lookupTable.columns.length - 1}]`);
+    return -1;
+  }
+  
+  // all tests passed
+  return returnColumn;
 }
 
 export function sb_lookupTable_to_string(lookupTable){
