@@ -61,15 +61,23 @@ export function activateHelpers(html,item){
     html.find('#sb-item-helpers-menu-bar-item-clearall').click(ev => {
       sb_item_sheet_clear_all(item,html, item.type);
     });
-
+    
+    let dropDownMenuOptions={
+      downVerticalAdjustment:1,
+      upVerticalAdjustment:2,
+      expandLeft:true,
+      expandRight:false
+    };
+    
     let input;
     // all items have name
     input=sb_item_sheet_get_input(html,'name','ITEM');
     if (input != null && input.length > 0) {  
       let menuItems=[];
-      menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE.ITEM.NAME)
-      menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE.ITEM.NAME);  
-      new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-name-${item.id}`, menuItems);
+      menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE.ITEM.NAME);
+      menuItems = sb_item_sheet_add_separator(menuItems);
+      menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE.ITEM.NAME);             
+      new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-name-${item.id}`, menuItems,dropDownMenuOptions);
     }
     
     // properties etc
@@ -81,14 +89,18 @@ export function activateHelpers(html,item){
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item); 
         menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item);
         menuItems = sb_item_sheet_dropdown_add_validate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         if(item.type=="property"){
           menuItems = sb_item_sheet_dropdown_add_copy_property_as_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);
         }
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_search(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item);
         
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-key-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-key-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -97,7 +109,7 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_autogenerate_property_icon(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].KEY,item);
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-datatype-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-datatype-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -106,8 +118,9 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].DEFAULT,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].DEFAULT);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-default-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-default-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property" || item.type=="panel" || item.type=="multipanel" || item.type=="sheettab"){
@@ -117,9 +130,11 @@ export function activateHelpers(html,item){
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TAG,item); 
         menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TAG,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TAG);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TAG);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tag-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tag-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -128,10 +143,12 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TOOLTIP,item); 
-        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TOOLTIP,item);        
+        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TOOLTIP,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TOOLTIP);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TOOLTIP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tooltip-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tooltip-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -142,8 +159,9 @@ export function activateHelpers(html,item){
         let menuItems=[];        
         menuItems = sb_item_sheet_dropdown_add_filter(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TABLEFILTER,item);
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TABLEFILTER,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].TABLEFILTER);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tablefilter-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-tablefilter-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="lookup"){
@@ -152,9 +170,10 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];        
         menuItems = sb_item_sheet_dropdown_add_lookuptable(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE,item);
-        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE,item); 
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LOOKUPTABLE);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-lookuptable-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-lookuptable-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -169,7 +188,7 @@ export function activateHelpers(html,item){
         menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLNAME,item);        
         menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLNAME);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLNAME);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollname-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollname-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property" || item.type=="cItem"){
@@ -178,10 +197,12 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLID,item); 
-        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLID,item);        
+        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLID,item);   
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_casing_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLID);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLID);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollid-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollid-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property" || item.type=="cItem" ){
@@ -190,8 +211,9 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLEXP,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].ROLLEXP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollexp-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-rollexp-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -201,8 +223,9 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].MAXUSES,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].MAXUSES);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-maxuses-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-maxuses-${item.id}`, menuItems,dropDownMenuOptions);
       }
       // mods condat
       for (let index = 0; index < item.system.mods.length; index++) {
@@ -210,8 +233,9 @@ export function activateHelpers(html,item){
         if (input != null && input.length > 0) {  
           let menuItems=[];
           menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CONDAT,item,index); 
+          menuItems = sb_item_sheet_add_separator(menuItems);
           menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CONDAT,index);  
-          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-condat-${item.id}`, menuItems);
+          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-condat-${item.id}`, menuItems,dropDownMenuOptions);
         }
       }
       // mods value
@@ -220,8 +244,9 @@ export function activateHelpers(html,item){
         if (input != null && input.length > 0) {  
           let menuItems=[];
           menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VALUE,item,index); 
+          menuItems = sb_item_sheet_add_separator(menuItems);
           menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VALUE,index);  
-          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-value-${item.id}`, menuItems);
+          new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-${index}-value-${item.id}`, menuItems,dropDownMenuOptions);
         }
       }
     }
@@ -232,8 +257,9 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].AUTOMAX,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].AUTOMAX);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-automax-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-automax-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){ 
@@ -242,8 +268,9 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].AUTO,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].AUTO);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-auto-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-auto-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -253,8 +280,9 @@ export function activateHelpers(html,item){
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CHECKGROUP,item); 
         menuItems = sb_item_sheet_dropdown_add_validate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CHECKGROUP,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].CHECKGROUP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-checkgroup-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-checkgroup-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -264,8 +292,9 @@ export function activateHelpers(html,item){
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LIST,item); 
         menuItems = sb_item_sheet_dropdown_add_validate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LIST,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LIST);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-list-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-list-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property"){
@@ -273,9 +302,10 @@ export function activateHelpers(html,item){
       input = sb_item_sheet_get_input(html, 'listauto', item.type);
       if (input != null && input.length > 0) {  
         let menuItems=[];
-        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LISTAUTO,item);         
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LISTAUTO,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].LISTAUTO);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-listauto-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-listauto-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -286,9 +316,12 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].FONTGROUP,item); 
-        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].FONTGROUP,item);        
+        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].FONTGROUP,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
+        menuItems = sb_item_sheet_dropdown_add_copy_input_as_css_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].FONTGROUP);  
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].FONTGROUP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-fontgroup-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-fontgroup-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="property" || item.type=="panel"){
@@ -297,9 +330,12 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].INPUTGROUP,item); 
-        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].INPUTGROUP,item);        
+        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].INPUTGROUP,item); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
+        menuItems = sb_item_sheet_dropdown_add_copy_input_as_css_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].INPUTGROUP); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].INPUTGROUP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-inputgroup-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-inputgroup-${item.id}`, menuItems,dropDownMenuOptions);
       }
     } 
     if(item.type=="multipanel" || item.type=="panel"){
@@ -308,9 +344,12 @@ export function activateHelpers(html,item){
       if (input != null && input.length > 0) {  
         let menuItems=[];
         menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].HEADERGROUP,item); 
-        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].HEADERGROUP,item);        
+        menuItems = sb_item_sheet_dropdown_add_autogenerate(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].HEADERGROUP,item);
+        menuItems = sb_item_sheet_add_separator(menuItems);
+        menuItems = sb_item_sheet_dropdown_add_copy_input_as_css_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].HEADERGROUP); 
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].HEADERGROUP);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-headergroup-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-headergroup-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -320,9 +359,10 @@ export function activateHelpers(html,item){
       input=sb_item_sheet_get_input(html, 'visibleif', item.type);
       if (input != null && input.length > 0) {  
         let menuItems=[];
-        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEIF,item);                 
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEIF,item);   
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEIF);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-visibleif-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-visibleif-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     if(item.type=="multipanel" || item.type=="panel" || item.type=="sheettab"){
@@ -330,9 +370,10 @@ export function activateHelpers(html,item){
       input=sb_item_sheet_get_input(html, 'visiblevalue', item.type);
       if (input != null && input.length > 0) {  
         let menuItems=[];
-        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEVALUE,item);                 
+        menuItems = sb_item_sheet_dropdown_add_editor(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEVALUE,item);   
+        menuItems = sb_item_sheet_add_separator(menuItems);
         menuItems = sb_item_sheet_dropdown_add_default_menuitems(html,menuItems,ITEMATTRIBUTE[item.type.toUpperCase()].VISIBLEVALUE);  
-        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-visiblevalue-${item.id}`, menuItems);
+        new DropDownMenu(html, `#sb-itemsheet-helper-dropdown-visiblevalue-${item.id}`, menuItems,dropDownMenuOptions);
       }
     }
     
@@ -518,6 +559,17 @@ function sb_item_sheet_dropdown_add_icon_picker(html,menu,oAttribute,item){
     return returnMenu;
 }
 
+function sb_item_sheet_add_separator(menu) {
+  let returnMenu;
+  let defaultMenuItems = [
+    {
+      separator:true     
+    }
+  ];
+  // add default menu items to  with supplied menu
+  returnMenu = menu.concat(defaultMenuItems);
+  return returnMenu;
+}
 
 function sb_item_sheet_dropdown_add_copy_property_as_menuitems(html,menu,oAttribute){
   let returnMenu;
@@ -548,7 +600,26 @@ function sb_item_sheet_dropdown_add_copy_property_as_menuitems(html,menu,oAttrib
         callback: () => {
           sb_item_sheet_copy_input_as_dialog_property(html,oAttribute);
         }
-      },
+      }
+      
+    ];
+    // add default menu items to  with supplied menu
+    returnMenu= menu.concat(defaultMenuItems);
+    return returnMenu;
+}
+//
+function sb_item_sheet_dropdown_add_copy_input_as_css_menuitems(html,menu,oAttribute){
+  let returnMenu;
+  let defaultMenuItems=[
+      {
+        name: "Copy as CSS",
+        icon: `<i class='fab fa-css3-alt fa-fw'></i>`,
+        tooltip:"Copy as CSS Rule Set",
+        condition:true,
+        callback: () => {
+          sb_item_sheet_copy_input_as_css(html,oAttribute);
+        }
+      }
       
     ];
     // add default menu items to  with supplied menu
@@ -592,49 +663,52 @@ function sb_item_sheet_dropdown_add_casing_menuitems(html,menu,oAttribute){
     return returnMenu;
 }
 
-function sb_item_sheet_dropdown_add_default_menuitems(html,menu,oAttribute,index=null){
+function sb_item_sheet_dropdown_add_default_menuitems(html, menu, oAttribute, index = null) {
   let returnMenu;
-  let defaultMenuItems=[
-      {
-        name: "Cut",
-        icon: "<i class='fas fa-cut fa-fw'></i>",
-        tooltip:"Cut to Clipboard",
-        condition:true,
-        callback: () => {
-          sb_item_sheet_cut_input(html,oAttribute,'','',index);
-        }
-      },
-      {
-        name: "Copy",
-        icon: "<i class='fas fa-copy fa-fw'></i>",
-        tooltip:"Copy to Clipboard",
-        condition:true,
-        callback: () => {
-          sb_item_sheet_copy_input(html,oAttribute,'','',index);
-        }
-      },
-      {
-        name: "Paste",
-        icon: "<i class='fas fa-paste fa-fw'></i>",
-        tooltip:"Paste from Clipboard",
-        condition:true,
-        callback: () => {
-          sb_item_sheet_paste_input(html,oAttribute,index);
-        }
-      },
-      {
-        name: "Clear",
-        icon: "<i class='fas fa-times-circle fa-fw'></i>",
-        tooltip:"Clear input",
-        condition:true,
-        callback: () => {
-         sb_item_sheet_clear_input(html,oAttribute.IDENTIFIER,true,index);
-        }
-      } 
-    ];
-    // add default menu items to  with supplied menu
-    returnMenu= menu.concat(defaultMenuItems);
-    return returnMenu;
+  let defaultMenuItems = [
+    {
+      name: "Cut",
+      icon: "<i class='fas fa-cut fa-fw'></i>",
+      tooltip: "Cut to Clipboard",
+      condition: true,
+      callback: () => {
+        sb_item_sheet_cut_input(html, oAttribute, '', '', index);
+      }
+    },
+    {
+      name: "Copy",
+      icon: "<i class='fas fa-copy fa-fw'></i>",
+      tooltip: "Copy to Clipboard",
+      condition: true,
+      callback: () => {
+        sb_item_sheet_copy_input(html, oAttribute, '', '', index);
+      }
+    },
+    {
+      name: "Paste",
+      icon: "<i class='fas fa-paste fa-fw'></i>",
+      tooltip: "Paste from Clipboard",
+      condition: true,
+      callback: () => {
+        sb_item_sheet_paste_input(html, oAttribute, index);
+      }
+    },
+    {
+      separator: true
+    },
+    {
+      name: "Clear",
+      icon: "<i class='fas fa-times-circle fa-fw'></i>",
+      tooltip: "Clear input",
+      condition: true,
+      callback: () => {
+        sb_item_sheet_clear_input(html, oAttribute.IDENTIFIER, true, index);
+      }
+    }
+  ];
+  // add default menu items to  with supplied menu
+  returnMenu = menu.concat(defaultMenuItems);
+  return returnMenu;
 }
 
 function sb_item_sheet_get_input(html,sAttribute,sTypeClass,index=null){ 
@@ -693,6 +767,10 @@ function sb_item_sheet_copy_input(html,oAttribute,sPrefix='',sSuffix='',index=nu
     }
   }                                                            
 }
+
+function sb_item_sheet_copy_input_as_css(html,oAttribute){ 
+  sb_item_sheet_copy_input(html,oAttribute,'.sandbox.sheet .','{\n}');                                                           
+} 
 
 function sb_item_sheet_copy_input_as_actor_property(html,oAttribute){ 
   sb_item_sheet_copy_input(html,oAttribute,'@{','}');                                                           
@@ -1409,7 +1487,7 @@ async function sb_item_sheet_autogenerate_icon(html,item,usedefault=false){
         default:                
           break;
       }
-      iconfile = getSandboxItemIconFile('property',datatype,rollable)
+      iconfile = getSandboxItemIconFile('property',datatype,rollable);
 
     }      
     await property.update({[`img`]: `${iconfile}`});
