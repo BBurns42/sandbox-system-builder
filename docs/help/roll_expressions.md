@@ -30,7 +30,7 @@ Rolls in sandbox must return a single numerical value.
 Always make sure that the result of your roll is a number!!! **AND ONLY ONE NUMBER** So you can't return: "Hello World", or [3,4,6], or "SUCCESS". It needs to be a number, only one, like 4. 
 To include any text, see [Conditional texts](#Conditional texts)
 
-If you need an expression that  does not include an actual roll, just put any number(like `0`, `56` etc.) first
+If you need an expression that  does not include an actual roll, just put any number(like `0`, `56` etc.) first  
 Example
 
 ```
@@ -181,8 +181,9 @@ rollp(dice;1d2)
 &&?[dice.total];0:N/A,1:Setting Dexterity to 1,2:Setting Strength to 1&&
 ```
 
-Example
-This example expression will set the value of a numerical property(`BDG_USE_FORTUNE`) based on another numerical property(`NUM_BASE_FORTUNE`) and uses the flag `~nochat~` to not create a chat message. Note that it starts with a `0` to make sure that the expression returns a number.
+Example  
+This example expression will set the value of a numerical property(`BDG_USE_FORTUNE`) based on another numerical property(`NUM_BASE_FORTUNE`) and uses the flag `~nochat~` to not create a chat message.   
+Note that it starts with a `0` to make sure that the expression returns a number.
 
 ```
 0 setself(BDG_USE_FORTUNE;@{NUM_BASE_FORTUNE}) ~nochat~
