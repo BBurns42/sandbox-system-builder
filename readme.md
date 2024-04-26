@@ -26,11 +26,17 @@ These pages are under construction, if needed, please refer to the previous [REA
 
 ### Videos
 
+These videos were made with earlier versions of Sandbox and thus some things looks slightly different and not all newer features are included, but the core principles and functionality is still valid.
+
 Playlist with video tutorials in English
 [Video tutorials -English](https://www.youtube.com/playlist?list=PLMAQsyqo9jDFpHYy4WZv0eF_SgqotcUKs)
 
 Playlist with video tutorials in Spanish
 [Video tutorials -Spanish](https://www.youtube.com/playlist?list=PLMAQsyqo9jDFEfeqRHBhwHT7kY_1eK2zY)
+
+### How-tos
+
+Find various articles on how-to do things in the [Wiki](https://gitlab.com/rolnl/sandbox-system-builder/-/wikis/How-to)
 
 ### More help
 
