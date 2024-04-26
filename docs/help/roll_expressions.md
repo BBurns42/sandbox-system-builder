@@ -24,7 +24,15 @@ Example
 $<1;1d6> 3d6+$1 &&total;1:FAIL,3:SUCCESS&& ~testroll~
 ```
 
-ALSO IMPORTANT: Rolls in sandbox only return numerical values! Always make sure that the result of your roll is a number!!! **AND ONLY ONE NUMBER** So you can't return: "Hello World", or [3,4,6], or "SUCCESS". It needs to be a number, only one, like 4.
+### Roll Value
+
+Rolls in sandbox must return a single numerical value. 
+Always make sure that the result of your roll is a number!!! **AND ONLY ONE NUMBER** So you can't return: "Hello World", or [3,4,6], or "SUCCESS". It needs to be a number, only one, like 4. 
+To include any text, see [Conditional texts](#Conditional texts)
+
+If you need an expression that  does not include an actual roll, just put any number(like `0`, `56` etc.) first
+Example
+`0 addself(NUMERICAL_PROPERTY;@{NUMERICAL_VALUE_TO_ADD})`
 
 ## Registration Helpers
 
@@ -112,6 +120,7 @@ add(property_key;value)
 ```
 
 This expression will only work with a targeted token. It will add "value" to the current value of the specified property (key only, no @). For example, `roll(Damage_Roll;2;10;false) sum(?[Damage_Roll]) add(HP;-sum(?[Damage_Roll]))`. This example expression will subtract 2d10 from the property `@{HP}` of the targeted token.
+Remember that Roll Expressions must always include a numerical value.
 
 #### addself()
 
@@ -121,7 +130,9 @@ This expression will only work with a targeted token. It will add "value" to the
 addself(property_key;value)
 ```
 
-Like `add()` but works on the actor itself
+Like `add()` but works on the actor itself.
+Remember that Roll Expressions must always include a numerical value.
+
 Example.
 
 ```
@@ -142,7 +153,8 @@ rollp(dice;1d3)
 set(property_key;value)
 ```
 
-As `add()` property, but will set the value to it.
+As `add()` property, this will only work with a targeted token, but will set the value to it.
+Remember that Roll Expressions must always include a numerical value.
 
 #### setself()
 
@@ -152,7 +164,9 @@ As `add()` property, but will set the value to it.
 setself(property_key;value)
 ```
 
-As `set()` property, but will set the value to it.
+As `set()` property, this will work with on the actor itself, but will set the value to it.
+Remember that Roll Expressions must always include a numerical value.
+
 Example
 
 ```
@@ -161,6 +175,15 @@ rollp(dice;1d2)
 %[?[dice.total],0:0,1:setself(NUM_DEXTERITY;1),2:setself(NUM_STRENGTH;1)]
 &&?[dice.total];0:N/A,1:Setting Dexterity to 1,2:Setting Strength to 1&&
 ```
+
+Example
+This example expression will set the value of a numerical property(`BDG_USE_FORTUNE`) based on another numerical property(`NUM_BASE_FORTUNE`) and uses the flag `~nochat~` to not create a chat message. Note that it starts with a `0` to make sure that the expression returns a number.
+
+```javascript
+0 setself(BDG_USE_FORTUNE;@{NUM_BASE_FORTUNE}) ~nochat~
+```
+
+
 
 #### table()
 
