@@ -32,7 +32,7 @@ $<1;1d6> 3d6+$1 &&total;1:FAIL,3:SUCCESS&& ~testroll~
 
 Rolls in sandbox must return a single numerical value.   
 Always make sure that the result of your roll is a number!!! **AND ONLY ONE NUMBER** So you can't return: "Hello World", or [3,4,6], or "SUCCESS". It needs to be a number, only one, like 4. 
-To include any text, see [Conditional texts](#Conditional texts)
+To include any text, see [Conditional texts](#conditional-texts)
 
 If you need an expression that  does not include an actual roll, just put any number(like `0`, `56` etc.) first  
 Example
