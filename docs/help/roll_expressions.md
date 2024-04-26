@@ -12,7 +12,7 @@ Both Properties and cItems have a section where you can configure how the roll w
 
 ### Roll examples
 
-For some examples see [Some examples of rolls expressions](#Some examples of rolls expressions)
+For some examples see [Some examples of rolls expressions](#Some-examples-of-rolls-expressions)
 
 ## Roll Expression Structure
 
