@@ -32,11 +32,16 @@ To include any text, see [Conditional texts](#Conditional texts)
 
 If you need an expression that  does not include an actual roll, just put any number(like `0`, `56` etc.) first
 Example
-`0 addself(NUMERICAL_PROPERTY;@{NUMERICAL_VALUE_TO_ADD})`
+
+```
+0 addself(NUMERICAL_PROPERTY;@{NUMERICAL_VALUE_TO_ADD})
+```
+
+
 
 ## Registration Helpers
 
-`$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expresion after the semicolon as $1. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
+`$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expresion after the semicolon as `$1`. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
 
 Using Registration Helpers are a great way to hide information about a roll(or any contributing property values) from players.
 
@@ -179,11 +184,9 @@ rollp(dice;1d2)
 Example
 This example expression will set the value of a numerical property(`BDG_USE_FORTUNE`) based on another numerical property(`NUM_BASE_FORTUNE`) and uses the flag `~nochat~` to not create a chat message. Note that it starts with a `0` to make sure that the expression returns a number.
 
-```javascript
+```
 0 setself(BDG_USE_FORTUNE;@{NUM_BASE_FORTUNE}) ~nochat~
 ```
-
-
 
 #### table()
 
