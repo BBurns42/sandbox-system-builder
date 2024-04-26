@@ -13,7 +13,7 @@ This field accepts [Expressions](sandbox_expressions.md)
 
 This is the main roll ID, an identifier or Key that the roll will belong to. It does not have to be unique, so if your system has a lot of skills and this is a roll for one of them, you just can use "skill" as roll ID. 
 
-This ID can be used by a cItem MOD to modify the roll, see [cItems](citems.md) and [Roll IDs](roll_expressions.md#roll-IDs)
+This ID can be used by a cItem MOD to modify the roll, see [cItems](citems.md) and [Roll IDs](roll_expressions.md#roll-ids)
 
 ### Has Dialogs
 
