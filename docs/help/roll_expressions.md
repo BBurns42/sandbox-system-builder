@@ -6,9 +6,13 @@ Rolls can be defined for Properties and cItems, if some requirements are met:
 - Properties: a property will trigger a dice roll when its label is clicked on the character sheet, only if the property option "Rollable" is checked. When checked, a Property item will display the roll options menu (see below).
 - cItems: all cItems types except PASSIVE accept rolls. When a cItem activation checkbox or icon is clicked on a character sheet, a roll will be triggered.
 
-**Roll options menu**
+### Roll options menu
 
 Both Properties and cItems have a section where you can configure how the roll will be triggered. See [Rollable Properties](properties_rollable.md)
+
+### Roll examples
+
+For some examples see [Some examples of rolls expressions](#Some examples of rolls expressions)
 
 ## Roll Expression Structure
 
@@ -26,7 +30,7 @@ $<1;1d6> 3d6+$1 &&total;1:FAIL,3:SUCCESS&& ~testroll~
 
 ### Roll Value
 
-Rolls in sandbox must return a single numerical value. 
+Rolls in sandbox must return a single numerical value.   
 Always make sure that the result of your roll is a number!!! **AND ONLY ONE NUMBER** So you can't return: "Hello World", or [3,4,6], or "SUCCESS". It needs to be a number, only one, like 4. 
 To include any text, see [Conditional texts](#Conditional texts)
 
@@ -37,8 +41,6 @@ Example
 0 addself(NUMERICAL_PROPERTY;@{NUMERICAL_VALUE_TO_ADD})
 ```
 
-
-
 ## Registration Helpers
 
 `$<index;expression>`: So roll parsing is not perfect, and until we find a way to do it more visually attractive there will be tons of problems. Expressions that contain brackets inside other expressions that also contain brackets will give you troubles. To avoid this, you can save pieces of your expression through this function. For example `$<1;%[@{str},0:0,15:1]>` will register the expresion after the semicolon as `$1`. A full example of this is: `$<1;%[@{str},0:0,15:1]> 2d6+$1`. This expression is equivalent to `2d6 + %[@{str},0:0,15:1]`. Remember to change the number before the semicolon, as is the index and will let you identify subexpressions using $1,$2,$3, etc.
@@ -47,7 +49,7 @@ Using Registration Helpers are a great way to hide information about a roll(or a
 
 ## Roll definition/functions
 
-Roll definitions can be as simple as a string with `1d20` to using a function call like rollp().
+Roll definitions can be as simple as a string with `1d20` or using a function call like rollp().
 
 ### roll()
 
@@ -124,7 +126,16 @@ All Common [Expressions](sandbox_expressions.md) Functions can be used in a Roll
 add(property_key;value)
 ```
 
-This expression will only work with a targeted token. It will add "value" to the current value of the specified property (key only, no @). For example, `roll(Damage_Roll;2;10;false) sum(?[Damage_Roll]) add(HP;-sum(?[Damage_Roll]))`. This example expression will subtract 2d10 from the property `@{HP}` of the targeted token.
+This expression will only work with a targeted token. It will add "value" to the current value of the specified property (key only, no @).   
+
+Example  
+This example expression will subtract 2d10 from the property `@{HP}` of the targeted token.
+
+```
+roll(Damage_Roll;2;10;false) sum(?[Damage_Roll]) add(HP;-sum(?[Damage_Roll]))
+```
+
+
 Remember that Roll Expressions must always include a numerical value.
 
 #### addself()
@@ -135,7 +146,7 @@ Remember that Roll Expressions must always include a numerical value.
 addself(property_key;value)
 ```
 
-Like `add()` but works on the actor itself.
+Like `add()` but works on the actor itself.  
 Remember that Roll Expressions must always include a numerical value.
 
 Example.
@@ -158,7 +169,7 @@ rollp(dice;1d3)
 set(property_key;value)
 ```
 
-As `add()` property, this will only work with a targeted token, but will set the value to it.
+As `add()` property, this will only work with a targeted token, but will set the value to it.  
 Remember that Roll Expressions must always include a numerical value.
 
 #### setself()
@@ -169,7 +180,7 @@ Remember that Roll Expressions must always include a numerical value.
 setself(property_key;value)
 ```
 
-As `set()` property, this will work with on the actor itself, but will set the value to it.
+As `set()` property, this will work with on the actor itself, but will set the value to it.  
 Remember that Roll Expressions must always include a numerical value.
 
 Example
@@ -333,7 +344,7 @@ All flags are used with surrounding tildes `~flag~`
 | `~noresult~`          | No result is shown in the created chat message               |
 | `~secretconditional~` | All text in conditional(`&&...&&`) will be marked as `secret`<br />Example.<br />`0 &&total;0:Everything are secret&& ~secretconditional~` |
 
-## Some examples of rolls
+## Some examples of rolls expressions
 
 - Roll 1d6: 
 
