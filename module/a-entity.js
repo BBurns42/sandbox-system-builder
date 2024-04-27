@@ -3027,8 +3027,9 @@ export class gActor extends Actor {
 
     // ALONDAAR - Processes Target/Self 'property update' expressions (ADD/SET)
     // PARAM 'mode' accepts: "add" or "set"
-    // PARAM 'target' accepts: target or "SELF"
-    async parseAddSet(expArray, mode, target, actorattributes, citemattributes, number, rolltotal) {
+    // PARAM 'target' accepts: target, "SELF", or "CITEM"
+    // PARAM 'tablekey' should only be not null if citem is in a free table
+    async parseAddSet(expArray, mode, target, actorattributes, citemattributes, number, rolltotal, cItemId = null, tablekey = null) {
         if (expArray != null) {
             for (let i = 0; i < expArray.length; i++) {
                 let blocks = expArray[i].split(";");
@@ -3043,10 +3044,16 @@ export class gActor extends Actor {
 
                 if (target != null) {
                     let targetattributes = null;
-                    if (target != "SELF")
-                        targetattributes = target.actor.system.attributes;
-                    else
-                        targetattributes = this.system.attributes;
+                    switch(target) {
+                        case "SELF":
+                            targetattributes = this.system.attributes;
+                            break;
+                        case "CITEM":
+                            targetattributes = citemattributes;
+                            break;
+                        default:
+                            targetattributes = target.actor.system.attributes;
+                    }
 
                     if (targetattributes != null && targetattributes[parseprop] != null) {
                         let attvalue = targetattributes[parseprop].value;
@@ -3096,10 +3103,31 @@ export class gActor extends Actor {
                                 attvalue = parsevalue;
                         }
 
-                        if (target != "SELF")
-                            await this.requestToGM(this, target.id, parseprop, attvalue);
-                        else
-                            await this.update({ [`system.attributes.${parseprop}.value`]: attvalue });
+                        switch(target) {
+                            case "SELF":
+                                await this.update({ [`system.attributes.${parseprop}.value`]: attvalue });
+                                break;
+                            case "CITEM":
+                                if (tablekey == null && cItemId != null) {
+                                    let citem = this.system.citems.find(y => y.id == cItemId);
+                                    if (citem != null) {
+                                        citem.attributes[parseprop].value = attvalue;
+                                        let citems = duplicate(this.system.citems);
+                                        citems[cItemId] = citem;
+                                        await this.update({"system.citems": citems});
+                                    }
+                                } else if (tablekey != null && cItemId != null) {
+                                    let tableitems = duplicate(this.system.attributes[tablekey].tableitems);
+                                    let citem = tableitems.find(y => y.id == cItemId);
+                                    citem.attributes[parseprop].value = attvalue;
+                                    await this.update({ [`system.attributes.${tablekey}.tableitems`]: tableitems });
+                                } else {
+                                    console.warn("No valid cItem provided.");
+                                }
+                                break;
+                            default:
+                                await this.requestToGM(this, target.id, parseprop, attvalue);
+                        }
                     }
                     else {
                         console.warn("Property key: '" + parseprop + "' not found on target.");
@@ -3244,7 +3272,7 @@ export class gActor extends Actor {
         }
     }
 
-    async rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number = 1, isactive = null, ciuses = null, cimaxuses = 1, target = null, rollcitemID = null, tokenID = null) {
+    async rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number = 1, isactive = null, ciuses = null, cimaxuses = 1, target = null, rollcitemID = null, tokenID = null, tablekey = null) {
 
         //console.log(rollexp);
         //console.log(rollid);
@@ -3959,12 +3987,18 @@ export class gActor extends Actor {
         let addSelfArray = null;
         [addSelfArray, rollexp, rollformula] = await this.extractExpression("addself", rollexp, rollformula);
 
+        let addCitemArray = null;
+        [addCitemArray, rollexp, rollformula] = await this.extractExpression("addcitem", rollexp, rollformula);
+
         //SETer to target implementation - set(property;value)
         let setArray = null;
         [setArray, rollexp, rollformula] = await this.extractExpression("set", rollexp, rollformula);
 
         let setSelfArray = null;
         [setSelfArray, rollexp, rollformula] = await this.extractExpression("setself", rollexp, rollformula);
+
+        let setCitemArray = null;
+        [setCitemArray, rollexp, rollformula] = await this.extractExpression("setcitem", rollexp, rollformula);
 
         // Rollable Table from expression: table(table_name;optional_value)
         let tableArray = null;
@@ -4007,8 +4041,10 @@ export class gActor extends Actor {
         // Alondaar -- Actually parse the ADD/SETs that were found earlier
         await this.parseAddSet(addArray, "add", target, actorattributes, citemattributes, number, rolltotal);
         await this.parseAddSet(addSelfArray, "add", "SELF", actorattributes, citemattributes, number, rolltotal);
+        await this.parseAddSet(addCitemArray, "add", "CITEM", actorattributes, citemattributes, number, rolltotal, rollcitemID, tablekey);
         await this.parseAddSet(setArray, "set", target, actorattributes, citemattributes, number, rolltotal);
         await this.parseAddSet(setSelfArray, "set", "SELF", actorattributes, citemattributes, number, rolltotal);
+        await this.parseAddSet(setCitemArray, "set", "CITEM", actorattributes, citemattributes, number, rolltotal, rollcitemID, tablekey);
         // ---------------------------------------------------------------------
         //CHECK CRITS AND FUMBLES TO COLOR THE ROLL
         // ---------------------------------------------------------------------
