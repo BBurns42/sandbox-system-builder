@@ -674,7 +674,7 @@ export class gActorSheet extends ActorSheet {
         
         let dialogTitle=rollname;  // used to be dialogPanel.system.title
         dialogTitle = await auxMeth.parseDialogProps(dialogTitle, dialogProps);                
-        dialogTitle = await auxMeth.basicParser(dialogTitle,this.actor);
+        dialogTitle = await auxMeth.basicParser(dialogTitle,this.actor,null,'FIRST');
         //static async autoParser(expr, attributes, itemattributes, exprmode, noreg = false, number = 1, uses = 0, maxuses = 1) 
         dialogTitle = await auxMeth.autoParser(dialogTitle, actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
         dialogTitle = await game.system.api._extractAPIFunctions(dialogTitle,actorattributes, citemattributes, true, false, number,ciuses,cimaxuses);
@@ -1016,6 +1016,10 @@ export class gActorSheet extends ActorSheet {
             if (this.actor.isToken && this.token != null)
                 tokenid = this.token.id;
             //TEST SERE FOR BETTER ROLL RESULTS
+
+            // basic parse again to remove 'currenttarget' tags since we aren't rolling per target
+            rollexp = await auxMeth.basicParser(rollexp,this.actor,null,'FIRST');
+            rollname = await auxMeth.basicParser(rollname,this.actor,null,'FIRST'); 
             
             let finalrollprev = await this.actor.rollSheetDice(rollexp, rollname, rollid, actorattributes, citemattributes, number, isactive, ciuses,cimaxuses, null, rollcitemID, tokenid);
             finalroll = finalrollprev.result;

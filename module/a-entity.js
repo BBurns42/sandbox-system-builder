@@ -3325,11 +3325,11 @@ export class gActor extends Actor {
 
 
         //Parse basics
-        rollname = await auxMeth.basicParser(rollname,this);
+        rollname = await auxMeth.basicParser(rollname,this,null,target);
         rollname = await auxMeth.autoParser(rollname, actorattributes, citemattributes, true, false, number);
         rollname = await game.system.api._extractAPIFunctions(rollname,actorattributes, citemattributes, true, false, number);
         
-        rollexp = await auxMeth.basicParser(rollexp,this);
+        rollexp = await auxMeth.basicParser(rollexp,this,null,target);
         
         if (citemattributes != null) {            
             rollexp = await rollexp.replace(/\#{name}/g, citemattributes.name);

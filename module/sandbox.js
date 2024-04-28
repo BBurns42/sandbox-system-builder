@@ -1710,7 +1710,7 @@ Hooks.on("renderDialog", async (app, html, data) => {
         // get new roll name for dialogTitle
         let dialogTitle=app.data.rollname;
         dialogTitle = await auxMeth.parseDialogProps(dialogTitle, dialogProps);  
-        dialogTitle = await auxMeth.basicParser(dialogTitle,app.data.actor);
+        dialogTitle = await auxMeth.basicParser(dialogTitle,app.data.actor,null,'FIRST');
         dialogTitle = await auxMeth.autoParser(dialogTitle, app.data.actor.system.attributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
         dialogTitle = await game.system.api._extractAPIFunctions(dialogTitle, app.data.actorattributes, app.data.citemattributes, false, null, app.data.number, app.data.uses, app.data.maxuses);
         console.log(dialogTitle);
