@@ -2514,7 +2514,8 @@ export class gActor extends Actor {
                         if (total_citem != null) {
                             if (!tableObj.system.isfreetable && tableHasValidFilter != null) {
                                 // check filter
-                                if (sb_table_filter_passed(tableHasValidFilter, gcitems[q], filter_passed_count)) {
+                                let filter_pass = await sb_table_filter_passed(tableHasValidFilter, gcitems[q], attributes, filter_passed_count)
+                                if (filter_pass) {
                                     // passsed
                                     filter_passed_count = filter_passed_count + 1;
                                     newtotal += Number(total_citem.value);

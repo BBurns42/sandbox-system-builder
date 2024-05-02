@@ -3607,7 +3607,8 @@ export class gActorSheet extends ActorSheet {
                         //console.warn('Filter found for table '+ propTable.name )
                         //console.warn(ciObject)
                         // check filter
-                        if(sb_table_filter_passed(tableHasValidFilter, ciObject, filter_passed_count)){
+                        let filter_pass = await sb_table_filter_passed(tableHasValidFilter, ciObject, attributes, filter_passed_count);
+                        if(filter_pass){
                           // passsed
                           filter_passed_count = filter_passed_count + 1;
                         } else{

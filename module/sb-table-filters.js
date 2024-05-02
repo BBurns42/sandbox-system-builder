@@ -1,10 +1,12 @@
-export function sb_table_filter_passed(filter, actorcitem, filter_passed_count) {
+import { auxMeth } from "./auxmeth.js";
+
+export async function sb_table_filter_passed(filter, actorcitem, actorattributes, filter_passed_count) {
   let filter_pass;
   let condition_propertyvalue;
   let condition_value;
   let condition_evaluation;
   filter_pass = true; // start with assuming that filter is passed for this row
-  filter.conditions.forEach(function (condition) {
+  for (const condition of filter.conditions) {
     condition_propertyvalue = null;
     // get property value
     switch (condition.type.trim()) {
@@ -53,6 +55,7 @@ export function sb_table_filter_passed(filter, actorcitem, filter_passed_count) 
     if (condition_propertyvalue != null) {
       //console.warn('key:[' + condition.key + '] datatype:'+ typeof condition_propertyvalue);
       // adapt datatypes
+      condition_value = await auxMeth.autoParser(condition.value, actorattributes, actorcitem.attributes, true);
       switch(typeof condition_propertyvalue){
         case('boolean'):
           if(condition.value.trim().toLowerCase()=='true'){
@@ -62,10 +65,10 @@ export function sb_table_filter_passed(filter, actorcitem, filter_passed_count) 
           }
           break;
         case('string'):
-          condition_value=condition.value.toString();
+          condition_value=condition_value.toString();
           break;
         case('number'):
-          condition_value=Number(condition.value);
+          condition_value=Number(condition_value);
           break;
       }
       
@@ -154,7 +157,7 @@ export function sb_table_filter_passed(filter, actorcitem, filter_passed_count) 
       //
       
     }
-  });
+  }
   return filter_pass;
 }
 
