@@ -48,8 +48,8 @@
   "gridUnits": "ft",
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "power",
-  "url":       "https://gitlab.com/rolnl/sandbox-system-builder/",
-  "manifest":  "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/master/system.json",
-  "download":  "https://gitlab.com/rolnl/sandbox-system-builder/-/archive/v0.14.4.4/sandbox-system-builder-v0.14.4.4.zip",
-  "changelog": "https://gitlab.com/rolnl/sandbox-system-builder/-/raw/v0.14.4.4/changelog.md"
+  "url":       "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/",
+  "manifest":  "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/raw/master/system.json",
+  "download":  "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/archive/v0.14.4.4/sandbox-system-builder-v0.14.4.4.zip",
+  "changelog": "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/raw/v0.14.4.4/changelog.md"
 }
