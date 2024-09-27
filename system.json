@@ -2,10 +2,10 @@
   "id": "sandbox",
   "title": "Sandbox System Builder",
   "description": "Custom system builder to build character sheets and rulesets for any game.",
-  "version": "0.14.4.4",
+  "version": "0.14.4.5",
   "compatibility": {
     "minimum": "10",
-    "verified": "11"
+    "verified": "12"
   },
   "templateVersion": 1,
   "authors": [{
@@ -49,7 +49,7 @@
   "primaryTokenAttribute": "health",
   "secondaryTokenAttribute": "power",
   "url":       "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/",
-  "manifest":  "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/raw/master/system.json",
-  "download":  "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/archive/v0.14.4.4/sandbox-system-builder-v0.14.4.4.zip",
-  "changelog": "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/-/raw/v0.14.4.4/changelog.md"
+  "manifest":  "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/refs/heads/master/system.json",
+  "download":  "https://github.com/BBurns42/sandbox-system-builder/archive/refs/tags/v0.14.4.5.zip",
+  "changelog": "https://raw.githubusercontent.com/BBurns42/sandbox-system-builder/refs/heads/master/changelog.md"
 }
